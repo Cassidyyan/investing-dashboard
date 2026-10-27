@@ -1,0 +1,15 @@
+# Packages installed by npm; recreated with npm ci.
+node_modules/
+
+# Generated app files, test coverage, and TypeScript build information.
+.next/
+out/
+coverage/
+*.tsbuildinfo
+
+# Private credentials. Only the empty template belongs in Git.
+.env*
+!.env.example
+
+# macOS folder metadata.
+.DS_Store
