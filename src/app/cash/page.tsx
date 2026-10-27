@@ -1,6 +1,6 @@
 import { loadPortfolio } from "@/server/load-portfolio";
-import { PortfolioPage } from "@/components/PortfolioPage";
-import { CashAccountsTable } from "@/components/CashAccountsTable";
+import { PortfolioPage } from "@/components/layout/PortfolioPage";
+import { CashAccountsTable } from "@/components/cash/CashAccountsTable";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export default async function CashPage() {

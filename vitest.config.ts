@@ -5,7 +5,7 @@ const root = fileURLToPath(new URL(".", import.meta.url));
 export default defineConfig({
   resolve: {
     alias: {
-      "server-only": resolve(root, "tests/server-only.ts"),
+      "server-only": resolve(root, "tests/helpers/server-only.ts"),
       "@": resolve(root, "src"),
     },
   },

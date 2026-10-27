@@ -48,10 +48,24 @@ investing-dashboard/
 ├── docs/                     Explanations for learning and maintenance
 ├── src/                      The application code you edit
 │   ├── app/                  Pages, page layout, loading screen, and styles
-│   ├── components/           Reusable parts of the dashboard
+│   ├── components/           Screen elements grouped by feature
+│   │   ├── layout/           Page shell, navigation, and loading animation
+│   │   ├── overview/         Summary cards
+│   │   ├── performance/      Daily history charts and period controls
+│   │   ├── accounts/         Investing account tables and totals
+│   │   ├── cash/             Cash & chequing table
+│   │   ├── holdings/         Position tables, sorting, and tabs
+│   │   ├── options/          Option contract cards
+│   │   ├── activity/         Orders and transactions
+│   │   ├── charts/           Allocation charts
+│   │   └── shared/           Icons and empty/error states
 │   ├── server/               Private code that reads SnapTrade data
 │   └── lib/                  Shared data types and formatting helpers
-├── tests/                    Checks for calculations and API failures
+├── tests/                    Checks grouped by the code they cover
+│   ├── components/           Rendered UI checks
+│   ├── server/               Fetching and normalization checks
+│   ├── lib/                  Calculation and sorting checks
+│   └── helpers/              Test-only support files
 ├── .env.example              Shareable template; empty variable names only
 ├── .env.local                Your private credentials; ignored by Git
 ├── .gitignore                Rules for what stays out of Git
@@ -64,6 +78,7 @@ There are a few configuration files at the top level because the development too
 ## Pages
 
 - **Overview** (`/`): summary cards and links to the rest of the app.
+- **Performance** (`/performance`): daily historical values with range controls and separate brokerage-reported returns. SnapTrade history is a beta add-on with a one-year limit; intraday and five-year histories are unavailable.
 - **Accounts** (`/accounts`): separate estimated CAD/USD values, collapsible allocation, and a combined USD estimate using the latest Bank of Canada daily rate. Accounts with a reported total of 0 CAD or 0 USD are hidden.
 - **Holdings & options** (`/holdings`): position tabs, with charts and per-account details collapsed until needed.
 - **Activity** (`/activity`): recent orders and transactions, collapsed by account.
@@ -75,7 +90,7 @@ Open a panel by clicking its heading. Expanding panels and switching position ta
 ## Read the code in this order
 
 1. [page.tsx](src/app/page.tsx): the overview page. It loads balances and shows summary cards and navigation links.
-2. [AccountsTable.tsx](src/components/AccountsTable.tsx): a component that turns account data into a table.
+2. [AccountsTable.tsx](src/components/accounts/AccountsTable.tsx): a component that turns account data into a table.
 3. [types.ts](src/lib/types.ts): definitions of the data the components expect.
 4. [load-portfolio.ts](src/server/load-portfolio.ts): requests account data and keeps successful sections when another section fails.
 5. [normalize.ts](src/server/normalize.ts): turns SnapTrade responses into simpler display data.

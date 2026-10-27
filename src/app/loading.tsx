@@ -1,4 +1,4 @@
-import { StonkLoader } from "@/components/StonkLoader";
+import { StonkLoader } from "@/components/layout/StonkLoader";
 export default function Loading() {
   return (
     <main className="stonk-loading-page" aria-busy="true">

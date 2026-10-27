@@ -1,7 +1,7 @@
 import { loadPortfolio } from "@/server/load-portfolio";
-import { PortfolioPage } from "@/components/PortfolioPage";
-import { OrdersList } from "@/components/OrdersList";
-import { ActivityList } from "@/components/ActivityList";
+import { PortfolioPage } from "@/components/layout/PortfolioPage";
+import { OrdersList } from "@/components/activity/OrdersList";
+import { ActivityList } from "@/components/activity/ActivityList";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export default async function ActivityPage() {

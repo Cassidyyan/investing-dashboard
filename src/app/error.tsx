@@ -1,5 +1,5 @@
 "use client";
-import { NavigationReady } from "@/components/NavigationProgress";
+import { NavigationReady } from "@/components/layout/NavigationProgress";
 export default function ErrorPage({ reset }: { reset: () => void }) {
   return (
     <main>

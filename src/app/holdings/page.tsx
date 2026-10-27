@@ -1,11 +1,11 @@
 import { loadExchangeRate } from "@/server/exchange-rate";
-import { IndustryPieChart } from "@/components/IndustryPieChart";
+import { IndustryPieChart } from "@/components/charts/IndustryPieChart";
 import { loadPortfolio } from "@/server/load-portfolio";
-import { PortfolioPage } from "@/components/PortfolioPage";
-import { HoldingsPieChart } from "@/components/HoldingsPieChart";
-import { PositionsTabs } from "@/components/PositionsTabs";
-import { OptionsDetails } from "@/components/OptionsDetails";
-import { PositionsTable } from "@/components/PositionsTable";
+import { PortfolioPage } from "@/components/layout/PortfolioPage";
+import { HoldingsPieChart } from "@/components/charts/HoldingsPieChart";
+import { PositionsTabs } from "@/components/holdings/PositionsTabs";
+import { OptionsDetails } from "@/components/options/OptionsDetails";
+import { PositionsTable } from "@/components/holdings/PositionsTable";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export default async function HoldingsPage() {
@@ -17,6 +17,12 @@ export default async function HoldingsPage() {
     <PortfolioPage portfolio={portfolio} path="/holdings">
       {(accounts) => (
         <>
+          <PositionsTabs
+            holdings={
+              <PositionsTable accounts={accounts} category="holdings" />
+            }
+            optionPositions={<OptionsDetails accounts={accounts} />}
+          />
           <details className="panel collapsible-panel">
             <summary>Industry allocation · all accounts</summary>
             <IndustryPieChart accounts={accounts} rate={rate} />
@@ -25,12 +31,6 @@ export default async function HoldingsPage() {
             <summary>Holdings allocation charts</summary>
             <HoldingsPieChart accounts={accounts} />
           </details>
-          <PositionsTabs
-            holdings={
-              <PositionsTable accounts={accounts} category="holdings" />
-            }
-            optionPositions={<OptionsDetails accounts={accounts} />}
-          />
           <p className="muted">
             Logos by{" "}
             <a href="https://www.logo.dev" target="_blank" rel="noreferrer">

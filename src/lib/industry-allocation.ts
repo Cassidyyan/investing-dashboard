@@ -1,5 +1,5 @@
-import type { AccountData, ExchangeRate, Result } from "./types";
-import { securityIndustry } from "./security-industries";
+import type { AccountData, ExchangeRate, Result } from "@/lib/types";
+import { securityIndustry } from "@/lib/security-industries";
 
 type Holding = { symbol: string; kind: string; amount: number; source: string };
 export type IndustryGroup = {

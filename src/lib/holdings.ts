@@ -1,4 +1,4 @@
-import type { AccountData } from "./types";
+import type { AccountData } from "@/lib/types";
 
 export function isOption(kind: string) {
   return kind === "option" || kind === "future_option";

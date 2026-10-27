@@ -70,3 +70,22 @@ export type Portfolio = {
   accounts: Result<AccountData[]>;
   connections: Result<ConnectionView[]>;
 };
+
+export type HistoryPoint = { date: string; value: number };
+export type AccountHistory = {
+  currency: string;
+  points: HistoryPoint[];
+  omittedPoints: number;
+};
+export type ReportedReturn = {
+  timeframe: string;
+  percent: number;
+  asOf: string | null;
+};
+export type PerformanceAccount = {
+  id: string;
+  name: string;
+  suffix: string;
+  history: Result<AccountHistory>;
+  returns: Result<ReportedReturn[]>;
+};

@@ -2,7 +2,7 @@ import "server-only";
 
 // Load independent sections together, preserving successful data if another request fails.
 
-import { getSnaptrade, type ReadClient } from "./snaptrade";
+import { getSnaptrade, type ReadClient } from "@/server/snaptrade";
 import {
   numeric,
   normalizeAccount,
@@ -11,7 +11,7 @@ import {
   normalizeOrders,
   normalizeActivities,
   normalizeConnections,
-} from "./normalize";
+} from "@/server/normalize";
 import type { Result, Portfolio } from "@/lib/types";
 async function settle<T>(
   request: () => Promise<{ data: T }>,

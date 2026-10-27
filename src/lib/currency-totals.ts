@@ -1,4 +1,4 @@
-import type { AccountData } from "./types";
+import type { AccountData } from "@/lib/types";
 
 export type CurrencyTotals = {
   cad: number | null;

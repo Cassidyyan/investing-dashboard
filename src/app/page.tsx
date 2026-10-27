@@ -1,8 +1,8 @@
 // Overview stays short; the other pages contain detailed tables and records.
-import { NavigationLink } from "@/components/NavigationProgress";
+import { NavigationLink } from "@/components/layout/NavigationProgress";
 import { loadPortfolio } from "@/server/load-portfolio";
-import { PortfolioPage } from "@/components/PortfolioPage";
-import { SummaryCards } from "@/components/SummaryCards";
+import { PortfolioPage } from "@/components/layout/PortfolioPage";
+import { SummaryCards } from "@/components/overview/SummaryCards";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export default async function Page() {
@@ -17,6 +17,13 @@ export default async function Page() {
           />
           <div className="overview-links">
             {[
+              {
+                href: "/performance",
+                label: "Historical performance",
+                description:
+                  "Daily value charts and brokerage-reported returns.",
+                icon: "↗",
+              },
               {
                 href: "/accounts",
                 label: "Your accounts",

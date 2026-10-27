@@ -33,7 +33,7 @@ The overviewâ€™s reported account totals remain distinct from the Accounts pageâ
 ## Security
 
 - `.env.local` and other environment files are ignored; `.env.example` has empty names only.
-- `src/server/*` imports `server-only`. The SDK is initialized only in `snaptrade.ts` and only six read methods are exposed.
+- `src/server/*` imports `server-only`. The SDK is initialized only in `snaptrade.ts` and only read methods are exposed.
 - No registration, signing implementation, user secret, trading endpoint, database, persistent response cache, analytics, remote fonts, or telemetry integration is included.
 - The dynamic page is excluded from static rendering. Responses use private/no-store headers; raw financial responses and upstream errors are not logged or sent to the browser.
 - ESLint bans trading method names and `NEXT_PUBLIC_SNAPTRADE*` references in application code. These checks are guardrails, not a security sandbox for arbitrary future code.
@@ -80,3 +80,21 @@ Greeks and IV remain unavailable by the user's choice to proceed without another
 This view uses one common currency (USD), converting CAD position values with the existing Bank of Canada reference-rate loader. It combines included positive stock/fund values across visible investing accounts. It is not net portfolio value or delta-adjusted risk: options, cash, crypto, shorts, unsupported currencies, and unavailable valuations are excluded. Failures and stale data remain flagged, and a missing rate prevents a mixed-currency chart rather than silently dropping CAD holdings.
 
 Industry groups are simplified, app-maintained classifications based on issuer descriptions, not a licensed GICS taxonomy or a live external classification feed. The mapping includes issuer-source URLs and a review date. Symbols retain exchange suffixes. Unclassified stocks remain in an Unclassified slice. Fund, sector-fund, and precious-metals-trust groups are distinct from operating-company industries, with no claim to ETF look-through allocation or overlap adjustment. Holdings and classification sources can be expanded under the chart. The chart shows the top three groups plus an Other slice, with remaining groups listed in a bounded scrollable dropdown.
+
+## Balance visibility
+
+The header's Hide balances/Show balances control replaces amounts, sensitive quantities, and return percentages with `.....` across the app. Figures are replaced in visible and accessible rendered text, without a tooltip containing the original amount. The app stores only `balances-hidden=1` or `0` in a same-site preference cookie and uses it for server rendering to avoid a flash of visible amounts after reload. No financial values are stored in this preference.
+
+This feature is for screen privacy. Financial data remains part of the app's loaded data and may be inspected in browser/network tools. Names, tickers, contract identifiers, dates, position direction, chart proportions/allocation percentages, and public exchange rates remain visible; it is not a screenshot anonymizer or authentication mechanism.
+
+## Historical performance
+
+The Performance page reads [historical account values](https://docs.snaptrade.com/reference/Experimental%20endpoints/AccountInformation_getAccountBalanceHistory) and [brokerage-reported return rates](https://docs.snaptrade.com/reference/Account%20Information/AccountInformation_getUserAccountReturnRates). Account Value History is beta, disabled by default, and limited to one year; the beta schema may change. The app does not enable add-ons automatically. History errors show setup/access guidance rather than mock values.
+
+The graph shows estimated daily **account value**, including cash, deposits, withdrawals, and transfers. Its dollar/percentage change is not a time-weighted or money-weighted investment return. Genuine brokerage-reported returns are displayed separately per account when supplied, using exact 1D, 1M, YTD, or 1Y periods. Weekly returns are not substituted for 5D. No aggregate return is invented by averaging account percentages.
+
+Only currently visible investing accounts participate. Cash & chequing and accounts excluded by the existing empty/zero filters are not included; this is not a lifetime history of closed accounts. Accounts aggregate by history currency, requiring an actual snapshot for every successful included account on each plotted date. Failed account histories are omitted with a partial-coverage warning. Dates with missing snapshots are omitted, not carried forward or zero-filled. Historical currencies are not converted using today's rate.
+
+1D shows the latest two available daily snapshots; 5D shows up to six snapshots/five observed intervals, not necessarily five calendar days. Other ranges use Toronto calendar dates and clamped calendar-month boundaries. Actual plotted date endpoints remain visible. 5 Year is disabled with an explanation; intraday and five-year history are not fabricated. Source data can be incomplete, delayed, or contain gaps. Reported-return timestamps are shown.
+
+History is fetched only on the Performance page, with one history and one return request per included account. Range/account selection, hovering, and keyboard inspection use already-loaded view models. No raw financial responses are persisted, no polling or synchronization request is introduced, and upstream error bodies are never logged. Hide balances masks chart values, value changes, tables, and return percentages; relative line shapes and dates remain visible.

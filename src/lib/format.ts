@@ -1,5 +1,5 @@
 // Display helpers shared by the components; these functions do not fetch data.
-import type { Money } from "./types";
+import type { Money } from "@/lib/types";
 export function money(value: Money): string {
   if (value.amount === null) return "Unavailable";
   if (!value.currency)

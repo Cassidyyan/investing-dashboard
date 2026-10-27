@@ -1,9 +1,9 @@
 import { loadExchangeRate } from "@/server/exchange-rate";
-import { CurrencyTotal } from "@/components/CurrencyTotal";
+import { CurrencyTotal } from "@/components/accounts/CurrencyTotal";
 import { loadPortfolio } from "@/server/load-portfolio";
-import { PortfolioPage } from "@/components/PortfolioPage";
-import { AccountsTable } from "@/components/AccountsTable";
-import { AllocationBar } from "@/components/AllocationBar";
+import { PortfolioPage } from "@/components/layout/PortfolioPage";
+import { AccountsTable } from "@/components/accounts/AccountsTable";
+import { AllocationBar } from "@/components/accounts/AllocationBar";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export default async function AccountsPage() {

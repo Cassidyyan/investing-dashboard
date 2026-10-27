@@ -10,7 +10,7 @@ export function getSnaptrade() {
   const client = new Snaptrade({
     auth: SnaptradeAuth.personalApiKey({ clientId, consumerKey }),
   });
-  // Expose only the six read operations used by this application.
+  // Expose only the read operations used by this application.
   const options = { timeout: 20_000 };
   return {
     accounts: () => client.accountInformation.listUserAccounts({}, options),
@@ -22,6 +22,17 @@ export function getSnaptrade() {
       client.accountInformation.getAllAccountPositions({ accountId }, options),
     orders: (accountId: string) =>
       client.accountInformation.getUserAccountRecentOrders(
+        { accountId },
+        options,
+      ),
+    // History is beta/opt-in and limited to one year by SnapTrade.
+    history: (accountId: string) =>
+      client.accountInformation.getAccountBalanceHistory(
+        { accountId },
+        options,
+      ),
+    returns: (accountId: string) =>
+      client.accountInformation.getUserAccountReturnRates(
         { accountId },
         options,
       ),

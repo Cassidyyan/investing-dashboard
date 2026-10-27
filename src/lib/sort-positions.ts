@@ -1,4 +1,4 @@
-import type { PositionView } from "./types";
+import type { PositionView } from "@/lib/types";
 export type PositionSortKey =
   "quantity" | "averageCost" | "price" | "value" | "return";
 export type SortDirection = "ascending" | "descending";
