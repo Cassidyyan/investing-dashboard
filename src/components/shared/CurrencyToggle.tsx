@@ -1,5 +1,5 @@
 "use client";
-import styles from "@/components/overview/Overview.module.css";
+import styles from "@/styles/dashboard.module.css";
 export type CurrencySelection = "CAD" | "USD" | "COMBINED_USD";
 export function CurrencyToggle<T extends CurrencySelection>({
   value,

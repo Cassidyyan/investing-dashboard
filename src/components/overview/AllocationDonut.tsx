@@ -3,8 +3,8 @@ import {
   PrivateValue,
   useBalancePrivacy,
 } from "@/components/shared/BalancePrivacy";
-import { StatCard } from "./StatCard";
-import styles from "./Overview.module.css";
+import { StatCard } from "@/components/shared/StatCard";
+import styles from "@/styles/dashboard.module.css";
 export function AllocationDonut({
   rows,
   partial,

@@ -1,7 +1,8 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { HoldingsPieChart } from "@/components/charts/HoldingsPieChart";
+import { AllocationDonut } from "@/components/holdings/AllocationDonut";
+import { allocationView } from "@/lib/holdings/holdings-view";
 import type { AccountData } from "@/lib/types";
 function account(values: number[]): AccountData {
   return {
@@ -40,11 +41,19 @@ it.each([[100], [60, 40]])(
   "renders SVG titles as single strings without React warnings: %j",
   (...values) => {
     const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    const allocation = allocationView([account(values)], "CAD", "holding", {
+      status: "error",
+      message: "Native CAD does not need FX",
+    });
     const html = renderToStaticMarkup(
-      createElement(HoldingsPieChart, { accounts: [account(values)] }),
+      createElement(AllocationDonut, {
+        items: allocation.items,
+        total: allocation.total,
+        currency: "CAD",
+      }),
     );
     expect(html).toContain(
-      `<title>TEST0 · stock: ${values.length === 1 ? "100" : "60.0"}%</title>`,
+      `<title>TEST0 · stock: ${values.length === 1 ? "100.0" : "60.0"}%</title>`,
     );
     expect(errors).not.toHaveBeenCalled();
   },

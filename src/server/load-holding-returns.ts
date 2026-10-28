@@ -4,8 +4,8 @@ import type { AccountData } from "@/lib/types";
 import type {
   SecurityTransaction,
   TransactionHistory,
-} from "@/lib/holding-returns";
-import { historyDate } from "@/lib/performance";
+} from "@/lib/returns/holding-returns";
+import { historyDate } from "@/lib/performance/performance";
 import { numeric } from "./normalize";
 import { getSnaptrade, type ReadClient } from "./snaptrade";
 

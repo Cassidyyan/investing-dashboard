@@ -1,8 +1,8 @@
 import { NavigationLink } from "@/components/layout/NavigationProgress";
-import type { OverviewModel } from "@/lib/overview";
-import { OverviewMoney } from "./OverviewMoney";
-import { StatCard } from "./StatCard";
-import styles from "./Overview.module.css";
+import type { OverviewModel } from "@/lib/overview/overview";
+import { MoneyValue } from "@/components/shared/MoneyValue";
+import { StatCard } from "@/components/shared/StatCard";
+import styles from "@/styles/dashboard.module.css";
 export function OverviewActivityList({
   activity,
 }: {
@@ -35,7 +35,7 @@ export function OverviewActivityList({
               </div>
               <time dateTime={a.date}>{a.date}</time>
               <b>
-                <OverviewMoney
+                <MoneyValue
                   amount={a.value.amount}
                   currency={a.value.currency || "CAD"}
                 />

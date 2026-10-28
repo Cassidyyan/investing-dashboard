@@ -1,7 +1,7 @@
 "use client";
 import { useId, useState } from "react";
 import type { HistoryPoint } from "@/lib/types";
-import { historyChange } from "@/lib/performance";
+import { historyChange } from "@/lib/performance/performance";
 import { money, signedMoney, signedPercent } from "@/lib/format";
 import { PrivateValue } from "@/components/shared/BalancePrivacy";
 function dayLabel(day: string) {

@@ -52,19 +52,21 @@ investing-dashboard/
 │   │   ├── layout/           Page shell, navigation, and loading animation
 │   │   ├── overview/         Summary cards
 │   │   ├── performance/      Daily history charts and period controls
+│   │   ├── returns/          Lifetime holding-return leaderboard
 │   │   ├── accounts/         Investing account tables and totals
 │   │   ├── cash/             Cash & chequing table
 │   │   ├── holdings/         Position tables, sorting, and tabs
 │   │   ├── options/          Option contract cards
 │   │   ├── activity/         Orders and transactions
-│   │   ├── charts/           Allocation charts
-│   │   └── shared/           Icons and empty/error states
+│   │   └── shared/           Cards, money display, badges, privacy, controls
 │   ├── server/               Private code that reads SnapTrade data
-│   └── lib/                  Shared data types and formatting helpers
+│   ├── lib/                  Types, formatting, and helpers grouped by feature
+│   ├── styles/               Shared dashboard design system
+│   └── dev/previews/         Invented development-only sample data
 ├── tests/                    Checks grouped by the code they cover
 │   ├── components/           Rendered UI checks
 │   ├── server/               Fetching and normalization checks
-│   ├── lib/                  Calculation and sorting checks
+│   ├── lib/                  Calculation checks mirroring src/lib features
 │   └── helpers/              Test-only support files
 ├── .env.example              Shareable template; empty variable names only
 ├── .env.local                Your private credentials; ignored by Git
@@ -133,17 +135,17 @@ Brokerage sales with negative share quantities are supported. Transactions witho
 
 ## Overview design previews
 
-In development (`npm run dev`), open `/?preview=sample`, `/?preview=loading`, `/?preview=refreshing`, `/?preview=empty`, `/?preview=error`, or `/?preview=hidden`. These routes use explicitly labelled, invented data from `src/lib/overview-preview.ts`; they skip brokerage requests. Production ignores the preview parameter. The live overview never falls back to sample figures.
+In development (`npm run dev`), open `/?preview=sample`, `/?preview=loading`, `/?preview=refreshing`, `/?preview=empty`, `/?preview=error`, or `/?preview=hidden`. These routes use explicitly labelled, invented data from `src/dev/previews/overview-preview.ts`; they skip brokerage requests. Production ignores the preview parameter. The live overview never falls back to sample figures.
 
 The overview's normal data requests are unchanged. Account totals, cash, and current positions power the live cards. Day change, lifetime total return, per-account day change, portfolio time-series history, and recent activity are not part of this overview load and show unavailable/not-connected states. The development sample demonstrates those UI slots. Connecting those slots later requires an explicit data-layer change; stock-price history still needs a separate provider for individual holding-return lines.
 
 ## Accounts design previews
 
-Development-only Accounts states are available at `/accounts?preview=sample`, `loading`, `refreshing`, `empty`, `error`, and `hidden` (use the same `?preview=` parameter for each). Invented fixtures live in `src/lib/accounts-preview.ts`; previews do not query SnapTrade. Production ignores the preview parameter. Live fetching and account filters are unchanged.
+Development-only Accounts states are available at `/accounts?preview=sample`, `loading`, `refreshing`, `empty`, `error`, and `hidden` (use the same `?preview=` parameter for each). Invented fixtures live in `src/dev/previews/accounts-preview.ts`; previews do not query SnapTrade. Production ignores the preview parameter. Live fetching and account filters are unchanged.
 
 ## Cash design previews
 
-Development-only cash states are available at `/cash?preview=sample`, `loading`, `refreshing`, `empty`, `error`, and `hidden` (use `?preview=` for each). Fixtures in `src/lib/cash-preview.ts` are explicitly invented; the sample includes one deliberate cash-versus-reported difference to demonstrate the disclosure. They do not query the brokerage and are ignored in production.
+Development-only cash states are available at `/cash?preview=sample`, `loading`, `refreshing`, `empty`, `error`, and `hidden` (use `?preview=` for each). Fixtures in `src/dev/previews/cash-preview.ts` are explicitly invented; the sample includes one deliberate cash-versus-reported difference to demonstrate the disclosure. They do not query the brokerage and are ignored in production.
 
 The cash currency toggle selects the native CAD or USD subtotal, without conversion or any new exchange-rate request. Reported account totals stay separate and unchanged. Classification and comparison explanations are in keyboard-accessible popovers; accounts with different sync timestamps retain their individual times.
 

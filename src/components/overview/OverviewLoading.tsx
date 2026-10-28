@@ -1,4 +1,4 @@
-import type { OverviewModel } from "@/lib/overview";
+import type { OverviewModel } from "@/lib/overview/overview";
 import { OverviewDashboard } from "./OverviewDashboard";
 // Real Suspense fallback: no financial sample data or pretend account state.
 export function OverviewLoading() {

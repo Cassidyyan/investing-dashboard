@@ -6,7 +6,7 @@ import {
   cashPreviews,
   createCashPreview,
   type CashPreviewState,
-} from "@/lib/cash-preview";
+} from "@/dev/previews/cash-preview";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export default async function CashPage({

@@ -1,11 +1,11 @@
 import { loadPortfolio } from "@/server/load-portfolio";
 import { loadExchangeRate } from "@/server/exchange-rate";
-import { adaptOverview } from "@/lib/overview";
+import { adaptOverview } from "@/lib/overview/overview";
 import {
   createOverviewPreview,
   overviewPreviews,
   type OverviewPreview,
-} from "@/lib/overview-preview";
+} from "@/dev/previews/overview-preview";
 import { OverviewDashboard } from "@/components/overview/OverviewDashboard";
 import { OverviewLoading } from "@/components/overview/OverviewLoading";
 import { Suspense } from "react";

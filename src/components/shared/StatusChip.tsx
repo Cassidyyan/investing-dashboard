@@ -1,4 +1,4 @@
-import styles from "@/components/overview/Overview.module.css";
+import styles from "@/styles/dashboard.module.css";
 export function StatusChip({
   updatedAt,
   loading = false,

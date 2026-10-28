@@ -13,7 +13,7 @@ import { BalancePrivacyProvider } from "@/components/shared/BalancePrivacy";
 import { AccountsTable } from "./AccountsTable";
 import { CurrencyTotal } from "./CurrencyTotal";
 import { AllocationBar } from "./AllocationBar";
-import shared from "@/components/overview/Overview.module.css";
+import shared from "@/styles/dashboard.module.css";
 import styles from "./Accounts.module.css";
 export type AccountsPreview =
   "sample" | "loading" | "refreshing" | "empty" | "error" | "hidden";

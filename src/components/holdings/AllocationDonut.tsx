@@ -1,8 +1,8 @@
 import { useId } from "react";
-import type { AllocationItem } from "@/lib/holdings-view";
+import type { AllocationItem } from "@/lib/holdings/holdings-view";
 import { useBalancePrivacy } from "@/components/shared/BalancePrivacy";
-import { OverviewMoney } from "@/components/overview/OverviewMoney";
-import shared from "@/components/overview/Overview.module.css";
+import { MoneyValue } from "@/components/shared/MoneyValue";
+import shared from "@/styles/dashboard.module.css";
 import styles from "./Holdings.module.css";
 export function AllocationDonut({
   items,
@@ -61,7 +61,7 @@ export function AllocationDonut({
       </svg>
       <div className={styles.donutCenter}>
         <strong>
-          <OverviewMoney amount={total} currency={currency} />
+          <MoneyValue amount={total} currency={currency} />
         </strong>
         <span>{hidden ? "Chart hidden" : "Estimated holdings value"}</span>
       </div>

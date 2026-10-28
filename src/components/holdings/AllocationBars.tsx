@@ -1,8 +1,8 @@
 import { useState } from "react";
-import type { AllocationItem } from "@/lib/holdings-view";
+import type { AllocationItem } from "@/lib/holdings/holdings-view";
 import { useBalancePrivacy } from "@/components/shared/BalancePrivacy";
-import { OverviewMoney } from "@/components/overview/OverviewMoney";
-import shared from "@/components/overview/Overview.module.css";
+import { MoneyValue } from "@/components/shared/MoneyValue";
+import shared from "@/styles/dashboard.module.css";
 import styles from "./Holdings.module.css";
 export function AllocationBars({
   items,
@@ -29,7 +29,7 @@ export function AllocationBars({
               </span>
               <span>{item.percent.toFixed(1)}%</span>
               <b>
-                <OverviewMoney amount={item.amount} currency={currency} />
+                <MoneyValue amount={item.amount} currency={currency} />
               </b>
             </div>
             <div

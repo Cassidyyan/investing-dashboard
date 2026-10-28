@@ -1,6 +1,6 @@
 import { loadPortfolio } from "@/server/load-portfolio";
 import { loadHoldingTransactions } from "@/server/load-holding-returns";
-import { calculateHoldingReturns } from "@/lib/holding-returns";
+import { calculateHoldingReturns } from "@/lib/returns/holding-returns";
 import { PortfolioPage } from "@/components/layout/PortfolioPage";
 import { HoldingReturnsDashboard } from "@/components/returns/HoldingReturnsDashboard";
 import { loadReturnExchangeRates } from "@/server/return-exchange-rates";

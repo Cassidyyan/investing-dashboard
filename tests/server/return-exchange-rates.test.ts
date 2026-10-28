@@ -8,7 +8,7 @@ import {
 import type {
   SecurityTransaction,
   TransactionHistory,
-} from "@/lib/holding-returns";
+} from "@/lib/returns/holding-returns";
 const row = (
   currency = "CAD",
   securityCurrency = "USD",
@@ -142,7 +142,8 @@ it("does not fetch for native-currency records and preserves errors without a cu
 });
 
 it("reconciles a transfer after historical cash flows are converted without doubling purchase costs", async () => {
-  const { calculateHoldingReturns } = await import("@/lib/holding-returns");
+  const { calculateHoldingReturns } =
+    await import("@/lib/returns/holding-returns");
   const transfer: SecurityTransaction = {
     ...row("USD", "USD"),
     fxConvertible: false,

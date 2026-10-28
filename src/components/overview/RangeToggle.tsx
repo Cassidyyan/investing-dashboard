@@ -1,5 +1,5 @@
-import type { OverviewRange } from "@/lib/overview";
-import styles from "./Overview.module.css";
+import type { OverviewRange } from "@/lib/overview/overview";
+import styles from "@/styles/dashboard.module.css";
 export function RangeToggle({
   value,
   onChange,

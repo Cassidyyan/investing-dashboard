@@ -1,7 +1,7 @@
 import type { AccountData } from "@/lib/types";
-import { cashSummary } from "@/lib/cash";
-import { StatCard } from "@/components/overview/StatCard";
-import { OverviewMoney } from "@/components/overview/OverviewMoney";
+import { cashSummary } from "@/lib/cash/cash";
+import { StatCard } from "@/components/shared/StatCard";
+import { MoneyValue } from "@/components/shared/MoneyValue";
 import { CurrencyToggle } from "@/components/shared/CurrencyToggle";
 import { InfoPopover } from "@/components/shared/InfoPopover";
 import styles from "./Cash.module.css";
@@ -53,7 +53,7 @@ export function CashSummary({
         <div>
           <span className={styles.label}>Cash held in {currency}</span>
           <p className={styles.heroValue}>
-            <OverviewMoney
+            <MoneyValue
               amount={summary.totals[currency]}
               currency={currency}
               cash
@@ -67,7 +67,7 @@ export function CashSummary({
           <div>
             <dt>Cash held in {other}</dt>
             <dd>
-              <OverviewMoney
+              <MoneyValue
                 amount={summary.totals[other]}
                 currency={other}
                 cash

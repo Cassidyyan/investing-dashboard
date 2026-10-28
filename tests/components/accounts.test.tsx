@@ -5,7 +5,7 @@ import { AccountsTable } from "@/components/accounts/AccountsTable";
 import { AccountsLoading } from "@/components/accounts/AccountsLoading";
 import { AllocationBar } from "@/components/accounts/AllocationBar";
 import { BalancePrivacyProvider } from "@/components/shared/BalancePrivacy";
-import { createAccountsPreview } from "@/lib/accounts-preview";
+import { createAccountsPreview } from "@/dev/previews/accounts-preview";
 import { money } from "@/lib/format";
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),

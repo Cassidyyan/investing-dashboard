@@ -1,12 +1,12 @@
 import { PrivateValue } from "@/components/shared/BalancePrivacy";
 import type { AccountData, PositionView } from "@/lib/types";
-import { isOption } from "@/lib/holdings";
+import { isOption } from "@/lib/holdings/holdings";
 import {
   daysToExpiration,
   findUnderlyingPrice,
   formatExpiration,
   moneyness,
-} from "@/lib/option-details";
+} from "@/lib/options/option-details";
 import {
   date,
   money,

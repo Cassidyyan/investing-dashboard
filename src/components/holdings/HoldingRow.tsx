@@ -7,8 +7,8 @@ import {
   selectedValue,
   type HoldingEntry,
   type HoldingsCurrency,
-} from "@/lib/holdings-view";
-import { isOption } from "@/lib/holdings";
+} from "@/lib/holdings/holdings-view";
+import { isOption } from "@/lib/holdings/holdings";
 import { date, money, quantity } from "@/lib/format";
 import { SecurityIcon } from "@/components/shared/SecurityIcon";
 import {
@@ -16,11 +16,11 @@ import {
   useBalancePrivacy,
 } from "@/components/shared/BalancePrivacy";
 import { InfoPopover } from "@/components/shared/InfoPopover";
-import { OverviewMoney } from "@/components/overview/OverviewMoney";
-import { ChangeBadge } from "@/components/overview/ChangeBadge";
+import { MoneyValue } from "@/components/shared/MoneyValue";
+import { ChangeBadge } from "@/components/shared/ChangeBadge";
 import { OptionCard } from "@/components/options/OptionsDetails";
 import styles from "./Holdings.module.css";
-import shared from "@/components/overview/Overview.module.css";
+import shared from "@/styles/dashboard.module.css";
 export const positionType = (kind: string) =>
   ({
     stock: "Stock",
@@ -77,7 +77,7 @@ export function HoldingRow({
         <td className={styles.numeric}>
           <span className={styles.mobileLabel}>Value</span>
           <b>
-            <OverviewMoney amount={value} currency={displayCurrency(mode)} />
+            <MoneyValue amount={value} currency={displayCurrency(mode)} />
           </b>
           <small>
             {mode === "COMBINED_USD" && p.value.currency === "CAD"

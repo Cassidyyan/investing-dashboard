@@ -7,7 +7,7 @@ import {
   selectHistoryRange,
   returnTimeframes,
   type HistoryRange,
-} from "@/lib/performance";
+} from "@/lib/performance/performance";
 import { date, signedPercent } from "@/lib/format";
 import { PrivateValue } from "@/components/shared/BalancePrivacy";
 import { HistoryChart } from "./HistoryChart";

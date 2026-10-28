@@ -2,12 +2,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it, vi } from "vitest";
 import { HoldingsDashboard } from "@/components/holdings/HoldingsDashboard";
 import { HoldingsLoading } from "@/components/holdings/HoldingsLoading";
-import { createHoldingsPreview } from "@/lib/holdings-preview";
+import { createHoldingsPreview } from "@/dev/previews/holdings-preview";
 import {
   HoldingsTable,
   sortHoldingEntries,
 } from "@/components/holdings/HoldingsTable";
-import { flattenHoldings } from "@/lib/holdings-view";
+import { flattenHoldings } from "@/lib/holdings/holdings-view";
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
   usePathname: () => "/holdings",

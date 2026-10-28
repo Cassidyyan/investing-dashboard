@@ -2,7 +2,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Portfolio } from "@/lib/types";
-import { cashFigureReview, cashSyncInfo } from "@/lib/cash";
+import { cashFigureReview, cashSyncInfo } from "@/lib/cash/cash";
 import {
   NavigationLink,
   NavigationReady,
@@ -11,10 +11,10 @@ import { WorkspaceHeader } from "@/components/layout/WorkspaceHeader";
 import { PortfolioLinks } from "@/components/shared/PortfolioLinks";
 import { DashboardNavigation } from "@/components/layout/DashboardNavigation";
 import { BalancePrivacyProvider } from "@/components/shared/BalancePrivacy";
-import { StatCard } from "@/components/overview/StatCard";
+import { StatCard } from "@/components/shared/StatCard";
 import { CashSummary } from "./CashSummary";
 import { CashAccountsTable } from "./CashAccountsTable";
-import shared from "@/components/overview/Overview.module.css";
+import shared from "@/styles/dashboard.module.css";
 import accountStyles from "@/components/accounts/Accounts.module.css";
 import styles from "./Cash.module.css";
 export type CashPreview =

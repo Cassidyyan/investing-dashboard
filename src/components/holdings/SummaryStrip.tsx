@@ -5,9 +5,9 @@ import {
   flattenHoldings,
   inCurrency,
   type HoldingsCurrency,
-} from "@/lib/holdings-view";
-import { StatCard } from "@/components/overview/StatCard";
-import { OverviewMoney } from "@/components/overview/OverviewMoney";
+} from "@/lib/holdings/holdings-view";
+import { StatCard } from "@/components/shared/StatCard";
+import { MoneyValue } from "@/components/shared/MoneyValue";
 import { CurrencyToggle } from "@/components/shared/CurrencyToggle";
 import { InfoPopover } from "@/components/shared/InfoPopover";
 import styles from "./Holdings.module.css";
@@ -73,7 +73,7 @@ export function SummaryStrip({
           label="Holdings display currency"
         />
         <p className={styles.summaryValue}>
-          <OverviewMoney
+          <MoneyValue
             amount={allocation.total}
             currency={displayCurrency(mode)}
           />

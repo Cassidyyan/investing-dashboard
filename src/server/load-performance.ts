@@ -12,7 +12,7 @@ import type {
 } from "@/lib/types";
 import { getSnaptrade, type ReadClient } from "./snaptrade";
 import { numeric } from "./normalize";
-import { historyDate } from "@/lib/performance";
+import { historyDate } from "@/lib/performance/performance";
 export function normalizeHistory(
   raw: AccountValueHistoryResponse,
 ): AccountHistory {

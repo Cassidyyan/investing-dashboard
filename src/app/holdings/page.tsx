@@ -2,12 +2,12 @@ import { Suspense } from "react";
 import { loadExchangeRate } from "@/server/exchange-rate";
 import { loadPortfolio } from "@/server/load-portfolio";
 import { getSecurityLogoUrl } from "@/server/security-logo";
-import { flattenHoldings } from "@/lib/holdings-view";
+import { flattenHoldings } from "@/lib/holdings/holdings-view";
 import {
   createHoldingsPreview,
   holdingsPreviews,
   type HoldingsPreviewState,
-} from "@/lib/holdings-preview";
+} from "@/dev/previews/holdings-preview";
 import { HoldingsDashboard } from "@/components/holdings/HoldingsDashboard";
 import { HoldingsLoading } from "@/components/holdings/HoldingsLoading";
 export const dynamic = "force-dynamic";

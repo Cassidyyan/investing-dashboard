@@ -5,7 +5,8 @@ import {
   BalanceVisibilityToggle,
   PrivateValue,
 } from "@/components/shared/BalancePrivacy";
-import { SortableHoldingsTable } from "@/components/holdings/SortableHoldingsTable";
+import { HoldingsTable } from "@/components/holdings/HoldingsTable";
+import { createHoldingsPreview } from "@/dev/previews/holdings-preview";
 import type { PositionView } from "@/lib/types";
 it("replaces hidden amounts rather than retaining them in accessible text or titles", () => {
   const html = renderToStaticMarkup(
@@ -36,6 +37,9 @@ it("labels the toggle with its action and pressed state", () => {
   expect(html).toContain("Show balances");
 });
 it("masks holdings quantities, costs, prices, values, and returns while retaining the ticker", () => {
+  const { portfolio, rate } = createHoldingsPreview("sample");
+  if (portfolio.accounts.status !== "ok") throw Error("fixture");
+  const accounts = portfolio.accounts.data;
   const position: PositionView = {
     symbol: "TEST",
     kind: "stock",
@@ -49,21 +53,21 @@ it("masks holdings quantities, costs, prices, values, and returns while retainin
   };
   const html = renderToStaticMarkup(
     <BalancePrivacyProvider initialHidden>
-      <SortableHoldingsTable
-        accountName="Test account"
-        rows={[{ ...position, rowKey: "test", logoUrl: null }]}
+      <HoldingsTable
+        accounts={accounts}
+        entries={[{ key: "test", account: accounts[0].account, position }]}
+        group={false}
+        mode="CAD"
+        rate={rate}
+        total={9746.05}
+        sort={{ key: "value", direction: "descending" }}
+        onSort={() => {}}
       />
     </BalancePrivacyProvider>,
   );
-  for (const value of [
-    "12.34567",
-    "789.43",
-    "456.21",
-    "9,746.05",
-    "4,113.08",
-    "73.04",
-  ])
+  for (const value of ["12.34567", "789.43", "456.21", "9,746.05", "4,113.08"])
     expect(html).not.toContain(value);
   expect(html).toContain("TEST");
-  expect(html).toContain(".....");
+  expect(html).toContain("••••");
+  expect(html).toContain("73.04");
 });

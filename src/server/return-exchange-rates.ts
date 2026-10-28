@@ -1,6 +1,6 @@
 import "server-only";
-import type { TransactionHistory } from "@/lib/holding-returns";
-import { calendarToday, historyDate } from "@/lib/performance";
+import type { TransactionHistory } from "@/lib/returns/holding-returns";
+import { calendarToday, historyDate } from "@/lib/performance/performance";
 export type HistoricalRate = { date: string; cadPerUsd: number };
 export const HISTORICAL_FX_NOTE =
   "Historical FX estimate: Bank of Canada daily reference rates, using the latest published rate on or before each transaction (at most 7 days earlier). Actual brokerage rates and spreads may differ.";

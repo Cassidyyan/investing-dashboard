@@ -1,5 +1,5 @@
 import { PrivateValue } from "@/components/shared/BalancePrivacy";
-import { accountCurrencyTotals } from "@/lib/currency-totals";
+import { accountCurrencyTotals } from "@/lib/accounts/currency-totals";
 import type { AccountData } from "@/lib/types";
 import { money, date, cashMoney } from "@/lib/format";
 import styles from "./Accounts.module.css";

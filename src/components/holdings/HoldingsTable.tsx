@@ -3,7 +3,7 @@ import {
   selectedValue,
   type HoldingEntry,
   type HoldingsCurrency,
-} from "@/lib/holdings-view";
+} from "@/lib/holdings/holdings-view";
 import { HoldingRow } from "./HoldingRow";
 import styles from "./Holdings.module.css";
 export type HoldingsSort = {

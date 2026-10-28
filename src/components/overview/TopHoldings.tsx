@@ -1,7 +1,7 @@
 import { NavigationLink } from "@/components/layout/NavigationProgress";
-import { OverviewMoney } from "./OverviewMoney";
-import { StatCard } from "./StatCard";
-import styles from "./Overview.module.css";
+import { MoneyValue } from "@/components/shared/MoneyValue";
+import { StatCard } from "@/components/shared/StatCard";
+import styles from "@/styles/dashboard.module.css";
 import { SecurityIcon } from "@/components/shared/SecurityIcon";
 export function TopHoldings({
   rows,
@@ -29,7 +29,7 @@ export function TopHoldings({
               </span>
               <strong title={r.label}>{r.label}</strong>
               <b>
-                <OverviewMoney amount={r.value} currency={currency} />
+                <MoneyValue amount={r.value} currency={currency} />
               </b>
             </li>
           ))}

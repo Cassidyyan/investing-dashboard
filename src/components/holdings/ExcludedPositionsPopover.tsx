@@ -1,4 +1,4 @@
-import type { ExcludedPosition } from "@/lib/holdings-view";
+import type { ExcludedPosition } from "@/lib/holdings/holdings-view";
 import { InfoPopover } from "@/components/shared/InfoPopover";
 import styles from "./Holdings.module.css";
 export function ExcludedPositionsPopover({

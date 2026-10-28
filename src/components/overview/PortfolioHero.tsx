@@ -5,12 +5,12 @@ import {
   convertOverviewChange,
   type OverviewModel,
   type OverviewRange,
-} from "@/lib/overview";
-import { OverviewMoney } from "./OverviewMoney";
-import { ChangeBadge } from "./ChangeBadge";
+} from "@/lib/overview/overview";
+import { MoneyValue } from "@/components/shared/MoneyValue";
+import { ChangeBadge } from "@/components/shared/ChangeBadge";
 import { RangeToggle } from "./RangeToggle";
 import { CurrencyToggle } from "@/components/shared/CurrencyToggle";
-import styles from "./Overview.module.css";
+import styles from "@/styles/dashboard.module.css";
 export function PortfolioHero({
   model,
   currency,
@@ -74,7 +74,7 @@ export function PortfolioHero({
         </div>
       </div>
       <p className={styles.heroValue}>
-        <OverviewMoney amount={total} currency={currency} />
+        <MoneyValue amount={total} currency={currency} />
       </p>
       <p className={styles.heroCaption}>
         {partial
@@ -166,8 +166,7 @@ export function PortfolioHero({
             <ul>
               {points.map((p) => (
                 <li key={p.label}>
-                  {p.label}:{" "}
-                  <OverviewMoney amount={p.value} currency={currency} />
+                  {p.label}: <MoneyValue amount={p.value} currency={currency} />
                 </li>
               ))}
             </ul>

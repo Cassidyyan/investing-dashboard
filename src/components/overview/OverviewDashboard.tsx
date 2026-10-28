@@ -8,16 +8,16 @@ import {
   NavigationReady,
 } from "@/components/layout/NavigationProgress";
 import { DashboardNavigation } from "@/components/layout/DashboardNavigation";
-import { presentOverview, type OverviewModel } from "@/lib/overview";
-import type { OverviewPreview } from "@/lib/overview-preview";
+import { presentOverview, type OverviewModel } from "@/lib/overview/overview";
+import type { OverviewPreview } from "@/dev/previews/overview-preview";
 import { PortfolioHero } from "./PortfolioHero";
 import { AccountList } from "./AccountList";
 import { AllocationDonut } from "./AllocationDonut";
 import { TopHoldings } from "./TopHoldings";
 import { OverviewActivityList } from "./OverviewActivityList";
-import { StatCard, CardSkeleton } from "./StatCard";
-import { OverviewMoney } from "./OverviewMoney";
-import styles from "./Overview.module.css";
+import { StatCard, CardSkeleton } from "@/components/shared/StatCard";
+import { MoneyValue } from "@/components/shared/MoneyValue";
+import styles from "@/styles/dashboard.module.css";
 import { WorkspaceHeader } from "@/components/layout/WorkspaceHeader";
 function OverviewContent({
   model,
@@ -159,11 +159,7 @@ function OverviewContent({
                         Available cash
                       </dt>
                       <dd>
-                        <OverviewMoney
-                          amount={model.cash[c]}
-                          currency={c}
-                          cash
-                        />
+                        <MoneyValue amount={model.cash[c]} currency={c} cash />
                       </dd>
                     </div>
                   ))}

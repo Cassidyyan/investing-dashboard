@@ -1,6 +1,9 @@
 import { PrivateValue } from "@/components/shared/BalancePrivacy";
 import type { AccountData, ExchangeRate, Result } from "@/lib/types";
-import { portfolioCurrencyTotals, combinedUsd } from "@/lib/currency-totals";
+import {
+  portfolioCurrencyTotals,
+  combinedUsd,
+} from "@/lib/accounts/currency-totals";
 import { money } from "@/lib/format";
 import styles from "./Accounts.module.css";
 export function CurrencyTotal({

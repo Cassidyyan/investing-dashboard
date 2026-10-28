@@ -7,7 +7,7 @@ import {
   accountsPreviews,
   createAccountsPreview,
   type AccountsPreviewState,
-} from "@/lib/accounts-preview";
+} from "@/dev/previews/accounts-preview";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export default async function AccountsPage({

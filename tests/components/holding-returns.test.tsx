@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
 import { HoldingReturnsDashboard } from "@/components/returns/HoldingReturnsDashboard";
 import { BalancePrivacyProvider } from "@/components/shared/BalancePrivacy";
-import type { HoldingReturn } from "@/lib/holding-returns";
+import type { HoldingReturn } from "@/lib/returns/holding-returns";
 const row = (
   symbol: string,
   profit: number,

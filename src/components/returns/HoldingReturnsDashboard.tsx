@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { PrivateValue } from "@/components/shared/BalancePrivacy";
 import { money, signedMoney, signedPercent, quantity } from "@/lib/format";
-import type { HoldingReturn } from "@/lib/holding-returns";
+import type { HoldingReturn } from "@/lib/returns/holding-returns";
 import { SecurityIcon } from "@/components/shared/SecurityIcon";
 
 const ranges = ["1D", "5D", "1M", "3M", "6M", "YTD", "1 Year"] as const;

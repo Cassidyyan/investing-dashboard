@@ -1,7 +1,7 @@
 import { PrivateValue } from "@/components/shared/BalancePrivacy";
 import { InfoPopover } from "@/components/shared/InfoPopover";
 import type { AccountData } from "@/lib/types";
-import { cashFigureReview } from "@/lib/cash";
+import { cashFigureReview } from "@/lib/cash/cash";
 import { date, money, cashMoney } from "@/lib/format";
 import accountStyles from "@/components/accounts/Accounts.module.css";
 import styles from "./Cash.module.css";

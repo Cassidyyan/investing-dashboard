@@ -1,8 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it, vi } from "vitest";
 import { OverviewDashboard } from "@/components/overview/OverviewDashboard";
-import { createOverviewPreview } from "@/lib/overview-preview";
-import { ChangeBadge } from "@/components/overview/ChangeBadge";
+import { createOverviewPreview } from "@/dev/previews/overview-preview";
+import { ChangeBadge } from "@/components/shared/ChangeBadge";
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
   usePathname: () => "/",

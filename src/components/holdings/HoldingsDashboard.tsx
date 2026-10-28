@@ -7,8 +7,8 @@ import {
   allocationView,
   inCurrency,
   type HoldingsCurrency,
-} from "@/lib/holdings-view";
-import { isOption } from "@/lib/holdings";
+} from "@/lib/holdings/holdings-view";
+import { isOption } from "@/lib/holdings/holdings";
 import { WorkspaceHeader } from "@/components/layout/WorkspaceHeader";
 import {
   NavigationLink,
@@ -17,11 +17,11 @@ import {
 import { DashboardNavigation } from "@/components/layout/DashboardNavigation";
 import { PortfolioLinks } from "@/components/shared/PortfolioLinks";
 import { BalancePrivacyProvider } from "@/components/shared/BalancePrivacy";
-import { StatCard } from "@/components/overview/StatCard";
+import { StatCard } from "@/components/shared/StatCard";
 import { SummaryStrip } from "./SummaryStrip";
 import { AllocationCard } from "./AllocationCard";
 import { HoldingsTable, type HoldingsSort } from "./HoldingsTable";
-import shared from "@/components/overview/Overview.module.css";
+import shared from "@/styles/dashboard.module.css";
 import styles from "./Holdings.module.css";
 export type HoldingsPreview =
   "sample" | "loading" | "refreshing" | "empty" | "error" | "hidden";

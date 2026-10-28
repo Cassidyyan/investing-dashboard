@@ -36,6 +36,7 @@ const config = [
       "src/app/**/*.{ts,tsx}",
       "src/components/**/*.{ts,tsx}",
       "src/lib/**/*.{ts,tsx}",
+      "src/dev/**/*.{ts,tsx}",
     ],
     rules: {
       "no-restricted-imports": [

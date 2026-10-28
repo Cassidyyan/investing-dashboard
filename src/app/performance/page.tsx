@@ -1,6 +1,6 @@
 import { loadPortfolio } from "@/server/load-portfolio";
 import { loadPerformance } from "@/server/load-performance";
-import { calendarToday } from "@/lib/performance";
+import { calendarToday } from "@/lib/performance/performance";
 import { PortfolioPage } from "@/components/layout/PortfolioPage";
 import { PerformanceDashboard } from "@/components/performance/PerformanceDashboard";
 export const dynamic = "force-dynamic";

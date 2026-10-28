@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it, vi } from "vitest";
 import { CashDashboard } from "@/components/cash/CashDashboard";
 import { CashLoading } from "@/components/cash/CashLoading";
-import { createCashPreview } from "@/lib/cash-preview";
+import { createCashPreview } from "@/dev/previews/cash-preview";
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
   usePathname: () => "/cash",

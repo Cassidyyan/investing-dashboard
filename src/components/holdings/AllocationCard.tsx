@@ -5,8 +5,8 @@ import {
   displayCurrency,
   type AllocationMode,
   type HoldingsCurrency,
-} from "@/lib/holdings-view";
-import { StatCard } from "@/components/overview/StatCard";
+} from "@/lib/holdings/holdings-view";
+import { StatCard } from "@/components/shared/StatCard";
 import { CurrencyToggle } from "@/components/shared/CurrencyToggle";
 import { InfoPopover } from "@/components/shared/InfoPopover";
 import { AllocationDonut } from "./AllocationDonut";

@@ -3,11 +3,11 @@ import {
   convertOverview,
   convertOverviewChange,
   type OverviewModel,
-} from "@/lib/overview";
-import { OverviewMoney } from "./OverviewMoney";
-import { ChangeBadge } from "./ChangeBadge";
-import { StatCard } from "./StatCard";
-import styles from "./Overview.module.css";
+} from "@/lib/overview/overview";
+import { MoneyValue } from "@/components/shared/MoneyValue";
+import { ChangeBadge } from "@/components/shared/ChangeBadge";
+import { StatCard } from "@/components/shared/StatCard";
+import styles from "@/styles/dashboard.module.css";
 export function AccountList({
   model,
   currency,
@@ -27,7 +27,7 @@ export function AccountList({
                 <div className={styles.rowSpread}>
                   <strong>{a.name}</strong>
                   <b>
-                    <OverviewMoney
+                    <MoneyValue
                       amount={convertOverview(a.value, currency, model.rate)}
                       currency={currency}
                     />

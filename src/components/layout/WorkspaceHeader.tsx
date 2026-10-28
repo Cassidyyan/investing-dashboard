@@ -4,7 +4,7 @@
 import { NavigationLink } from "./NavigationProgress";
 import { useBalancePrivacy } from "@/components/shared/BalancePrivacy";
 import { StatusChip } from "@/components/shared/StatusChip";
-import styles from "@/components/overview/Overview.module.css";
+import styles from "@/styles/dashboard.module.css";
 export function WorkspaceHeader({
   updatedAt,
   loading = false,
