@@ -13,6 +13,7 @@ import type {
 import { getSnaptrade, type ReadClient } from "./snaptrade";
 import { numeric } from "./normalize";
 import { historyDate } from "@/lib/performance/performance";
+import { loadAccountFunding } from "./load-account-funding";
 export function normalizeHistory(
   raw: AccountValueHistoryResponse,
 ): AccountHistory {
@@ -68,18 +69,27 @@ async function read<T, U>(
 }
 export async function loadPerformance(
   accounts: AccountData[],
-  client: Pick<ReadClient, "history" | "returns"> | null = getSnaptrade(),
+  client:
+    | (Pick<ReadClient, "history" | "returns"> &
+        Partial<Pick<ReadClient, "transactionPage">>)
+    | null = getSnaptrade(),
+  options: { reportedReturns?: boolean } = {},
 ): Promise<PerformanceAccount[]> {
   if (!client) return [];
-  return Promise.all(
+  const results: PerformanceAccount[] = await Promise.all(
     accounts.map(async ({ account }) => {
       const [history, returns] = await Promise.all([
         read(() => client.history(account.id), normalizeHistory, "History"),
-        read(
-          () => client.returns(account.id),
-          normalizeReturns,
-          "Reported returns",
-        ),
+        options.reportedReturns === false
+          ? Promise.resolve<Result<ReportedReturn[]>>({
+              status: "ok",
+              data: [],
+            })
+          : read(
+              () => client.returns(account.id),
+              normalizeReturns,
+              "Reported returns",
+            ),
       ]);
       return {
         id: account.id,
@@ -90,4 +100,31 @@ export async function loadPerformance(
       };
     }),
   );
+  let rateLimited = results.some((a) =>
+    [a.history, a.returns].some(
+      (r) => r.status === "error" && r.message.includes("rate limit"),
+    ),
+  );
+  // Fetch only where a chart exists, sequentially to avoid transaction bursts.
+  for (const account of results) {
+    if (account.history.status !== "ok" || !account.history.data.points.length)
+      continue;
+    account.funding =
+      rateLimited || !client.transactionPage
+        ? {
+            status: "error",
+            message: rateLimited
+              ? "Funding history not requested after a rate limit. Wait before refreshing."
+              : "Funding history is unavailable.",
+          }
+        : await loadAccountFunding(account.id, {
+            transactionPage: client.transactionPage,
+          });
+    if (
+      account.funding.status === "error" &&
+      account.funding.message.includes("rate limit")
+    )
+      rateLimited = true;
+  }
+  return results;
 }

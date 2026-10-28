@@ -1,0 +1,544 @@
+.page {
+  --performance-chart-0: #146d7c;
+  --performance-chart-1: #408e96;
+  --performance-chart-2: #577d85;
+  font-variant-numeric: tabular-nums;
+}
+.page :is(button, select, summary, a):focus-visible {
+  outline: 2px solid var(--ov-brand);
+  outline-offset: 3px;
+}
+.page :is(button, select, summary) {
+  min-height: 44px;
+}
+.page a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.controls {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 0 0 20px;
+}
+.accountLabel {
+  display: grid;
+  gap: 8px;
+  width: 280px;
+  max-width: 100%;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ov-secondary);
+}
+.accountSelect {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+.accountSelect select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 10px 40px 10px 14px;
+  border: 1px solid var(--ov-border);
+  border-radius: 10px;
+  background: var(--ov-surface);
+  color: var(--ov-text);
+  font: inherit;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.accountSelect select:hover {
+  border-color: var(--ov-brand);
+}
+.accountSelect svg {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--ov-secondary);
+}
+.ranges {
+  margin-left: auto;
+  max-width: 100%;
+}
+.ranges > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.ranges button {
+  border: 1px solid var(--ov-border);
+  border-radius: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  color: var(--ov-secondary);
+  background: white;
+  font: inherit;
+  font-size: 12px;
+}
+.cards {
+  display: grid;
+  gap: 24px;
+}
+.cards > section {
+  grid-column: auto;
+  min-width: 0;
+}
+.caption {
+  font-size: 12px;
+  color: var(--ov-secondary);
+  margin: 0 0 12px;
+}
+.heroValue {
+  margin: 8px 0;
+  font-size: clamp(36px, 5vw, 48px);
+  line-height: 1.15;
+  letter-spacing: -1px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.heroChange {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  font-size: 12px;
+  color: var(--ov-secondary);
+}
+.heroChange > span:nth-child(2) {
+  font-size: 14px;
+}
+.chartToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 20px 0 12px;
+}
+.chartToolbar p {
+  font-size: 12px;
+  color: var(--ov-secondary);
+  margin: 0;
+}
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  background: var(--ov-canvas);
+  border: 1px solid var(--ov-border);
+  border-radius: 10px;
+}
+.segmented button {
+  min-width: 64px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ov-secondary);
+  font: inherit;
+  font-size: 12px;
+}
+.segmented button[aria-pressed="true"] {
+  background: var(--ov-brand-soft);
+  color: var(--ov-brand);
+}
+.chartPlot {
+  position: relative;
+  min-width: 0;
+}
+.chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: pan-y;
+  border-radius: 8px;
+}
+.axis {
+  fill: var(--ov-secondary);
+  font-family: var(--font-ui);
+}
+.hoverCard {
+  position: absolute;
+  z-index: 5;
+  top: 8px;
+  width: 290px;
+  max-width: 100%;
+  pointer-events: none;
+  border: 1px solid var(--ov-border);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 97%);
+  box-shadow: 0 4px 16px rgb(32 43 56 / 12%);
+}
+.tooltipContent {
+  padding: 14px;
+  font-size: 12px;
+}
+.tooltipContent > strong {
+  font-size: 12px;
+}
+.tooltipContent > span,
+.tooltipContent > small {
+  display: block;
+  color: var(--ov-secondary);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.tooltipValue {
+  margin: 8px 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+.inspected {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--ov-secondary);
+  font-size: 12px;
+  margin: 8px 0;
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  border-top: 1px solid var(--ov-border);
+  padding-top: 20px;
+  margin: 12px 0 0;
+}
+.stats dt {
+  font-size: 12px;
+  color: var(--ov-secondary);
+}
+.stats dd {
+  margin: 6px 0 0;
+  font-size: 16px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.fundingDetails {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--ov-secondary);
+}
+.fundingDetails > summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+.inspection {
+  padding: 16px;
+  border: 1px solid var(--ov-border);
+  border-radius: 12px;
+  background: var(--ov-surface);
+  color: var(--ov-text);
+  font-variant-numeric: tabular-nums;
+}
+.inspectionDate {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ov-secondary);
+}
+.returnMetrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+}
+.returnMetrics > div {
+  min-width: 0;
+}
+.returnMetrics dt {
+  font-size: 12px;
+  color: var(--ov-secondary);
+  line-height: 1.5;
+}
+.returnMetrics dd {
+  margin: 6px 0 0;
+  font-size: 18px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.gain {
+  color: var(--ov-positive);
+}
+.loss {
+  color: var(--ov-negative);
+}
+.returnMetrics .returnUnavailable {
+  font-size: 13px;
+  color: var(--ov-secondary);
+}
+.returnReason {
+  font-size: 12px;
+  color: var(--ov-secondary);
+  line-height: 1.6;
+  margin: 8px 0 0;
+}
+.hoverCard .inspection {
+  padding: 12px 0 0;
+  border: 0;
+  background: transparent;
+}
+.hoverCard .inspectionDate {
+  display: none;
+}
+.hoverCard .returnMetrics {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+.hoverCard .returnMetrics dd {
+  font-size: 14px;
+}
+.accountRows {
+  display: grid;
+}
+.accountRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1.3fr) 120px;
+  gap: 16px;
+  align-items: center;
+  padding: 20px 0;
+}
+.accountRow + .accountRow {
+  border-top: 1px solid var(--ov-border);
+}
+.accountRow > div {
+  min-width: 0;
+}
+.accountRow h3 {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  overflow-wrap: anywhere;
+}
+.accountRow strong {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.accountMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ov-secondary);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--ov-brand-soft);
+  color: var(--ov-brand);
+}
+.fieldLabel {
+  display: block;
+  color: var(--ov-secondary);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.sparkline {
+  width: 120px;
+  height: 44px;
+}
+.setup {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px solid var(--ov-border);
+  border-radius: 12px;
+  background: var(--ov-brand-soft);
+  font-size: 12px;
+  color: var(--ov-text);
+}
+.setup > div:first-child {
+  margin-right: auto;
+}
+.setup p {
+  margin: 4px 0 0;
+  color: var(--ov-secondary);
+}
+.setup button {
+  border: 1px solid var(--ov-border);
+  border-radius: 8px;
+  background: white;
+  padding: 8px 12px;
+  color: var(--ov-brand);
+  font: inherit;
+}
+.empty {
+  padding: 24px 0;
+  font-size: 13px;
+  color: var(--ov-secondary);
+}
+.empty h3 {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  color: var(--ov-text);
+}
+.empty p {
+  margin: 0 0 12px;
+}
+.empty > a,
+.empty > button {
+  margin-right: 12px;
+}
+.page .valuesTable,
+.page .reportedTable {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 0;
+  white-space: normal;
+  font-size: 13px;
+}
+.page :is(.valuesTable, .reportedTable) :is(th, td) {
+  padding: 14px 10px;
+  border-bottom: 1px solid var(--ov-border);
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+}
+.page :is(.valuesTable, .reportedTable) th {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ov-secondary);
+}
+.page :is(.valuesTable, .reportedTable) th:not(:first-child),
+.page :is(.valuesTable, .reportedTable) td:not(:first-child) {
+  text-align: right;
+}
+.reportedTable small {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  margin-top: 4px;
+}
+.partial {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--ov-brand-soft);
+  color: var(--ov-brand);
+  font-size: 12px;
+}
+.chartSkeleton {
+  height: 330px;
+}
+.rowSkeleton {
+  height: 120px;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 1023px) {
+  .ranges {
+    margin-left: 0;
+  }
+}
+@media (max-width: 767px) {
+  .accountLabel {
+    width: 100%;
+  }
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .returnMetrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .accountRow {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    border: 1px solid var(--ov-border);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 8px 0;
+    gap: 20px 12px;
+  }
+  .accountRow > div:first-child {
+    grid-column: 1/-1;
+  }
+  .sparkline {
+    width: 100%;
+    grid-column: 1/-1;
+    height: 52px;
+  }
+  .page .reportedTable,
+  .reportedTable tbody,
+  .reportedTable tr {
+    display: block;
+  }
+  .reportedTable thead {
+    display: none;
+  }
+  .page .reportedTable tr {
+    border: 1px solid var(--ov-border);
+    border-radius: 12px;
+    padding: 8px 16px;
+    margin: 12px 0;
+  }
+  .page .reportedTable th {
+    display: block;
+    text-align: left;
+    padding: 12px 0;
+  }
+  .page .reportedTable td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 44px;
+    padding: 12px 0;
+  }
+  .reportedTable td::before {
+    content: attr(data-label);
+    color: var(--ov-secondary);
+  }
+  .page .valuesTable {
+    font-size: 12px;
+  }
+  .page .valuesTable :is(th, td) {
+    padding: 12px 4px;
+  }
+  .page .valuesTable td > span {
+    flex-wrap: wrap;
+    justify-content: end;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+.changeBadge {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+@media (max-width: 767px) {
+  .accountRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

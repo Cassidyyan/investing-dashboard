@@ -2,9 +2,11 @@ import styles from "@/styles/dashboard.module.css";
 export function StatusChip({
   updatedAt,
   loading = false,
+  dataThrough,
 }: {
   updatedAt: string;
   loading?: boolean;
+  dataThrough?: string | null;
 }) {
   const updated = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Toronto",
@@ -28,6 +30,7 @@ export function StatusChip({
         Read-only
       </span>
       <span>{loading ? "Loading portfolio…" : `Updated ${updated} ET`}</span>
+      {!loading && dataThrough && <span>Data through {dataThrough}</span>}
     </div>
   );
 }

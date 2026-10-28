@@ -82,10 +82,18 @@ export type ReportedReturn = {
   percent: number;
   asOf: string | null;
 };
+export type FundingEvent = {
+  date: string | null;
+  amount: number | null;
+  currency: string | null;
+  issue?: string;
+};
+export type AccountFunding = { events: FundingEvent[] };
 export type PerformanceAccount = {
   id: string;
   name: string;
   suffix: string;
   history: Result<AccountHistory>;
   returns: Result<ReportedReturn[]>;
+  funding?: Result<AccountFunding>;
 };

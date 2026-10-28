@@ -99,7 +99,7 @@ The server is the local Node.js process started with `npm run dev`. Components m
 
 ## Server files
 
-All files in `src/server/` start with `import "server-only"`.
+All files in `src/server/` start with `import "server-only"`. `load-overview.ts` composes shared loaders for Overview; `load-account-funding.ts` supplies dated external funding for history-backed estimates.
 
 | File                       | Responsibility                                                         |
 | -------------------------- | ---------------------------------------------------------------------- |
@@ -107,10 +107,24 @@ All files in `src/server/` start with `import "server-only"`.
 | `load-portfolio.ts`        | Concurrent account sections, partial failures and account scopes       |
 | `normalize.ts`             | Safe display objects, masked account numbers and normalized valuations |
 | `exchange-rate.ts`         | Latest public Bank of Canada daily reference rate                      |
-| `load-performance.ts`      | Available account value history and reported returns                   |
+| `load-performance.ts`      | Account history, reported returns, and conditional funding loads       |
 | `load-holding-returns.ts`  | Available transaction history for the leaderboard                      |
 | `return-exchange-rates.ts` | Dated reference rates for labelled historical FX estimates             |
 | `security-logo.ts`         | Logo.dev URLs using only the publishable key                           |
+
+## Overview history and activity
+
+`server/load-overview.ts` composes current portfolio sections, recent activities, the daily reference rate and shared Performance history/funding. It makes no separate legacy return-rate request. `lib/overview/history.ts` groups native-currency histories, selects date ranges, attaches latest daily account changes, and computes the same recorded-net-deposit gain used in Performance. `lib/overview/overview.ts` maps dated recent activity and keeps current reported values separate.
+
+`PortfolioHero.tsx` renders connected history, coverage and dates. When a selected display currency has no history, it uses an available native currency with explicit chart/statistic labels. `AccountList.tsx` shows each account's latest dated change; `OverviewActivityList.tsx` shows up to five newest retrieved transactions, keeping original currencies. Existing skeletons, errors, refresh and privacy controls apply. `/?preview=history` uses labelled invented fixtures for this path.
+
+## Historical performance inspection
+
+`components/performance/PerformanceChart.tsx` selects the closest daily point on hover, touch, or left/right arrow keys. `HistoryInspection.tsx` renders the selected date's two metrics and unavailable reasons. Styling lives beside them in `Performance.module.css`.
+
+`server/load-account-funding.ts` reads all available paginated transactions only for accounts with a value chart. It normalizes contributions/withdrawals, flags unknown or unsupported transfers, rejects incomplete pages, and stops after 10,000 transactions. `load-performance.ts` runs these funding reads sequentially and stops requesting them after a rate limit. No raw transactions are persisted.
+
+`lib/performance/cash-flow-returns.ts` calculates gain versus net deposits up to the inspected date and an estimated Modified Dietz return from the first visible snapshot to that date. Date-range changes reset the period baseline, while cumulative net deposits retain their full recorded history. Currency groups use exactly the same accounts as the value chart. Tests use the labelled fixture in `dev/previews/performance-preview.ts`; `/performance?preview=sample` enables it only in development and makes no brokerage calls.
 
 ## Organization rules
 
@@ -140,3 +154,41 @@ Tests use invented data and do not require brokerage credentials. `vitest.config
 Keep tool configuration at the project root: `package.json`, `package-lock.json`, `tsconfig.json`, `next.config.ts`, `eslint.config.mjs`, `vitest.config.ts`, and `.prettierignore`. Next.js generates `next-env.d.ts`; npm and Next.js generate `node_modules/`, `.next/`, and `*.tsbuildinfo`. These are not folders to organize manually.
 
 `.env.example` contains empty variable names for setup. `.env.local` contains local private values and must stay ignored by Git. See [Security and data behavior](security-and-data.md) for credentials, privacy, account classification, currency scopes and data limitations.
+
+## Performance page components
+
+`app/performance/page.tsx` keeps the same `loadPortfolio(undefined, ["positions"])` followed by `loadPerformance()` calls. A Suspense boundary renders `PerformanceLoading` while they finish. The page passes the existing portfolio metadata into `PerformanceDashboard` for type badges, connection states and timestamps.
+
+- `PerformanceDashboard`: shared header/navigation, account/currency/range controls, refresh and page states.
+- `PerformanceHero`: latest observed value, existing change calculation, source/methodology popover and funding estimates.
+- `PerformanceChart`: observed-day area/line, dashed gap segments, hover/touch/keyboard inspection and Chart/Table modes.
+- `ChartTooltip`: selected value and previous-observation change plus the existing funding-based percentages.
+- `PerformanceStats`: Start, Current, High, Low.
+- `AccountPerformanceList`: available per-account histories, original masked numbers/type metadata, changes and sparklines.
+- `ReportedReturnsCard`: one empty state or a compact supported-period matrix with missing-value disclosures.
+- `SetupBanner`: conditional source guidance and retry.
+
+`lib/performance/presentation.ts` prepares chart coordinates and delegates financial changes to the unchanged `historyChange()` helper. Existing history aggregation, range selection, funding and FX rules remain unchanged. The generic `components/shared/RangeToggle.tsx` now serves both Overview and Performance. `PortfolioLinks` also accepts the Performance navigation group, and the shared header/status accept an optional Data through date.
+
+The old `HistoryChart.tsx` was replaced by the split components above. The native account control and all feature styling live in `Performance.module.css`. Development previews now include `sample`, `mixed`, `reported`, `single`, `empty`, `error`, `loading`, `refreshing` and `hidden`; none call SnapTrade or become live fallbacks.
+
+## Holding Returns presentation
+
+`app/returns/page.tsx` preserves its existing sequence: portfolio history scope → holding transactions → historical FX → `calculateHoldingReturns()`. It passes the same calculated rows/issues to `HoldingReturnsDashboard`, plus already-loaded portfolio metadata and security descriptions where available. A Suspense boundary uses `ReturnsLoading` without mock figures.
+
+The feature lives in `components/returns/`:
+
+| Component                             | Responsibility                                                                              |
+| ------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `HoldingReturnsDashboard`             | Shared page shell, currency/account/search/sort/view state, refresh and source errors       |
+| `EstimatesStrip` / `EstimatesDrawer`  | Compact coverage status and native modal methodology/coverage notes                         |
+| `ProfitSummary`                       | Ranked native-currency totals and component breakdown                                       |
+| `BestWorstCards`                      | Highest/lowest total profit, independent of table sorting                                   |
+| `LeaderboardTable` / `LeaderboardRow` | Top-ten/full list, mobile cards and expandable holding details                              |
+| `ProfitBar`                           | Zero-centered positive/negative display; never a new financial calculation                  |
+| `NeedsDataCard`                       | Existing unranked issues grouped into counted reason filters                                |
+| `ReturnValue`                         | Shared ChangeBadge wrapper, currency-free table amounts, zero dashes and signed percentages |
+
+`lib/returns/presentation.ts` sorts copies of rows, sums existing ranked fields and groups issue text for display. It never changes basis, eligibility, transfers or FX. `signedAmount()` in `lib/format.ts` retains native currency precision while omitting the currency code for labelled tables; shared `ChangeBadge` accepts an optional `showCurrency` setting. The financial engine remains `lib/returns/holding-returns.ts`.
+
+`Returns.module.css` contains all feature styling. Obsolete Performance/Returns global styles were removed after both pages moved to scoped modules. `dev/previews/returns-preview.ts` contains only labelled invented examples. Tests cover total/component consistency, full-set sorting, issue grouping, privacy, and page states. Browser previews exercise drawer focus/Escape, row expansion, filters and responsive layouts without live brokerage requests.

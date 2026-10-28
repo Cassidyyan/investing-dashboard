@@ -13,3 +13,8 @@ coverage/
 
 # macOS folder metadata.
 .DS_Store
+
+# Private UI captures and browser authentication state.
+/screenshots/
+/screenshots-tool/.auth/
+/screenshots-tool/.artifacts/

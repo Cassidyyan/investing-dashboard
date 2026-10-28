@@ -1,5 +1,5 @@
-// Overview adapter: only the fields already fetched by the overview are used.
-// Missing history, day changes, lifetime returns and activity stay null in live mode.
+// Adapt current snapshots; optional history is attached by history.ts.
+import type { OverviewHistory } from "./history";
 import type {
   AccountData,
   ExchangeRate,
@@ -7,7 +7,7 @@ import type {
   Portfolio,
   Result,
 } from "@/lib/types";
-export type Change = { amount: number; percent: number } | null;
+export type Change = { amount: number; percent: number | null } | null;
 export type OverviewRange = "1D" | "1W" | "1M" | "1Y" | "All";
 export type OverviewModel = {
   configured: boolean;
@@ -16,7 +16,14 @@ export type OverviewModel = {
   updatedAt: string;
   rate: ExchangeRate | null;
   partial: boolean;
-  accounts: { id: string; name: string; value: Money; dayChange: Change }[];
+  accounts: {
+    id: string;
+    name: string;
+    value: Money;
+    dayChange: Change;
+    dayChangeCurrency?: string;
+    dayChangePeriod?: string;
+  }[];
   cash: { CAD: number | null; USD: number | null; partial: boolean };
   assets: { label: string; value: Money }[];
   holdings: {
@@ -28,6 +35,10 @@ export type OverviewModel = {
   dayChange: Change;
   totalReturn: Change;
   history: Record<OverviewRange, { label: string; value: number }[]> | null;
+  historyByCurrency?: Partial<Record<"CAD" | "USD", OverviewHistory>>;
+  historyMessage?: string;
+  historyIssues?: string[];
+  activityMessage?: string;
   activity:
     | {
         id: string;
@@ -42,6 +53,7 @@ export type OverviewModel = {
 export function adaptOverview(
   portfolio: Portfolio,
   rate: Result<ExchangeRate>,
+  options: { activitiesLoaded?: boolean } = {},
 ): OverviewModel {
   const all = portfolio.accounts.status === "ok" ? portfolio.accounts.data : [];
   const investing = all.filter((a) => !a.cashOnly);
@@ -100,6 +112,29 @@ export function adaptOverview(
       holdings.push({ symbol: p.symbol, value: p.value, kind: p.kind });
     }
   }
+  const activity: NonNullable<OverviewModel["activity"]> = [];
+  let missingActivity = 0;
+  if (options.activitiesLoaded)
+    for (const a of all) {
+      if (a.activities.status === "error") {
+        missingActivity++;
+        continue;
+      }
+      for (const [index, row] of a.activities.data.rows.entries()) {
+        if (!row.date || !Number.isFinite(Date.parse(row.date))) {
+          missingActivity++;
+          continue;
+        }
+        activity.push({
+          id: `${a.account.id}-${index}-${row.date}`,
+          label: row.description || row.type,
+          account: a.account.name,
+          date: row.date,
+          value: row.amount,
+        });
+      }
+    }
+  activity.sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
   return {
     configured: portfolio.configured,
     error:
@@ -123,7 +158,16 @@ export function adaptOverview(
     dayChange: null,
     totalReturn: null,
     history: null,
-    activity: null,
+    activity:
+      options.activitiesLoaded &&
+      portfolio.accounts.status === "ok" &&
+      (activity.length > 0 || missingActivity === 0)
+        ? activity.slice(0, 5)
+        : null,
+    activityMessage:
+      missingActivity > 0
+        ? "Some transaction history could not load or has missing dates. Displayed activity is partial."
+        : undefined,
     mock: false,
   };
 }
@@ -150,7 +194,8 @@ export function convertOverviewChange(
   currency: "CAD" | "USD",
   rate: ExchangeRate | null,
 ): Change {
-  if (!change || !Number.isFinite(change.percent)) return null;
+  if (!change || (change.percent !== null && !Number.isFinite(change.percent)))
+    return null;
   const amount = convertOverview(
     { amount: change.amount, currency: source },
     currency,

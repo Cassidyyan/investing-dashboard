@@ -9,11 +9,13 @@ export function WorkspaceHeader({
   updatedAt,
   loading = false,
   refreshing = false,
+  dataThrough,
   onRefresh: refresh,
 }: {
   updatedAt: string;
   loading?: boolean;
   refreshing?: boolean;
+  dataThrough?: string | null;
   onRefresh: () => void;
 }) {
   const { hidden, toggle } = useBalancePrivacy();
@@ -23,7 +25,11 @@ export function WorkspaceHeader({
         <span aria-hidden="true">h</span>holdings
       </NavigationLink>
       <div className={styles.toolbar}>
-        <StatusChip updatedAt={updatedAt} loading={loading} />
+        <StatusChip
+          updatedAt={updatedAt}
+          loading={loading}
+          dataThrough={dataThrough}
+        />
         <button
           type="button"
           className={styles.ghostButton}

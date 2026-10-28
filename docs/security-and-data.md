@@ -66,13 +66,28 @@ Normalization preserves existing price, cost, multiplier and valuation rules. Ex
 
 Option expiry and moneyness use the existing helpers. Calendar days are computed in America/Toronto, not as an exact trading cutoff. At the money means within 0.5% of strike. Moneyness describes the contract, not whether the position has made a profit. Underlying prices come from available position data; missing prices do not produce invented moneyness. Greeks and IV require an additional source and are not derived from position prices.
 
-The Holdings load does not supply day change, so that column is omitted. Live Overview likewise leaves unavailable history, day changes, lifetime returns and activity slots unavailable rather than manufacturing figures.
+The Holdings load does not supply day change, so that column is omitted. Overview now connects available account history and recent activity. Unsupported data remains unavailable rather than manufacturing figures. Its daily value changes include cash flows, and the funding-based gain estimate is labelled separately from investment return.
 
 ## Historical account performance
 
-Only the Performance route requests account value history through `load-performance.ts`. History and reported returns normalize independently, so one failing endpoint does not hide the other's successful response. Available history depends on the connected account and API capabilities; an activity-history permission does not establish that account value history is available.
+Performance and Overview both reuse account value history through `load-performance.ts`. Overview uses `load-overview.ts` to compose that load with current snapshots and recent activity, without requesting legacy brokerage return rates. History and reported returns normalize independently, so one failing endpoint does not hide the other's successful response. Available history depends on the connected account and API capabilities; an activity-history permission does not establish that account value history is available.
 
 The UI's existing daily history range is limited to its available source, with five-year history disabled. Range filters operate on loaded points. Currency aggregation uses shared dates without filling missing accounts or mixing native currencies. Daily value change includes cash flows and is not labelled investment return. Reported-return periods are matched exactly and never averaged across accounts.
+
+### Return percentages at an inspected date
+
+Performance and Overview conditionally read funding transactions for accounts with historical value points. It uses the existing read-only transaction adapter, fetching up to 10,000 available transactions per account with no date filter. Funding reads are sequential, skip accounts without charts, and stop after a rate limit. Incomplete pagination, missing IDs, repeated IDs and request failures make funding-based returns unavailable without removing the value line.
+
+Cash CONTRIBUTION amounts increase net deposits; signed WITHDRAWAL amounts decrease them. Trades, dividends, interest, fees and taxes are investment activity, not external funding. Unknown transactions, transfers, in-kind contributions, unexpected signs, fee-bearing funding and foreign-currency funding need reconciliation rather than being guessed. Events after the inspected date never affect earlier metrics. An undated funding issue blocks the calculation because its timing cannot be established.
+
+- **Gain vs net deposits** = `(value at the inspected date − cumulative net deposits through that date) / cumulative net deposits`. It requires positive net deposits and is not a time-weighted investment return.
+- **Range return · cash-flow adjusted** uses Modified Dietz: `(ending value − starting value − net flows) / (starting value + time-weighted flows)`. The starting value is the first actual snapshot in the selected range. Flows after that snapshot through the inspected date are weighted by the fraction of calendar time remaining, assuming end-of-day flows. A deposit on the ending day has zero time weight; opening-day deposits are already in the opening snapshot. Positive weighted capital and a later inspected date are required.
+
+These are non-annualized estimates based on available brokerage records, which may omit older funding. They are separate from brokerage-reported returns. No current FX rate is substituted for historical funding currency conversion. Grouped returns combine values and funding across the same currency/account scope instead of averaging account percentages. Range return may still be available when an older funding issue blocks the cumulative metric.
+
+The original value line and its cash-flow-inclusive balance change remain unchanged. Net deposits respect balance privacy; Performance percentages remain visible by preference. Keyboard chart inspection exposes the same observations as pointer hover.
+
+Sources: [SnapTrade account activities](https://docs.snaptrade.com/reference/Account%2520Information/AccountInformation_getAccountActivities) and the [GIPS Modified Dietz methodology](https://www.gipsstandards.org/standards/gips-standards-for-firms/gips-standards-handbook-for-firms/).
 
 ## Lifetime holding-return estimates
 
@@ -89,3 +104,37 @@ Eligible cross-currency cash flows can use historical Bank of Canada daily rates
 Invented data lives exclusively in `src/dev/previews/` and test fixtures. Labelled `?preview=` states are enabled only by the existing development route branches. Production ignores those branches, and live failures never fall back to sample figures.
 
 Tests run without brokerage credentials. They exercise partial failures, normalization, currency handling, history, allocation, transfers, privacy and page states. Moving files does not change API requests, calculations or read-only behavior.
+
+## Overview history scope
+
+Overview's reported total still uses current reported investing balances and the selected daily reference conversion. Its history and statistics use observed native-currency snapshots, never current-rate conversions of past values. If the chosen current-total currency has no native history, the chart falls back to an available reported currency and explicitly labels it. Current total and history can therefore differ in date, account coverage, currency and scope.
+
+Only current investing accounts are included in this history cohort; Cash & chequing stays out of investing totals/history. Successful histories with no usable snapshots and failed histories are excluded from the chart with coverage disclosure. Within each currency, aggregation requires shared dates for every included account. Future snapshots are ignored. The latest change uses the latest two available daily snapshots; a missing/zero baseline does not produce an invented percentage. Account-level changes retain their source currency for any separately labelled current reference conversion in the account list.
+
+Overview also reads recent activities through the existing read-only activity method. The adapter sorts valid dated transactions across retrieved accounts and shows at most five, with original currencies. It discloses failed loads and omitted undated rows; recent activity is not an exhaustive lifetime ledger. No raw responses or historical records are persisted. These extra requests happen on page load or manual refresh, not on range or currency changes.
+
+Account value history remains beta and may contain gaps or schema changes; see [SnapTrade's history documentation](https://docs.snaptrade.com/reference/Account%20Information/AccountInformation_getAccountBalanceHistory). Account history cannot replace individual stock-price history for the holding comparison chart, missing trade cost basis, or options Greeks/IV. Those unavailable states continue to name their actual missing source.
+
+## Performance presentation and privacy
+
+The redesigned Performance page reuses the existing loaders, native-currency aggregation, range cutoffs, value-change helper and funding calculations. The largest value is the latest observed snapshot in the chosen range, not a new live brokerage quote. Account rows use the same existing per-account histories and optional portfolio type metadata; missing metadata is omitted. The header distinguishes retrieval time from the last observed date.
+
+Observed-day markers and dashed gaps do not supply missing daily prices. The Chart/Table switch and keyboard/touch inspection operate locally. Previous-observation changes can span several calendar days and remain labelled accordingly. High/low and summary figures are derived only from the selected observed series. Five-year history is hidden because the existing source does not supply it. Native USD tabs appear only when USD history exists; USD holdings within a CAD-reported history do not create an invented USD line.
+
+Brokerage-reported returns retain exact supplied periods, percentages and dates; missing cells show a dash with an accessible explanation. If no supported periods exist, one empty state replaces repeated per-account warnings. Access guidance is conditional and does not enable features or change permissions.
+
+Performance's balances-hidden state now masks monetary values and net deposits with **••••**, blurs charts and leaves percentages visible as requested. This overrides its earlier percentage-hiding presentation preference; the underlying display-privacy boundary remains unchanged. The obsolete slider/component was replaced with keyboard-operable chart inspection and an explicit Table view.
+
+## Holding Returns display scope
+
+The redesigned leaderboard changes presentation only. The original history account scope still includes sold securities and zero-balance investing accounts; transaction loading, average-cost profit calculations, transfer reconciliation, FX estimation and exclusion rules remain unchanged.
+
+Summary profit, realized, unrealized and dividends aggregate only eligible ranked holdings in one native currency. Unranked reported dividends appear separately and are excluded from summary totals. Total profit retains attributed charges/refunds: the breakdown and expanded details show their signed impact, not an added source of return. The CAD/USD control switches native cohorts and applies no additional exchange-rate conversion.
+
+The account control filters by account names associated with each combined holding row. It does not infer per-account profit allocations. A holding spanning two accounts can appear in either filter with the same combined result; those filtered totals must not be summed as separate account returns. The UI explains that scope. Search affects the ranked/unranked lists only, and table sorting happens before the ten-row display limit. Best and worst cards remain ordered by total profit regardless of the table's sort setting.
+
+The estimates drawer retains the full lifetime, missing-history, tickerless-transaction, transfer and FX explanation. An amber coverage strip appears only for actual account issues or unranked holdings. Grouped reason labels are display categories derived from existing issues; the exact deduplicated reasons remain available in accessible popovers and no eligibility rule is relaxed.
+
+Names for fully sold securities, per-account profit splits, and exact per-transaction FX observations are not exposed by the existing return rows. Missing names are omitted and available FX notes identify the estimation source. No single current FX rate is substituted for historical rates. The comparison view continues to state that a separate historical stock-price source is required.
+
+Hidden amounts and share quantities render **••••**, profit bars blur, and percentages stay visible. Zero amounts display a dash when visible; missing and zero values retain distinct accessible labels. Holding identities and public rate methodology remain visible. Logo.dev attribution and initial-based fallback remain available. Native dialog behavior supplies modal focus trapping and Escape dismissal; closing returns focus to the opener.

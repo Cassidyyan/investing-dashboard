@@ -1,93 +1,100 @@
-import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import { HoldingReturnsDashboard } from "@/components/returns/HoldingReturnsDashboard";
+import { ReturnsLoading } from "@/components/returns/ReturnsLoading";
+import { LeaderboardTable } from "@/components/returns/LeaderboardTable";
 import { BalancePrivacyProvider } from "@/components/shared/BalancePrivacy";
-import type { HoldingReturn } from "@/lib/returns/holding-returns";
-const row = (
-  symbol: string,
-  profit: number,
-  percent: number,
-): HoldingReturn => ({
-  key: `${symbol}:CAD`,
-  symbol,
-  currency: "CAD",
-  accounts: ["Test"],
-  firstPurchase: "2026-01-01",
-  purchases: 1000,
-  realized: profit,
-  unrealized: 0,
-  dividends: 0,
-  charges: 0,
-  totalProfit: profit,
-  returnPercent: percent,
-  sales: [{ date: "2026-02-01", units: 5, profit }],
-  issues: [],
-});
-it("defaults to profit ranking rather than percentage and exposes sale details", () => {
-  const html = renderToStaticMarkup(
-    createElement(HoldingReturnsDashboard, {
-      rows: [row("PERCENT_WINNER", 25, 100), row("PROFIT_WINNER", 300, 30)],
-      issues: [],
-    }),
+import { createReturnsPreview } from "@/dev/previews/returns-preview";
+import { isRanked, sortReturns } from "@/lib/returns/presentation";
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+  usePathname: () => "/returns",
+}));
+function render(state: Parameters<typeof createReturnsPreview>[0] = "sample") {
+  return renderToStaticMarkup(
+    <HoldingReturnsDashboard {...createReturnsPreview(state)} />,
   );
-  expect(html).toContain("<h3>PROFIT_WINNER</h3>");
-  expect(html).toContain("1 profitable / 1 sales");
-  expect(html).toContain("First recorded buy:");
-  expect(html).toContain("not a guarantee");
+}
+it("uses shared navigation and neutral best/worst cards with one coverage strip and a details dialog", () => {
+  const html = render();
+  expect(html).toContain("What has earned the most?");
+  expect(html).toContain("Performance sections");
+  expect(html).toContain("12 of 15 holdings ranked · Estimates");
+  expect(html).toContain("Best holding");
+  expect(html).toContain("Worst holding");
+  expect(html).toContain("<h3>ALPHA</h3>");
+  expect(html).toContain("Largest gain among ranked holdings");
+  expect(html).toContain("<dialog");
+  expect(html).toContain("Partial-history account notes");
+  expect(html).toContain("cannot be attributed");
+  expect(html).not.toContain("returns-winner");
+  expect(html).not.toContain("eligible records");
 });
-it("masks profits and return percentages when balances are hidden", () => {
+it("keeps profitable sale details, existing FX notes and account-filter scope explicit", () => {
+  const html = render();
+  expect(html).toContain("Sales history");
+  expect(html).toContain("First recorded buy date");
+  expect(html).toContain("FX est.");
+  expect(html).toContain("Bank of Canada daily reference rates");
+  expect(html).toContain("original recorded purchase cost");
+  expect(html).toContain("per-account profit breakdowns are not supplied");
+  expect(html).toContain("Calculation notes");
+  expect(html).toContain("Logo.dev");
+});
+it("hides monetary amounts while leaving percentages visible", () => {
   const html = renderToStaticMarkup(
     <BalancePrivacyProvider initialHidden>
-      <HoldingReturnsDashboard
-        rows={[row("TEST", 3141.59, 37.42)]}
-        issues={[]}
-      />
+      <HoldingReturnsDashboard {...createReturnsPreview()} />
     </BalancePrivacyProvider>,
   );
-  expect(html).toContain(".....");
-  expect(html).toContain("TEST");
-  expect(html).not.toContain("3,141.59");
-  expect(html).not.toContain("37.42%");
+  expect(html).toContain("••••");
+  expect(html).not.toContain("3,600.00");
+  expect(html).not.toContain("1,200.00");
+  expect(html).toContain("+12.00%");
+  expect(html).toContain("ALPHA");
 });
-
-it("opens a currency with eligible returns and makes coverage warnings visible", () => {
-  const unavailable = {
-    ...row("CAD_MISSING", 0, 0),
-    totalProfit: null,
-    returnPercent: null,
-    issues: ["Missing purchase history."],
-  };
-  const usd = {
-    ...row("USD_AVAILABLE", 50, 10),
-    key: "USD_AVAILABLE:USD",
-    currency: "USD",
-  };
+it("limits the leaderboard to ten after sorting the entire set", () => {
+  const sample = createReturnsPreview();
+  const ranked = sample.rows.filter((r) => r.currency === "CAD" && isRanked(r));
+  const sorted = sortReturns(ranked, "profit-asc");
   const html = renderToStaticMarkup(
-    createElement(HoldingReturnsDashboard, {
-      rows: [unavailable, usd],
-      issues: ["Unmatched transaction."],
-    }),
+    <LeaderboardTable
+      rows={sorted}
+      currency="CAD"
+      names={sample.names}
+      max={1200}
+    />,
   );
-  expect(html).toContain("<h3>USD_AVAILABLE</h3>");
-  expect(html).toContain('value="USD" selected=""');
-  expect(html).toContain("matched records are shown below");
-  expect(html).toContain("Unmatched transaction.");
+  expect(html.match(/<tbody/g)).toHaveLength(10);
+  expect(html).toContain("Show all 12");
+  expect(html).toContain("<strong>MU</strong>");
+  expect(html).not.toContain("<strong>ALPHA</strong>");
+  expect(html).not.toContain("CAD ");
+  expect(html).toContain('scope="col"');
 });
-
-it("clearly marks historical FX estimates and explains reconciled transfers", () => {
-  const r = {
-    ...row("TEST", 100, 10),
-    notes: [
-      "Historical FX estimate: Bank of Canada daily reference rates.",
-      "Internal share transfer reconciled: original recorded purchase cost carried between accounts.",
-    ],
-  };
+it("provides needs-data filters and all-unranked, empty, loading and reconnect states", () => {
+  const unranked = render("unranked");
+  expect(unranked).toContain("0 of 3 holdings ranked");
+  expect(unranked).toContain("3 holdings can’t be ranked yet");
+  expect(unranked).toContain("No purchase basis");
+  expect(unranked).toContain("Short sale");
+  expect(unranked).toContain("Trades don’t reconcile");
+  expect(unranked).not.toContain('aria-label="Best holding"');
+  expect(render("empty")).toContain("No supported holding transactions");
+  expect(render("error")).toContain("Reconnect in SnapTrade");
+  const loading = renderToStaticMarkup(<ReturnsLoading />);
+  expect(loading).toContain("Loading leaderboard");
+  expect(loading).toContain("Loading data coverage");
+  expect(loading).not.toContain("invented sample");
+});
+it("keeps figures visible and disables refresh during refresh", () => {
   const html = renderToStaticMarkup(
-    createElement(HoldingReturnsDashboard, { rows: [r], issues: [] }),
+    <HoldingReturnsDashboard
+      {...createReturnsPreview()}
+      preview="refreshing"
+    />,
   );
-  expect(html).toContain("Historical FX estimate");
-  expect(html).toContain("Bank of Canada daily reference rates");
-  expect(html).toContain("Calculation notes");
-  expect(html).toContain("original recorded purchase cost");
+  expect(html).toContain("Refreshing…");
+  expect(html).toContain('aria-busy="true"');
+  expect(html).toContain("3,600.00");
 });

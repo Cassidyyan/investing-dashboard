@@ -3,10 +3,13 @@ import type { OverviewModel } from "@/lib/overview/overview";
 import { MoneyValue } from "@/components/shared/MoneyValue";
 import { StatCard } from "@/components/shared/StatCard";
 import styles from "@/styles/dashboard.module.css";
+import { date } from "@/lib/format";
 export function OverviewActivityList({
   activity,
+  message,
 }: {
   activity: OverviewModel["activity"];
+  message?: string;
 }) {
   return (
     <StatCard
@@ -14,9 +17,14 @@ export function OverviewActivityList({
       className={styles.full}
       action={<NavigationLink href="/activity">View all</NavigationLink>}
     >
+      {message && (
+        <p className={styles.footnote} role="status">
+          {message}
+        </p>
+      )}
       {activity === null ? (
         <p className={styles.empty}>
-          Transactions are not loaded on Overview.{" "}
+          Transaction history could not be loaded.{" "}
           <NavigationLink href="/activity">Open Activity</NavigationLink> to
           view your recent records.
         </p>
@@ -33,7 +41,7 @@ export function OverviewActivityList({
                 <strong>{a.label}</strong>
                 <small>{a.account}</small>
               </div>
-              <time dateTime={a.date}>{a.date}</time>
+              <time dateTime={a.date}>{date(a.date)}</time>
               <b>
                 <MoneyValue
                   amount={a.value.amount}

@@ -796,3 +796,8 @@
     transition: none !important;
   }
 }
+
+.readOnly {
+  white-space: nowrap;
+  flex-shrink: 0;
+}

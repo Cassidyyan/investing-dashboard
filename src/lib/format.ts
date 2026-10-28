@@ -38,6 +38,27 @@ export function quantity(value: number | null) {
 export function signedMoney(value: Money): string {
   return `${value.amount !== null && value.amount > 0 ? "+" : ""}${money(value)}`;
 }
+// Native numeric amount with currency precision, for tables labelled by currency.
+export function signedAmount(value: Money): string {
+  if (value.amount === null) return "Unavailable";
+  let formatted: string;
+  try {
+    formatted = new Intl.NumberFormat("en-CA", {
+      style: "currency",
+      currency: value.currency || "CAD",
+    })
+      .formatToParts(value.amount)
+      .filter((part) => part.type !== "currency" && part.type !== "literal")
+      .map((part) => part.value)
+      .join("");
+  } catch {
+    formatted = value.amount.toLocaleString("en-CA", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+  return `${value.amount > 0 ? "+" : ""}${formatted}`;
+}
 export function signedPercent(value: number | null | undefined): string {
   if (value === null || value === undefined || !Number.isFinite(value))
     return "Unavailable";

@@ -1,6 +1,17 @@
 "use client";
 import { useEffect, useRef, type ReactNode } from "react";
 import styles from "./InfoPopover.module.css";
+function positionPanel(node: HTMLDetailsElement | null) {
+  if (!node?.open) return;
+  const panel = node.querySelector<HTMLDivElement>('[role="note"]');
+  if (!panel) return;
+  panel.style.transform = "";
+  const rect = panel.getBoundingClientRect();
+  const edge = document.documentElement.clientWidth - 12;
+  const shift =
+    rect.left < 12 ? 12 - rect.left : rect.right > edge ? edge - rect.right : 0;
+  panel.style.transform = shift ? `translateX(${shift}px)` : "";
+}
 export function InfoPopover({
   label,
   children,
@@ -25,11 +36,17 @@ export function InfoPopover({
         node.current.open = false;
     }
     document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
+    const reposition = () => positionPanel(node.current);
+    window.addEventListener("resize", reposition);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      window.removeEventListener("resize", reposition);
+    };
   }, []);
   return (
     <details
       ref={node}
+      onToggle={() => positionPanel(node.current)}
       className={`${styles.popover} ${align === "start" ? styles.start : ""}`}
       onKeyDown={(event) => {
         if (event.key === "Escape" && node.current?.open) {

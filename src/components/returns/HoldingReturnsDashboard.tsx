@@ -1,422 +1,412 @@
 "use client";
-
-import { useState } from "react";
-import { PrivateValue } from "@/components/shared/BalancePrivacy";
-import { money, signedMoney, signedPercent, quantity } from "@/lib/format";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import type { Portfolio } from "@/lib/types";
 import type { HoldingReturn } from "@/lib/returns/holding-returns";
-import { SecurityIcon } from "@/components/shared/SecurityIcon";
-
-const ranges = ["1D", "5D", "1M", "3M", "6M", "YTD", "1 Year"] as const;
-export function HoldingReturnsDashboard({
-  rows,
-  issues,
-}: {
+import {
+  isRanked,
+  sortReturns,
+  type ReturnsSort,
+} from "@/lib/returns/presentation";
+import { WorkspaceHeader } from "@/components/layout/WorkspaceHeader";
+import { DashboardNavigation } from "@/components/layout/DashboardNavigation";
+import { NavigationReady } from "@/components/layout/NavigationProgress";
+import { PortfolioLinks } from "@/components/shared/PortfolioLinks";
+import { StatCard } from "@/components/shared/StatCard";
+import { RangeToggle } from "@/components/shared/RangeToggle";
+import { BalancePrivacyProvider } from "@/components/shared/BalancePrivacy";
+import { InfoPopover } from "@/components/shared/InfoPopover";
+import { EstimatesStrip } from "./EstimatesStrip";
+import { EstimatesDrawer } from "./EstimatesDrawer";
+import { ProfitSummary } from "./ProfitSummary";
+import { BestWorstCards } from "./BestWorstCards";
+import { LeaderboardTable } from "./LeaderboardTable";
+import { NeedsDataCard } from "./NeedsDataCard";
+import shared from "@/styles/dashboard.module.css";
+import styles from "./Returns.module.css";
+const ranges = ["1D", "5D", "1M", "3M", "6M", "YTD", "1Y"] as const;
+export type ReturnsPreview =
+  | "sample"
+  | "loading"
+  | "refreshing"
+  | "empty"
+  | "error"
+  | "hidden"
+  | "unranked"
+  | "complete";
+type Props = {
   rows: HoldingReturn[];
   issues: string[];
-}) {
-  const currencies = [...new Set(rows.map((r) => r.currency))].sort();
-  const rankedCurrencies = currencies.filter((c) =>
-    rows.some((r) => r.currency === c && r.totalProfit !== null),
-  );
+  portfolio?: Portfolio;
+  names?: Record<string, string>;
+  isLoading?: boolean;
+  preview?: ReturnsPreview;
+};
+function ReturnsContent({
+  rows,
+  issues,
+  portfolio,
+  names = {},
+  isLoading = false,
+  preview,
+}: Props) {
+  const router = useRouter(),
+    [pending, startTransition] = useTransition();
+  const currencies = [...new Set(rows.map((r) => r.currency))].sort(),
+    rankedCurrencies = currencies.filter((c) =>
+      rows.some((r) => r.currency === c && isRanked(r)),
+    );
   const [currency, setCurrency] = useState(
     rankedCurrencies.includes("CAD")
       ? "CAD"
       : rankedCurrencies[0] || currencies[0] || "CAD",
   );
-  const [sort, setSort] = useState<"profit" | "percent">("profit");
-  const [tab, setTab] = useState<"leaderboard" | "chart">("leaderboard");
-  const [range, setRange] = useState<(typeof ranges)[number]>("1 Year");
-  const filtered = rows.filter((r) => r.currency === currency);
-  const ranked = filtered
-    .filter((r) => r.totalProfit !== null && r.returnPercent !== null)
-    .sort(
-      (a, b) =>
-        (sort === "profit"
-          ? b.totalProfit! - a.totalProfit!
-          : b.returnPercent! - a.returnPercent!) ||
-        a.symbol.localeCompare(b.symbol),
-    );
-  const unavailable = filtered.filter(
-    (r) => r.totalProfit === null || r.returnPercent === null,
-  );
-  const best = ranked[0];
-  const amount = (value: number | null, signed = true) => (
-    <PrivateValue>
-      {signed
-        ? signedMoney({ amount: value, currency })
-        : money({ amount: value, currency })}
-    </PrivateValue>
-  );
+  const [sort, setSort] = useState<ReturnsSort>("profit-desc"),
+    [tab, setTab] = useState<"leaderboard" | "chart">("leaderboard"),
+    [range, setRange] = useState<(typeof ranges)[number]>("1Y"),
+    [account, setAccount] = useState("all"),
+    [search, setSearch] = useState(""),
+    [details, setDetails] = useState(false);
+  const loading = isLoading || preview === "loading",
+    refreshing = pending || preview === "refreshing",
+    refresh = () => startTransition(() => router.refresh());
+  const cohort = rows.filter(
+      (r) =>
+        r.currency === currency &&
+        (account === "all" || r.accounts.includes(account)),
+    ),
+    ranked = cohort.filter(isRanked),
+    unranked = cohort.filter((r) => !isRanked(r));
+  const matches = (r: HoldingReturn) =>
+    `${r.symbol} ${names[r.symbol] || ""}`
+      .toLowerCase()
+      .includes(search.trim().toLowerCase());
+  const sorted = sortReturns(ranked.filter(matches), sort),
+    needs = unranked.filter(matches),
+    accountNames = [...new Set(rows.flatMap((r) => r.accounts))].sort();
+  const max = Math.max(0, ...ranked.map((r) => Math.abs(r.totalProfit!)));
+  const expired =
+      portfolio?.connections.status === "ok" &&
+      portfolio.connections.data.some((c) => c.status === "Disabled"),
+    failed = portfolio?.accounts.status === "error",
+    configured = portfolio?.configured ?? true;
   return (
-    <>
-      <div
-        className="position-tabs"
-        role="group"
-        aria-label="Holdings performance views"
-      >
-        <button
-          type="button"
-          aria-pressed={tab === "leaderboard"}
-          onClick={() => setTab("leaderboard")}
-        >
-          Lifetime leaderboard
-        </button>
-        <button
-          type="button"
-          aria-pressed={tab === "chart"}
-          onClick={() => setTab("chart")}
-        >
-          Compare return lines
-        </button>
-      </div>
-      <p className="notice">
-        Estimates cover transactions available from SnapTrade across currently
-        connected accounts, including sold holdings and zero-balance investing
-        accounts. Older brokerage history may be missing. “Lifetime” is not a
-        guarantee of complete all-time records.
-      </p>
-      {issues.length > 0 && (
-        <details className="panel" open>
-          <summary>Partial history · matched records are shown below</summary>
-          <ul>
-            {issues.map((issue) => (
-              <li key={issue}>{issue}</li>
-            ))}
-          </ul>
-        </details>
-      )}
-      {rows.some((r) =>
-        r.notes?.some((note) => note.startsWith("Historical FX estimate")),
-      ) && (
-        <p className="notice">
-          Some returns use historical{" "}
-          <a
-            href="https://www.bankofcanada.ca/rates/exchange/daily-exchange-rates/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Bank of Canada daily reference rates
-          </a>
-          . They are estimates; your brokerage’s conversion rates and spreads
-          may differ. See each holding’s calculation notes.
-        </p>
-      )}
-      {tab === "leaderboard" ? (
-        <section className="panel holding-returns">
-          <div className="returns-toolbar">
-            <div>
-              <p className="eyebrow">SALES + CURRENT HOLDINGS + DIVIDENDS</p>
-              <h2>Your best performers.</h2>
-            </div>
-            <label>
-              Currency
-              <select
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-              >
-                {(currencies.length ? currencies : ["CAD"]).map((c) => (
-                  <option key={c} value={c}>
-                    {c} ·{" "}
-                    {
-                      rows.filter(
-                        (r) => r.currency === c && r.totalProfit !== null,
-                      ).length
-                    }{" "}
-                    ranked
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Rank by
-              <select
-                value={sort}
-                onChange={(e) =>
-                  setSort(e.target.value as "profit" | "percent")
-                }
-              >
-                <option value="profit">Total profit · highest first</option>
-                <option value="percent">Return % · highest first</option>
-              </select>
-            </label>
+    <div className={`${shared.page} ${styles.page}`}>
+      {!loading && <NavigationReady path="/returns" />}
+      <a className={shared.skip} href="#returns-main">
+        Skip to content
+      </a>
+      <WorkspaceHeader
+        updatedAt={portfolio?.retrievedAt || new Date().toISOString()}
+        onRefresh={refresh}
+        loading={loading}
+        refreshing={refreshing}
+      />
+      <main className={shared.main} id="returns-main">
+        <div className={shared.titleRow}>
+          <div>
+            <h1>What has earned the most?</h1>
+            <p>Lifetime holding estimates, including sales and dividends.</p>
           </div>
-          {best && (
-            <div className="returns-winner">
-              <div>
-                <span className="eyebrow">LEADING HOLDING · {currency}</span>
-                <div className="returns-security">
-                  <SecurityIcon
-                    symbol={best.symbol}
-                    logoUrl={best.logoUrl ?? null}
-                  />
-                  <h3>{best.symbol}</h3>
-                </div>
-                <span>
-                  {best.totalProfit! > 0
-                    ? "Largest gain"
-                    : "Highest result; no positive gain"}{" "}
-                  among eligible records
-                  {sort === "percent" ? " by percentage" : " by profit"}
-                </span>
-              </div>
-              <div>
-                <strong>{amount(best.totalProfit)}</strong>
-                <small>
-                  <PrivateValue>
-                    {signedPercent(best.returnPercent)}
-                  </PrivateValue>{" "}
-                  on total purchases
-                </small>
-              </div>
-            </div>
-          )}
-          {ranked.length > 0 ? (
-            <div className="table-wrap">
-              <table>
-                <caption className="sr-only">
-                  Lifetime estimates ranked by{" "}
-                  {sort === "profit" ? "total profit" : "return percentage"} in{" "}
-                  {currency}
-                </caption>
-                <thead>
-                  <tr>
-                    <th>Holding</th>
-                    <th className="numeric">Realized</th>
-                    <th className="numeric">Unrealized</th>
-                    <th className="numeric">Dividends</th>
-                    <th className="numeric">Total profit</th>
-                    <th className="numeric">Return %</th>
-                    <th>Sale history</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ranked.map((r, i) => (
-                    <tr key={r.key}>
-                      <td>
-                        <div className="returns-security">
-                          <SecurityIcon
-                            symbol={r.symbol}
-                            logoUrl={r.logoUrl ?? null}
-                          />
-                          <b>
-                            {i + 1}. {r.symbol}
-                          </b>
-                        </div>
-                        <small>{r.accounts.join(" · ")}</small>
-                        <small>First recorded buy: {r.firstPurchase}</small>
-                        {r.notes?.some((note) =>
-                          note.startsWith("Historical FX estimate"),
-                        ) && (
-                          <small className="warning">
-                            Historical FX estimate
-                          </small>
-                        )}
-                        {!!r.notes?.length && (
-                          <details>
-                            <summary>Calculation notes</summary>
-                            <ul>
-                              {r.notes.map((note) => (
-                                <li key={note}>{note}</li>
-                              ))}
-                            </ul>
-                          </details>
-                        )}
-                      </td>
-                      <td className="numeric">{amount(r.realized)}</td>
-                      <td className="numeric">{amount(r.unrealized)}</td>
-                      <td className="numeric">{amount(r.dividends, false)}</td>
-                      <td className="numeric">
-                        <b>{amount(r.totalProfit)}</b>
-                      </td>
-                      <td className="numeric">
-                        <PrivateValue>
-                          {signedPercent(r.returnPercent)}
-                        </PrivateValue>
-                      </td>
-                      <td>
-                        <details className="returns-sales">
-                          <summary>
-                            {r.sales.filter((s) => s.profit > 0).length}{" "}
-                            profitable / {r.sales.length} sales
-                          </summary>
-                          <div>
-                            {r.sales.length ? (
-                              <ul>
-                                {[...r.sales]
-                                  .sort((a, b) => b.date.localeCompare(a.date))
-                                  .map((s, index) => (
-                                    <li key={`${s.date}-${index}`}>
-                                      <span>
-                                        {s.date} ·{" "}
-                                        <PrivateValue>
-                                          {quantity(s.units)}
-                                        </PrivateValue>{" "}
-                                        shares
-                                      </span>
-                                      <b>{amount(s.profit)}</b>
-                                    </li>
-                                  ))}
-                              </ul>
-                            ) : (
-                              <p>No recorded sales.</p>
-                            )}
-                          </div>
-                        </details>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="empty">
-              No holdings in {currency} have enough reconciled history to rank
-              yet.
-            </p>
-          )}
-          {unavailable.length > 0 && (
-            <details className="returns-unavailable" open={!ranked.length}>
-              <summary>
-                {unavailable.length} holdings need historical cost or FX data
-              </summary>
-              <div className="returns-issues">
-                <p className="muted">
-                  These records are shown separately because a complete lifetime
-                  return cannot yet be verified. Transfers are matched
-                  automatically when both accounts and the original purchase
-                  cost reconcile.
-                </p>
-                {unavailable.map((r) => (
-                  <article key={r.key}>
-                    <div className="returns-security">
-                      <SecurityIcon
-                        symbol={r.symbol}
-                        logoUrl={r.logoUrl ?? null}
-                      />
-                      <h3>{r.symbol}</h3>
-                    </div>
-                    <small>{r.accounts.join(" · ")}</small>
-                    {r.notes?.some((note) =>
-                      note.startsWith("Historical FX estimate"),
-                    ) && (
-                      <small className="warning">
-                        Reported cash flows converted using estimated historical
-                        FX
-                      </small>
-                    )}
-                    <p>
-                      Reported dividends: {amount(r.dividends, false)} · Profit
-                      and return unavailable
-                    </p>
-                    <ul>
-                      {r.issues.map((issue) => (
-                        <li key={issue}>{issue}</li>
-                      ))}
-                    </ul>
-                  </article>
-                ))}
-              </div>
-            </details>
-          )}
-          {!rows.length && (
-            <p className="muted">
-              No supported stock or fund history was returned.
-            </p>
-          )}
-          <details className="returns-method">
-            <summary>How these estimates work</summary>
-            <p>
-              Total profit = realized sales profit + unrealized profit +
-              reported dividends − separately attributed charges. Losing sales
-              reduce the total. A weighted average purchase cost matches shares
-              to each sale, separately in each account.
-            </p>
-            <p>
-              Return % = total profit ÷ total purchase cash outflows, including
-              repeat purchases. This is a simple cumulative return on purchases,
-              not an annualized, time-weighted, or money-weighted return.
-              Repeated trading changes the denominator.
-            </p>
-            <p>
-              Amounts use reported transaction cash flows. Records with nonzero
-              trade fees, missing purchases, uncertain same-day ordering,
-              unmatched transfers, splits, reinvestment events, or missing
-              currency rates are excluded from ranking until reconciled.
-              Separate account-wide fees or taxes without a ticker cannot be
-              allocated and are excluded. Cash dividends are included as
-              reported; no dividend reinvestment or tax treatment is assumed.
-            </p>
-            <p>
-              For uniquely matched zero-cash share transfers within the same
-              brokerage, the original recorded purchase cost moves with the
-              shares. Both ending share counts must prove the transfer
-              direction. This adds no sale profit, no extra purchase outflow,
-              and no taxable-gain assumption.
-            </p>
-            <p>
-              Transactions without a ticker are shown as coverage warnings and
-              cannot be attributed to a holding. They do not automatically block
-              every other stock in the account. Rankings cover matched records;
-              unmatched older trades or dividends may change these estimates.
-            </p>
-            <p>
-              CAD and USD profits are ranked separately in each security’s
-              currency. Where transaction cash flows use a different currency,
-              historical Bank of Canada daily reference rates estimate the
-              conversion. The most recent published rate on or before the
-              transaction is used, up to seven days earlier; these estimates may
-              differ from actual brokerage conversions. Options, short
-              positions, and unsupported instruments are excluded. Snapshot
-              timing and brokerage retention limits can affect coverage. These
-              are analytical estimates, not tax calculations.
-            </p>
-          </details>
-        </section>
-      ) : (
-        <section className="panel">
-          <p className="eyebrow">HOLDING RETURN COMPARISON</p>
-          <h2>Each holding, its own line.</h2>
-          <div
-            className="history-ranges"
-            role="group"
-            aria-label="Planned comparison period"
-          >
-            {ranges.map((r) => (
-              <button
-                className="button"
-                type="button"
-                key={r}
-                aria-pressed={range === r}
-                onClick={() => setRange(r)}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
-          <p className="notice" role="status">
-            Historical price provider required. The {range} comparison is not
-            available yet. No return lines have been estimated from transaction
-            prices.
-          </p>
-          <div className="returns-chart-placeholder">
-            <span>Return %</span>
+        </div>
+        <DashboardNavigation path="/returns" />
+        <PortfolioLinks path="/returns" group="performance" />
+        {preview && (
+          <aside className={shared.previewBanner}>
+            Development preview: {preview}. All figures are invented sample
+            data.
+          </aside>
+        )}
+        {!loading && (!configured || failed || expired) && (
+          <div className={shared.error} role="alert">
             <div>
-              <b>Ready for historical prices</b>
+              <strong>
+                {expired
+                  ? "Brokerage connection needs attention"
+                  : !configured
+                    ? "Connect your local account"
+                    : "Holding returns could not load"}
+              </strong>
               <p>
-                Each stock will have a separate line, aligned by days since its
-                first recorded purchase.
+                {expired
+                  ? "Reconnect in SnapTrade, then refresh. Available estimates may be stale."
+                  : portfolio?.accounts.status === "error"
+                    ? portfolio.accounts.message
+                    : "Configure your existing credentials locally in .env.local."}
               </p>
             </div>
-            <span>Duration held →</span>
+            {expired ? (
+              <a
+                className={shared.ghostButton}
+                href="https://dashboard.snaptrade.com"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Reconnect in SnapTrade ↗
+              </a>
+            ) : (
+              <button
+                type="button"
+                className={shared.ghostButton}
+                onClick={refresh}
+                disabled={refreshing}
+              >
+                Retry
+              </button>
+            )}
           </div>
-          <p className="muted">
-            These controls preview the requested periods. Daily prices and a
-            reconciled share/cash-flow history are needed for your actual return
-            lines; 1D intraday detail also depends on the provider. Lifetime
-            ranking above works without a separate price provider.
-          </p>
-        </section>
-      )}
-    </>
+        )}
+        <div
+          className={refreshing ? shared.refreshing : undefined}
+          aria-busy={loading || refreshing}
+        >
+          {loading ? (
+            <div className={styles.loading}>
+              <div className={styles.summaryTiles}>
+                {[0, 1, 2, 3].map((i) => (
+                  <StatCard title="Loading profit" key={i}>
+                    <div
+                      className={`${shared.skeleton} ${shared.skeletonValue}`}
+                    />
+                  </StatCard>
+                ))}
+              </div>
+              <div className={styles.bestWorst}>
+                {["Loading best holding", "Loading worst holding"].map((t) => (
+                  <StatCard title={t} key={t}>
+                    <div
+                      className={`${shared.skeleton} ${styles.cardSkeleton}`}
+                    />
+                  </StatCard>
+                ))}
+              </div>
+              {["Loading leaderboard", "Loading data coverage"].map((t) => (
+                <StatCard title={t} key={t}>
+                  <div
+                    className={`${shared.skeleton} ${styles.tableSkeleton}`}
+                  />
+                </StatCard>
+              ))}
+            </div>
+          ) : (
+            <>
+              <EstimatesStrip
+                ranked={ranked.length}
+                total={cohort.length}
+                caveats={issues.length > 0 || unranked.length > 0}
+                onDetails={() => setDetails(true)}
+              />
+              <ProfitSummary
+                rows={ranked}
+                currency={currency}
+                onCurrency={setCurrency}
+                otherCurrencies={currencies.filter(
+                  (c) => !["CAD", "USD"].includes(c),
+                )}
+              />
+              <BestWorstCards rows={ranked} currency={currency} names={names} />
+              <StatCard
+                title={
+                  tab === "leaderboard"
+                    ? "All ranked holdings"
+                    : "Compare return lines"
+                }
+                className={styles.listCard}
+              >
+                <div className={styles.controls}>
+                  <div
+                    className={styles.segmented}
+                    role="group"
+                    aria-label="Holdings performance views"
+                  >
+                    <button
+                      type="button"
+                      aria-pressed={tab === "leaderboard"}
+                      onClick={() => setTab("leaderboard")}
+                    >
+                      Leaderboard
+                    </button>
+                    <button
+                      type="button"
+                      aria-pressed={tab === "chart"}
+                      onClick={() => setTab("chart")}
+                    >
+                      Compare return lines
+                    </button>
+                  </div>
+                  <label className={styles.search}>
+                    Search holdings
+                    <input
+                      type="search"
+                      placeholder="Ticker or name"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                  </label>
+                  <label>
+                    Account association
+                    <select
+                      value={account}
+                      onChange={(e) => setAccount(e.target.value)}
+                    >
+                      <option value="all">All accounts</option>
+                      {accountNames.map((name) => (
+                        <option key={name} value={name}>
+                          {name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {tab === "leaderboard" && (
+                    <label>
+                      Sort by
+                      <select
+                        value={sort}
+                        onChange={(e) => setSort(e.target.value as ReturnsSort)}
+                      >
+                        <option value="profit-desc">
+                          Total profit · high to low
+                        </option>
+                        <option value="profit-asc">
+                          Total profit · low to high
+                        </option>
+                        <option value="percent">Return % · high to low</option>
+                        <option value="realized">Realized · high to low</option>
+                        <option value="unrealized">
+                          Unrealized · high to low
+                        </option>
+                        <option value="dividends">
+                          Dividends · high to low
+                        </option>
+                      </select>
+                    </label>
+                  )}
+                  <InfoPopover label="Account filter and summary scope">
+                    <p>
+                      Account association filters holdings linked to the
+                      selected account name. Each holding’s values remain
+                      combined across all accounts listed in its details;
+                      per-account profit breakdowns are not supplied. Summary
+                      and best/worst cards use all ranked holdings in this
+                      currency/account selection. Search filters the lists only.
+                      Totals exclude unranked holdings, including their reported
+                      dividends.
+                    </p>
+                  </InfoPopover>
+                </div>
+                <p className={styles.caption}>
+                  Amounts in {currency} · combined holding totals · Search
+                  filters the lists only.
+                </p>
+                {tab === "leaderboard" ? (
+                  <>
+                    {!rows.length ? (
+                      <div className={styles.empty}>
+                        <h3>No supported holding transactions</h3>
+                        <p>
+                          Recorded stock and fund transactions will appear after
+                          a successful brokerage history sync.
+                        </p>
+                        <button
+                          type="button"
+                          className={shared.ghostButton}
+                          onClick={refresh}
+                          disabled={refreshing}
+                        >
+                          Retry history
+                        </button>
+                      </div>
+                    ) : !ranked.length ? (
+                      <div className={styles.empty}>
+                        <p>
+                          No holdings in this selection have enough reconciled
+                          history to rank.
+                        </p>
+                        <button
+                          type="button"
+                          className={styles.textButton}
+                          onClick={() => setDetails(true)}
+                          aria-haspopup="dialog"
+                        >
+                          View estimate details
+                        </button>
+                      </div>
+                    ) : (
+                      <LeaderboardTable
+                        key={`${currency}-${account}-${search}-${sort}`}
+                        rows={sorted}
+                        currency={currency}
+                        names={names}
+                        max={max}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className={styles.ranges}>
+                      <RangeToggle
+                        value={range}
+                        onChange={setRange}
+                        options={ranges.map((value) => ({
+                          value,
+                          label: value,
+                        }))}
+                        label="Planned comparison period"
+                      />
+                    </div>
+                    <div className={styles.empty} role="status">
+                      <h3>Historical price provider required</h3>
+                      <p>
+                        The {range} comparison is not connected. Individual
+                        daily stock prices are not supplied by account value
+                        history.
+                      </p>
+                      <p>
+                        No return lines are estimated from transaction prices.
+                        Planned axes: duration held and return %.
+                      </p>
+                    </div>
+                  </>
+                )}
+              </StatCard>
+              <NeedsDataCard
+                key={`${currency}-${account}`}
+                rows={needs}
+                currency={currency}
+              />
+            </>
+          )}
+        </div>
+        <EstimatesDrawer
+          open={details}
+          onClose={() => setDetails(false)}
+          issues={issues}
+        />
+        <p className={styles.srOnly} role="status">
+          {loading
+            ? "Loading holding returns."
+            : refreshing
+              ? "Refreshing holding returns."
+              : "Holding returns ready."}
+        </p>
+        <footer className={shared.footer}>
+          Read-only lifetime estimates · No trading or stored brokerage data.
+          Logos by{" "}
+          <a href="https://www.logo.dev" target="_blank" rel="noreferrer">
+            Logo.dev
+          </a>
+          .
+        </footer>
+      </main>
+    </div>
+  );
+}
+export function HoldingReturnsDashboard(props: Props) {
+  return props.preview === "hidden" ? (
+    <BalancePrivacyProvider initialHidden>
+      <ReturnsContent {...props} />
+    </BalancePrivacyProvider>
+  ) : (
+    <ReturnsContent {...props} />
   );
 }

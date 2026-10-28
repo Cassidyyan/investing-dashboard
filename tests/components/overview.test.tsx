@@ -113,3 +113,16 @@ it("shows real loading skeletons without sample financial data or a mock banner"
   expect(html).not.toContain("Development preview");
   expect(html).not.toContain("Sample TFSA");
 });
+it("uses connected native history and transaction states instead of not-connected placeholders", () => {
+  const model = createOverviewPreview("history");
+  const html = renderToStaticMarkup(
+    <OverviewDashboard model={model} preview="history" />,
+  );
+  expect(html).toContain("CAD account value history");
+  expect(html).toContain("Latest daily value change");
+  expect(html).toContain("Gain vs recorded net deposits");
+  expect(html).toContain("+10.00%");
+  expect(html).toContain("History coverage");
+  expect(html).not.toContain("History not connected");
+  expect(html).not.toContain("Returns &amp; history unavailable");
+});

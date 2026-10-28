@@ -137,7 +137,7 @@ Brokerage sales with negative share quantities are supported. Transactions witho
 
 In development (`npm run dev`), open `/?preview=sample`, `/?preview=loading`, `/?preview=refreshing`, `/?preview=empty`, `/?preview=error`, or `/?preview=hidden`. These routes use explicitly labelled, invented data from `src/dev/previews/overview-preview.ts`; they skip brokerage requests. Production ignores the preview parameter. The live overview never falls back to sample figures.
 
-The overview's normal data requests are unchanged. Account totals, cash, and current positions power the live cards. Day change, lifetime total return, per-account day change, portfolio time-series history, and recent activity are not part of this overview load and show unavailable/not-connected states. The development sample demonstrates those UI slots. Connecting those slots later requires an explicit data-layer change; stock-price history still needs a separate provider for individual holding-return lines.
+Overview now requests account history, available funding history and recent activity through the shared server loaders. The value chart, latest daily value changes, per-account changes, gain versus recorded net deposits and newest transactions use those live results. Failed sections retain their safe messages instead of falling back to sample data. `/?preview=history` demonstrates this connection using explicitly invented fixtures in development. Individual stock-return comparison lines still require a separate historical price provider.
 
 ## Accounts design previews
 
@@ -162,3 +162,39 @@ Day change is not supplied by this page's existing load, so there is no day-chan
 In development only, `/holdings?preview=sample` uses explicitly labelled invented fixtures without brokerage requests. Other preview states are `loading`, `refreshing`, `empty`, `error`, and `hidden`. Live pages never fall back to fixtures. Balances-hidden masks amounts and quantities with **••••**, blurs charts, and leaves percentages visible.
 
 Unavailable USD cash is displayed as `0` by preference. This is formatting only: underlying missing values, incomplete-data indicators, and portfolio calculations remain unchanged. CAD amounts, buying power, and reported totals keep their existing behavior.
+
+## Historical performance hover
+
+Hover over the account-value line, or use the keyboard chart inspection, to inspect both **Gain vs net deposits** through that date and **Range return · cash-flow adjusted** from the first visible snapshot. The latter is a Modified Dietz estimate with end-of-day deposit/withdrawal timing. Changing the range changes its baseline; it does not discard earlier deposits from the cumulative metric.
+
+The app now reads available funding history for accounts whose charts load. Missing/incomplete funding, unsupported transfers or unconverted funding currencies produce an unavailable explanation, never an invented percentage. The value line and brokerage-reported returns stay separate. Estimates depend on available history and can miss older deposits. See [calculation details](docs/security-and-data.md#return-percentages-at-an-inspected-date).
+
+For local UI checks, `/performance?preview=sample` uses clearly labelled invented history/funding without calling SnapTrade. Production ignores this preview.
+
+## Shared live history on Overview
+
+`src/server/load-overview.ts` loads current snapshots and recent activity, then reuses the Performance history/funding loader once for investing accounts. It skips the legacy brokerage return-rate request because Overview's gain estimate comes from dated funding. Recent activity stays in each transaction's original currency.
+
+Historical values stay in their reported currency. If the selected current-total currency has no history, the chart shows an available native currency with an explicit label; for example, a USD current total can sit above clearly labelled CAD history. Today’s Bank of Canada rate converts current totals, never past snapshots. Historical account coverage, as-of dates, gaps and funding limitations are shown in the coverage disclosure. The chart uses shared observed dates only. Empty/failed histories do not erase successful account histories; excluded accounts are reflected in the coverage count.
+
+“Latest daily value change” includes funding flows and is not investment return. “Gain vs recorded net deposits” is an estimate from available funding, not verified lifetime profit. Unsupported transfers, missing historical funding or unconverted funding currencies can keep that metric unavailable even when the value chart works. Refresh repeats these read-only loads; there is no background polling or persisted financial history.
+
+## Performance page design
+
+Account performance uses the shared teal dashboard header/cards and shows **Data through** separately from retrieval time. Account selection and native CAD/USD tabs filter already-loaded histories; there is no combined or converted historical line. The shared range controls hide unsupported 5Y history. **Change in value** retains the existing calculation and includes funding flows; brokerage-reported returns remain a separate card.
+
+Hover, touch, or focus the chart and use ← / → (Home / End also work) to inspect dates. A Chart/Table switch exposes the same observations and previous-observation changes. Dashed segments mark missing calendar days; no missing values are created. Single observations show a short message, and available per-account histories appear below the hero. Funding-based gain/Modified Dietz estimates remain available in the tooltip and disclosure.
+
+Hidden balances render **••••** and blur charts while percentages remain visible. Loading, refresh, empty, reconnect and source-guidance states reuse the shared controls. Development-only examples: `/performance?preview=mixed`, `reported`, `single`, `empty`, `error`, `loading`, `refreshing`, and `hidden` (use `?preview=` for each). All preview figures are invented. Live fetching and calculations are unchanged.
+
+## Holding Returns page design
+
+The lifetime leaderboard uses the shared dashboard header, currency and range controls, cards and gain/loss badges. One coverage strip replaces the old warning banners; **Details** opens a keyboard-accessible estimates drawer containing methodology, account coverage warnings and the historical Bank of Canada rate explanation.
+
+Summary tiles and best/worst cards use ranked holdings in the selected native currency and account association. Charges are retained in total profit and shown as a separate negative component when present; refunds have the opposite impact. Unranked holdings and their dividends do not enter these summary totals. Search filters the lists, while sort works across the full matching set before the first ten are displayed. Expand a row for account names, available first-buy dates, sales and calculation notes. The needs-data card groups existing issues into reason filters without changing eligibility.
+
+Account association is a membership filter: each holding's original combined results remain intact. The data layer does not supply per-account profit splits, so these filtered totals must not be added together as independent account returns. Company names appear only when supplied by existing positions; names for sold holdings can be missing. Exact per-transaction FX rates are not exposed in the return rows; the available historical FX source notes are shown instead of a fabricated single rate. Compare return lines still requires historical stock prices.
+
+Profit totals differ from account values on Overview/Portfolio and current positive-position values on Holdings: lifetime profit includes eligible recorded sales, unrealized gains/losses, dividends and attributed charges. They have different coverage and units of meaning. No calculation, FX rule, account scope or live API call was changed for this redesign.
+
+Development-only Holding Returns previews: `/returns?preview=sample`, `complete`, `unranked`, `empty`, `loading`, `refreshing`, `error` and `hidden` (use `?preview=` for each). These figures are invented; production ignores them. Hidden amounts use **••••**, bars blur, and percentages stay visible. Logos retain their optional Logo.dev fallback and attribution.

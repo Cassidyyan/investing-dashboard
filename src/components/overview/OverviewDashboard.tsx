@@ -173,7 +173,10 @@ function OverviewContent({
               <AccountList model={model} currency={currency} />
               <AllocationDonut rows={view.allocation} partial={view.partial} />
               <TopHoldings rows={view.holdings} currency={currency} />
-              <OverviewActivityList activity={model.activity} />
+              <OverviewActivityList
+                activity={model.activity}
+                message={model.activityMessage}
+              />
             </>
           )}
         </div>

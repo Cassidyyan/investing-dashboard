@@ -1,5 +1,7 @@
 // DEVELOPMENT-ONLY MOCK ADAPTER. Never used as fallback for real account data.
 import type { OverviewModel, OverviewRange } from "@/lib/overview/overview";
+import { connectOverviewHistory } from "@/lib/overview/history";
+import { createPerformancePreview } from "./performance-preview";
 export const overviewPreviews = [
   "sample",
   "loading",
@@ -7,9 +9,23 @@ export const overviewPreviews = [
   "empty",
   "error",
   "hidden",
+  "history",
 ] as const;
 export type OverviewPreview = (typeof overviewPreviews)[number];
 export function createOverviewPreview(state: OverviewPreview): OverviewModel {
+  if (state === "history") {
+    const sample = createPerformancePreview();
+    return connectOverviewHistory(
+      {
+        ...createOverviewPreview("sample"),
+        history: null,
+        dayChange: null,
+        totalReturn: null,
+      },
+      sample.history,
+      sample.today,
+    );
+  }
   const history = Object.fromEntries(
     (["1D", "1W", "1M", "1Y", "All"] as OverviewRange[]).map((range, index) => [
       range,

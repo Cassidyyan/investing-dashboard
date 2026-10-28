@@ -81,3 +81,94 @@ it("retains account history when return requests hit a rate limit", async () => 
   expect(result[0].returns.status).toBe("error");
   expect(JSON.stringify(result)).toContain("rate limit");
 });
+it("adds dated funding only for charts with available snapshots", async () => {
+  const transactionPage = vi.fn().mockResolvedValue({
+    data: {
+      data: [
+        {
+          id: "d",
+          type: "CONTRIBUTION",
+          trade_date: "2026-10-01",
+          amount: 100,
+          currency: { code: "CAD" },
+        },
+      ],
+      pagination: { total: 1 },
+    },
+  });
+  const client = {
+    history: vi.fn().mockImplementation((id: string) =>
+      id === "empty"
+        ? Promise.resolve({ data: { currency: "CAD", history: [] } })
+        : Promise.resolve({
+            data: {
+              currency: "CAD",
+              history: [{ date: "2026-10-26", total_value: "110" }],
+            },
+          }),
+    ),
+    returns: vi.fn().mockResolvedValue({ data: { data: [] } }),
+    transactionPage,
+  };
+  const result = await loadPerformance(
+    ["a", "empty"].map((id) => ({
+      account: { id, name: id, suffix: "1234" },
+    })) as AccountData[],
+    client as unknown as Pick<
+      ReadClient,
+      "history" | "returns" | "transactionPage"
+    >,
+  );
+  expect(transactionPage).toHaveBeenCalledTimes(1);
+  expect(result[0].funding?.status).toBe("ok");
+  expect(result[1].funding).toBeUndefined();
+});
+it("stops funding requests after a rate limit while retaining both charts", async () => {
+  const transactionPage = vi
+    .fn()
+    .mockRejectedValue({ response: { status: 429 } });
+  const client = {
+    history: vi.fn().mockResolvedValue({
+      data: {
+        currency: "CAD",
+        history: [{ date: "2026-10-26", total_value: "100" }],
+      },
+    }),
+    returns: vi.fn().mockResolvedValue({ data: { data: [] } }),
+    transactionPage,
+  };
+  const result = await loadPerformance(
+    ["a", "b"].map((id) => ({
+      account: { id, name: id, suffix: "1234" },
+    })) as AccountData[],
+    client as unknown as Pick<
+      ReadClient,
+      "history" | "returns" | "transactionPage"
+    >,
+  );
+  expect(transactionPage).toHaveBeenCalledTimes(1);
+  expect(result.every((a) => a.history.status === "ok")).toBe(true);
+  expect(result[1].funding).toMatchObject({
+    status: "error",
+    message: expect.stringContaining("not requested after a rate limit"),
+  });
+});
+it("can share history and funding without requesting brokerage return rates", async () => {
+  const client = {
+    history: vi
+      .fn()
+      .mockResolvedValue({ data: { currency: "CAD", history: [] } }),
+    returns: vi.fn(),
+  };
+  const accounts = [
+    { account: { id: "a", name: "Test", suffix: "1234" } },
+  ] as AccountData[];
+  const result = await loadPerformance(
+    accounts,
+    client as unknown as Pick<ReadClient, "history" | "returns">,
+    { reportedReturns: false },
+  );
+  expect(client.history).toHaveBeenCalledTimes(1);
+  expect(client.returns).not.toHaveBeenCalled();
+  expect(result[0].history.status).toBe("ok");
+});

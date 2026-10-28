@@ -34,17 +34,22 @@ export function AccountList({
                   </b>
                 </div>
                 <div className={styles.rowSpread}>
-                  <small>Day change</small>
+                  <small>
+                    {model.mock ? "Day change" : "Latest value change"}
+                  </small>
                   <ChangeBadge
                     change={convertOverviewChange(
                       a.dayChange,
-                      a.value.currency,
+                      a.dayChangeCurrency || a.value.currency,
                       currency,
                       model.rate,
                     )}
                     currency={currency}
                   />
                 </div>
+                {a.dayChangePeriod && (
+                  <small>{a.dayChangePeriod} · includes cash flows</small>
+                )}
               </NavigationLink>
             </li>
           ))}
