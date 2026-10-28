@@ -1,44 +1,52 @@
+import { Suspense } from "react";
 import { loadExchangeRate } from "@/server/exchange-rate";
-import { IndustryPieChart } from "@/components/charts/IndustryPieChart";
 import { loadPortfolio } from "@/server/load-portfolio";
-import { PortfolioPage } from "@/components/layout/PortfolioPage";
-import { HoldingsPieChart } from "@/components/charts/HoldingsPieChart";
-import { PositionsTabs } from "@/components/holdings/PositionsTabs";
-import { OptionsDetails } from "@/components/options/OptionsDetails";
-import { PositionsTable } from "@/components/holdings/PositionsTable";
+import { getSecurityLogoUrl } from "@/server/security-logo";
+import { flattenHoldings } from "@/lib/holdings-view";
+import {
+  createHoldingsPreview,
+  holdingsPreviews,
+  type HoldingsPreviewState,
+} from "@/lib/holdings-preview";
+import { HoldingsDashboard } from "@/components/holdings/HoldingsDashboard";
+import { HoldingsLoading } from "@/components/holdings/HoldingsLoading";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-export default async function HoldingsPage() {
+export default async function HoldingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ preview?: string }>;
+}) {
+  const { preview } = await searchParams;
+  if (
+    process.env.NODE_ENV === "development" &&
+    holdingsPreviews.includes(preview as HoldingsPreviewState)
+  )
+    return (
+      <HoldingsDashboard
+        {...createHoldingsPreview(preview as HoldingsPreviewState)}
+        preview={preview as HoldingsPreviewState}
+      />
+    );
+  return (
+    <Suspense fallback={<HoldingsLoading />}>
+      <LiveHoldings />
+    </Suspense>
+  );
+}
+async function LiveHoldings() {
+  // Same existing sections and rate request. No extra brokerage or quote calls.
   const [portfolio, rate] = await Promise.all([
     loadPortfolio(undefined, ["positions"]),
     loadExchangeRate(),
   ]);
-  return (
-    <PortfolioPage portfolio={portfolio} path="/holdings">
-      {(accounts) => (
-        <>
-          <PositionsTabs
-            holdings={
-              <PositionsTable accounts={accounts} category="holdings" />
-            }
-            optionPositions={<OptionsDetails accounts={accounts} />}
-          />
-          <details className="panel collapsible-panel">
-            <summary>Industry allocation · all accounts</summary>
-            <IndustryPieChart accounts={accounts} rate={rate} />
-          </details>
-          <details className="panel collapsible-panel">
-            <summary>Holdings allocation charts</summary>
-            <HoldingsPieChart accounts={accounts} />
-          </details>
-          <p className="muted">
-            Logos by{" "}
-            <a href="https://www.logo.dev" target="_blank" rel="noreferrer">
-              Logo.dev
-            </a>
-          </p>
-        </>
-      )}
-    </PortfolioPage>
+  const accounts =
+    portfolio.accounts.status === "ok" ? portfolio.accounts.data : [];
+  const logos = Object.fromEntries(
+    flattenHoldings(accounts).map((e) => [
+      `${e.position.symbol}|${e.position.kind}`,
+      getSecurityLogoUrl(e.position.symbol, e.position.kind),
+    ]),
   );
+  return <HoldingsDashboard portfolio={portfolio} rate={rate} logos={logos} />;
 }

@@ -1,28 +1,38 @@
+import { Suspense } from "react";
 import { loadPortfolio } from "@/server/load-portfolio";
-import { PortfolioPage } from "@/components/layout/PortfolioPage";
-import { CashAccountsTable } from "@/components/cash/CashAccountsTable";
+import { CashDashboard } from "@/components/cash/CashDashboard";
+import { CashLoading } from "@/components/cash/CashLoading";
+import {
+  cashPreviews,
+  createCashPreview,
+  type CashPreviewState,
+} from "@/lib/cash-preview";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-export default async function CashPage() {
-  const portfolio = await loadPortfolio(undefined, ["balances"], "cash");
+export default async function CashPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ preview?: string }>;
+}) {
+  const { preview } = await searchParams;
+  if (
+    process.env.NODE_ENV === "development" &&
+    cashPreviews.includes(preview as CashPreviewState)
+  )
+    return (
+      <CashDashboard
+        portfolio={createCashPreview(preview as CashPreviewState)}
+        preview={preview as CashPreviewState}
+      />
+    );
   return (
-    <PortfolioPage portfolio={portfolio} path="/cash">
-      {(accounts) => (
-        <section className="panel">
-          <h2>
-            Cash &amp; chequing{" "}
-            <span className="badge">{accounts.length} shown</span>
-          </h2>
-          <p className="muted">
-            Banking accounts identified by the brokerage, plus accounts
-            confirmed to have no open holdings. Cash-only investing accounts
-            appear here too; they are not automatically classified as chequing
-            or savings. These accounts are excluded from investing totals.
-            Zero-CAD and zero-USD accounts remain hidden.
-          </p>
-          <CashAccountsTable accounts={accounts} />
-        </section>
-      )}
-    </PortfolioPage>
+    <Suspense fallback={<CashLoading />}>
+      <LiveCash />
+    </Suspense>
   );
+}
+async function LiveCash() {
+  // Same existing request, section selection, and cash-account scope. No FX fetch.
+  const portfolio = await loadPortfolio(undefined, ["balances"], "cash");
+  return <CashDashboard portfolio={portfolio} />;
 }

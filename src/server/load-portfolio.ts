@@ -37,7 +37,7 @@ function mapResult<T, U>(r: Result<T>, map: (data: T) => U): Result<U> {
     };
   }
 }
-export type AccountScope = "investing" | "cash" | "overview";
+export type AccountScope = "investing" | "cash" | "overview" | "history";
 
 export type PortfolioSection =
   "balances" | "positions" | "orders" | "activities";
@@ -75,16 +75,19 @@ export async function loadPortfolio(
       accounts,
       connections: mapResult(connections, normalizeConnections),
     };
-  // Skip zero-CAD/USD accounts before requesting any of their details.
+  // Current views hide zero totals. History keeps them for fully sold holdings.
   const visibleAccounts = accounts.data.filter(
     (a) =>
-      (scope === "investing"
-        ? a.account_category !== "DEPOSIT"
-        : a.account_category !== "LOC") &&
-      !(
-        ["CAD", "USD"].includes(a.balance?.total?.currency ?? "") &&
-        numeric(a.balance?.total?.amount) === 0
-      ),
+      (scope === "history"
+        ? a.account_category !== "DEPOSIT" && a.account_category !== "LOC"
+        : scope === "investing"
+          ? a.account_category !== "DEPOSIT"
+          : a.account_category !== "LOC") &&
+      (scope === "history" ||
+        !(
+          ["CAD", "USD"].includes(a.balance?.total?.currency ?? "") &&
+          numeric(a.balance?.total?.amount) === 0
+        )),
   );
   const settled = await Promise.allSettled(
     visibleAccounts.map(async (a) => {

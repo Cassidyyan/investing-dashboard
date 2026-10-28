@@ -2,6 +2,9 @@
 
 import { createContext, useContext, useState, type ReactNode } from "react";
 const BalancePrivacy = createContext({ hidden: false, toggle: () => {} });
+export function useBalancePrivacy() {
+  return useContext(BalancePrivacy);
+}
 export function BalancePrivacyProvider({
   children,
   initialHidden = false,
@@ -51,14 +54,20 @@ export function BalanceVisibilityToggle() {
     </button>
   );
 }
-export function PrivateValue({ children }: { children: ReactNode }) {
+export function PrivateValue({
+  children,
+  placeholder = ".....",
+}: {
+  children: ReactNode;
+  placeholder?: string;
+}) {
   const { hidden } = useContext(BalancePrivacy);
   return (
     <span
       className={`private-value${hidden ? " private-value-hidden" : ""}`}
       aria-label={hidden ? "Amount hidden" : undefined}
     >
-      {hidden ? "....." : children}
+      {hidden ? placeholder : children}
     </span>
   );
 }

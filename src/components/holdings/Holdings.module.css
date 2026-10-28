@@ -1,0 +1,702 @@
+.page {
+  --holding-chart-0: #146d7c;
+  --holding-chart-1: #287f8b;
+  --holding-chart-2: #408e96;
+  --holding-chart-3: #577d85;
+  --holding-chart-4: #7d9fa3;
+  --holding-chart-5: #5c747b;
+  --holding-chart-other: #86949a;
+  font-variant-numeric: tabular-nums;
+}
+.page :is(b, strong, dd, time) {
+  font-variant-numeric: tabular-nums;
+}
+.page :global(.security-icon) > span {
+  font-size: 12px;
+  color: var(--ov-brand);
+  background: var(--ov-brand-soft);
+}
+.summaryStrip {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  margin: 0 0 24px;
+}
+.summaryStrip > section {
+  grid-column: auto;
+}
+.summaryStrip > section > div:first-child {
+  flex-wrap: wrap;
+}
+.summaryValue {
+  font-size: clamp(28px, 3vw, 36px);
+  font-weight: 600;
+  letter-spacing: -0.8px;
+  line-height: 1.2;
+  margin: 16px 0 8px;
+  overflow-wrap: anywhere;
+}
+.footnote {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ov-secondary);
+  margin: 12px 0 0;
+}
+.mainGrid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+.holdingsCard {
+  grid-column: span 8;
+}
+.allocationCard {
+  grid-column: span 4;
+  min-width: 0;
+  position: sticky;
+  top: 24px;
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+}
+.allocationCard > div:first-child {
+  margin-bottom: 12px;
+}
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  width: fit-content;
+  max-width: 100%;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--ov-border);
+  border-radius: 10px;
+  background: var(--ov-canvas);
+}
+.segmented button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ov-secondary);
+  font-size: 12px;
+  font-weight: 500;
+}
+.segmented button[aria-pressed="true"],
+.segmented button[aria-selected="true"] {
+  background: var(--ov-brand-soft);
+  color: var(--ov-brand);
+}
+.currencyControl {
+  margin: 12px 0;
+}
+.currencyControl > div {
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+.currencyControl button {
+  padding: 8px;
+}
+.filters {
+  display: grid;
+  gap: 16px;
+  margin: 16px 0;
+}
+.accountChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.accountChips button {
+  min-height: 44px;
+  border: 1px solid var(--ov-border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: var(--ov-surface);
+  color: var(--ov-secondary);
+  font-size: 12px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.accountChips button[aria-pressed="true"] {
+  color: var(--ov-brand);
+  background: var(--ov-brand-soft);
+  border-color: var(--ov-brand);
+}
+.search {
+  display: grid;
+  gap: 6px;
+  color: var(--ov-secondary);
+  font-size: 12px;
+}
+.search input {
+  width: 100%;
+  min-height: 44px;
+  min-width: 0;
+  border: 1px solid var(--ov-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--ov-text);
+  background: var(--ov-surface);
+}
+.search input:focus-visible {
+  outline: 2px solid var(--ov-brand);
+  outline-offset: 3px;
+}
+.groupToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 12px;
+  color: var(--ov-secondary);
+  cursor: pointer;
+}
+.groupToggle input {
+  accent-color: var(--ov-brand);
+  width: 16px;
+  height: 16px;
+}
+.tables {
+  margin-top: 16px;
+}
+.accountSection {
+  min-width: 0;
+}
+.accountSection + .accountSection {
+  margin-top: 24px;
+}
+.page .accountSection > h3 {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+.accountSection > h3 span {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ov-secondary);
+}
+.page .table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+  border-collapse: collapse;
+  white-space: normal;
+  font-size: 13px;
+}
+.securityColumn {
+  width: 37%;
+}
+.valueColumn {
+  width: 24%;
+}
+.weightColumn {
+  width: 14%;
+}
+.accountColumn {
+  width: 25%;
+}
+.page .table th {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  background: var(--ov-canvas);
+  color: var(--ov-secondary);
+  padding: 0 8px;
+  border: 0;
+}
+.table th button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  padding: 8px 0;
+  font: inherit;
+  color: inherit;
+}
+.page .table td {
+  min-width: 0;
+  padding: 16px 8px 4px;
+  border: 0;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.table small {
+  display: block;
+  color: var(--ov-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 4px;
+}
+.numeric {
+  text-align: right;
+}
+.numeric b {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.security {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  min-width: 0;
+}
+.security :global(.security-icon) {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  color: var(--ov-brand);
+  background: var(--ov-brand-soft);
+}
+.securityCopy {
+  min-width: 0;
+}
+.securityCopy > strong,
+.securityCopy > small {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.securityCopy > strong {
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 600;
+}
+.typeBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  padding: 4px 6px;
+  border-radius: 6px;
+  margin: 6px 0 0;
+  background: var(--ov-canvas);
+  color: var(--ov-secondary);
+  font-size: 12px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.table td:last-child > details > summary {
+  font-size: 12px;
+  padding: 6px;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  min-height: 44px;
+}
+.table td:last-child > details > div {
+  left: auto;
+  right: 0;
+}
+.weightTrack {
+  height: 4px;
+  background: var(--ov-skeleton);
+  border-radius: 99px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+.weightTrack > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+.page .table .detailRow > td {
+  padding: 0 8px 8px;
+  border-bottom: 1px solid var(--ov-border);
+}
+.positionDetails > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 12px;
+  color: var(--ov-brand);
+  cursor: pointer;
+  border-radius: 8px;
+  list-style: none;
+}
+.positionDetails > summary::-webkit-details-marker {
+  display: none;
+}
+.positionDetails > summary > span {
+  font-size: 16px;
+}
+.detailsBody {
+  padding: 16px;
+  background: var(--ov-canvas);
+  border-radius: 12px;
+  margin: 0 0 8px;
+}
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+}
+.facts dt {
+  font-size: 12px;
+  color: var(--ov-secondary);
+}
+.facts dd {
+  font-size: 13px;
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+.optionDetails {
+  margin-top: 16px;
+}
+.page .optionDetails :global(.option-card) {
+  border-radius: 12px;
+  background: var(--ov-surface);
+}
+.page .optionDetails :global(.option-card) > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+}
+.page .optionDetails :global(.option-contract-heading) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.page .optionDetails :global(.option-facts) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.page .optionDetails :global(.option-facts) dd {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+.page .optionDetails :global(.badge),
+.page .optionDetails :global(.option-days),
+.page .optionDetails :global(.muted),
+.page .optionDetails :global(.option-facts) dt {
+  font-size: 12px;
+}
+.page .optionDetails :global(.moneyness-green),
+.page .optionDetails :global(.moneyness-red),
+.page .optionDetails :global(.moneyness-atm) {
+  color: var(--ov-brand);
+  background: var(--ov-brand-soft);
+}
+.donut {
+  position: relative;
+  width: 200px;
+  max-width: 100%;
+  aspect-ratio: 1;
+  margin: 16px auto;
+}
+.donut > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.donutCenter {
+  position: absolute;
+  inset: 20%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+}
+.donutCenter strong {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.donutCenter > span {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--ov-secondary);
+}
+.allocationList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 16px;
+}
+.allocationLine {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  align-items: baseline;
+  font-size: 12px;
+}
+.allocationName {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  overflow-wrap: anywhere;
+}
+.allocationName i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.allocationLine > span:nth-child(2) {
+  text-align: right;
+  white-space: nowrap;
+}
+.allocationLine b {
+  grid-column: 1/-1;
+  text-align: right;
+  font-weight: 500;
+  font-size: 12px;
+}
+.track {
+  height: 4px;
+  border-radius: 99px;
+  background: var(--ov-skeleton);
+  margin-top: 6px;
+  overflow: hidden;
+}
+.track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+.expandedList {
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+.excluded {
+  margin: 12px 0;
+}
+.excludedList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+.excludedList li {
+  display: grid;
+  gap: 3px;
+  font-size: 12px;
+}
+.excludedList strong {
+  color: var(--ov-text);
+  font-size: 12px;
+}
+.textButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px;
+  background: transparent;
+  color: var(--ov-brand);
+  font-size: 12px;
+  font-family: inherit;
+}
+.empty {
+  padding: 24px 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ov-secondary);
+}
+.partial {
+  font-size: 12px;
+  color: var(--ov-secondary);
+  margin: 0 0 16px;
+}
+.skeletonTable {
+  height: 320px;
+}
+.skeletonDonut {
+  height: 200px;
+  width: 200px;
+  max-width: 100%;
+  border-radius: 50%;
+  margin: auto;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.mobileLabel {
+  display: none;
+}
+@media (max-width: 1100px) {
+  .summaryStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .summaryStrip .valueTile {
+    grid-column: 1/-1;
+  }
+}
+@media (max-width: 1023px) {
+  .mainGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .holdingsCard,
+  .allocationCard {
+    grid-column: 1;
+  }
+  .allocationCard {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+}
+@media (max-width: 767px) {
+  .summaryStrip {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .mainGrid {
+    gap: 16px;
+  }
+  .allocationCard {
+    order: -1;
+  }
+  .page .holdingsCard {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .holdingsCard > div:first-child {
+    padding: 0 4px;
+  }
+  .holdingsCard > .filters,
+  .holdingsCard > .footnote,
+  .holdingsCard > .segmented {
+    margin-left: 4px;
+    margin-right: 4px;
+  }
+  .page .table,
+  .table tbody {
+    display: block;
+  }
+  .table colgroup {
+    display: none;
+  }
+  .table thead {
+    display: block;
+    margin-bottom: 12px;
+  }
+  .table thead tr {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .page .table th {
+    padding: 0;
+    background: transparent;
+  }
+  .table th button {
+    padding: 8px;
+    border: 1px solid var(--ov-border);
+    border-radius: 8px;
+  }
+  .rowGroup {
+    border: 1px solid var(--ov-border);
+    border-radius: 16px;
+    padding: 16px;
+    background: var(--ov-surface);
+    box-shadow: var(--ov-shadow);
+  }
+  .rowGroup + .rowGroup {
+    margin-top: 16px;
+  }
+  .holdingRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .page .table td {
+    display: block;
+    width: 100%;
+    padding: 12px 0;
+  }
+  .table .holdingRow > td + td {
+    border-top: 1px solid var(--ov-border);
+  }
+  .table .holdingRow > td:first-child {
+    padding-top: 0;
+  }
+  .table .numeric {
+    text-align: left;
+  }
+  .mobileLabel {
+    display: block;
+    font-size: 12px;
+    color: var(--ov-secondary);
+    margin-bottom: 4px;
+  }
+  .weightTrack {
+    max-width: 100%;
+  }
+  .detailRow {
+    display: block;
+  }
+  .page .table .detailRow > td {
+    padding: 0;
+    border-bottom: 0;
+  }
+  .facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .detailsBody {
+    padding: 12px;
+  }
+  .page .optionDetails :global(.option-facts) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .table td:last-child > details > div {
+    left: 0;
+    right: auto;
+  }
+  .holdingsCard [role="tabpanel"] {
+    min-width: 0;
+  }
+}
+
+.page > header > a,
+.page footer a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.page input:focus-visible {
+  outline: 2px solid var(--ov-brand);
+  outline-offset: 3px;
+}
+.page .optionDetails summary {
+  min-height: 44px;
+}

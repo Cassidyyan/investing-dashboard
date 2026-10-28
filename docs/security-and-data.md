@@ -1,100 +1,239 @@
-# Security and data behavior
+# Understanding the project
 
-[← Start here](../README.md) · [Project guide](project-guide.md)
+[← Start here](../README.md) · [Security and data behavior](security-and-data.md)
 
-## Data and behavior
+This project has four main parts: **pages**, **screen components**, **server code**, and **shared helpers**. Start with a page and follow its imports to understand one feature at a time.
 
-The dashboard lists accounts, balances and buying power, unified positions, account allocation, recent orders, activity, and connection status. All SDK calls run on the server. Every page checks positions to identify accounts with no open holdings, then requests its additional detail sections. The overview loads balances; accounts loads balances and positions; holdings loads positions; activity loads orders and activities. Zero-CAD accounts are filtered before detail requests. Accounts with successfully retrieved positions containing no open holdings are excluded from investing pages, even if they hold cash, and are shown separately on Cash & chequing (`/cash`). Explicit `DEPOSIT` accounts also go on this page; `LOC` accounts are excluded from the cash page. Zero-CAD/USD accounts remain hidden. Cash-page accounts do not contribute to investing totals. Unknown position quantities, failed requests, and incomplete or stale account snapshots are retained. This intentionally excludes cash-only investing accounts too; it does not change or disconnect any brokerage account.
+## Folder map
 
-Each refresh retrieves the current page’s data again; it does not request a paid brokerage synchronization. Each request has a 20-second timeout. Independent sections load concurrently; errors remain visible while successful results survive.
+```text
+src/
+├── app/                         Which page the visitor opens
+│   ├── page.tsx                 / — Overview
+│   ├── accounts/page.tsx        /accounts — Investing accounts
+│   ├── cash/page.tsx            /cash — Cash & chequing
+│   ├── holdings/page.tsx        /holdings — Holdings & options
+│   ├── activity/page.tsx        /activity — Orders & transactions
+│   ├── layout.tsx               Shared fonts and navigation-animation provider
+│   ├── loading.tsx              Loading screen
+│   ├── error.tsx                Retry screen
+│   └── globals.css              App-wide styles, grouped into commented sections
+├── components/                  Screen elements, grouped by purpose
+│   ├── layout/                  Page shell, navigation, and loading animation
+│   ├── overview/                Summary cards
+│   ├── accounts/                Investing account tables, totals, and allocation bars
+│   ├── cash/                    Cash/chequing account table
+│   ├── holdings/                Position tables, sorting, and tabs
+│   ├── options/                 Expandable option contract details
+│   ├── activity/                Orders and account activity lists
+│   ├── charts/                  Allocation charts and their shared SVG renderer
+│   └── shared/                  Empty/error states and security icons
+├── server/                      Private data access; every file uses server-only
+└── lib/                         Shared types, formatting, and calculations
 
-Accounts with a reported total of exactly 0 CAD or 0 USD are hidden throughout the dashboard, including their positions, orders, and activity. They remain connected in SnapTrade. Accounts with unknown totals or totals in currencies other than CAD/USD remain visible. Summary counts and allocation reflect the visible accounts.
+tests/
+├── components/                  Rendered chart and summary checks
+├── server/                      Normalization, fetching, and logo configuration checks
+├── lib/                         Financial calculations, dates, and sorting checks
+└── helpers/                     Test-only server-only marker replacement
+```
 
-Totals are grouped by the API currency. Holdings charts and reported totals remain grouped by original currency. The Accounts page also offers the separate estimated conversion described below. Missing amounts stay unavailable, rather than becoming zero. Cash is shown separately from account value and is not added again to it. Allocation uses available non-negative account totals within each currency, excludes missing/negative totals, and can be incomplete.
+`app/` follows Next.js naming rules: a folder containing `page.tsx` becomes a URL. The component folders follow the app's features instead of putting every screen element in one long list.
 
-Position values are estimates: units × price for supported stock/ADR/closed-end-fund/ETF/mutual-fund/crypto kinds, and units × price × reported multiplier for options. PHYS.TO in CAD is explicitly supported as a per-unit trust even when SnapTrade labels it `other`, based on the [issuer’s listing and unit information](https://sprott.com/media/xcilumow/phys.pdf). Other unrecognized instrument kinds or missing inputs produce unavailable values. Short positions preserve their signs. These estimates are not used to replace reported account totals.
+The `@/` prefix in imports means **start inside `src/`**. For example, `@/components/accounts/AccountsTable` points to `src/components/accounts/AccountsTable.tsx`. Imports use these direct paths so you can find a file without following re-export files.
 
-Activity is a bounded first page (up to 25 matching records per account from the last 90 days), not a complete tax or performance record. Recent orders reflect the SDK endpoint's available window. Retrieval time is distinct from position `as_of` and brokerage holdings synchronization time. Holdings older than 36 hours are flagged; this threshold is a display heuristic, not a claim about the brokerage schedule. All displayed timestamps use America/Toronto.
+## A good reading order
 
-## Holdings chart and tabs
+1. Open [the Accounts page](../src/app/accounts/page.tsx). It loads data, then chooses the screen components.
+2. Open [AccountsTable](../src/components/accounts/AccountsTable.tsx). It receives account data and turns it into table rows.
+3. Open [the shared types](../src/lib/types.ts). These describe the data each component expects.
+4. Open [load-portfolio](../src/server/load-portfolio.ts). It requests accounts and their details, handles failures, and selects investing or cash accounts.
+5. Open [normalize](../src/server/normalize.ts). It converts the API's response into those simpler display types.
+6. Open [snaptrade](../src/server/snaptrade.ts). It creates the private API connection using local credentials.
 
-The holdings allocation chart includes available positive position values from all visible accounts, including options, with a separate pie for each currency. Securities with the same symbol and kind are combined within a currency. Each pie shows the three largest holdings individually and combines the remaining holdings into an Other slice. A dropdown lists every remaining holding with its value and percentage of the full currency total. Cash balances are excluded. Missing, zero, negative, or unsupported position values are excluded and reported as incomplete allocation; zero-unit positions are omitted. This is a share of available positive position values, not net account value or risk exposure.
+## How data reaches the screen
 
-Current holdings excludes option and futures-option positions; Current options includes both kinds. Zero-unit positions are omitted from both tabs; unknown quantities remain visible. Short positions remain visible in the tables with their signs. Switching tabs makes no new API requests and does not resolve the existing API refresh rate limits.
+```text
+You open /accounts
+  → app/accounts/page.tsx calls loadPortfolio()
+    → server/load-portfolio.ts requests the required sections
+      → server/snaptrade.ts makes read-only API calls
+    → server/normalize.ts converts responses into display objects
+  → components/accounts/AccountsDashboard.tsx supplies navigation, refresh, and warning states
+  → components/accounts/AccountsTable.tsx displays the rows
+```
 
-## Accounts: native currencies and combined total
+The **server** is the local Node.js process started by `npm run dev`. The **browser** is where you view the page. SnapTrade credentials stay on the server. Components receive only the display data they need.
 
-The Accounts page shows CAD and USD separately, estimated from reported cash plus supported position market values. Cash-equivalent positions are excluded because SnapTrade counts them in cash. Buying power is not added. Short positions and negative cash preserve their signs. The brokerage-reported account total remains a separate comparison; it is never added to the reconstructed values. Missing prices, unavailable sections, stale holdings, and incomplete accounts are flagged. Other currencies are excluded from the combined CAD/USD total and listed explicitly.
+## Find the right component
 
-The bottom section sums visible accounts and estimates a USD equivalent using `USD + CAD / rate`, where `rate` is CAD per USD from Bank of Canada series `FXUSDCAD`. The server fetches the latest business-day observation from the public Valet API with no credentials or portfolio data sent to that service. The page displays both rate directions and the observation date. This is a daily reference rate, not a Wealthsimple execution quote; spreads and fees are excluded. Missing, invalid, or over-seven-day-old rates leave the combined total unavailable while preserving separate balances. There is no hardcoded or silent fallback rate. An unavailable rate request times out after eight seconds.
+Paths below are relative to `src/components/`.
 
-The overview’s reported account totals remain distinct from the Accounts page’s reconstructed estimates and can differ when broker data is incomplete or valuations use different timestamps.
+| Folder      | Files and responsibilities                                                                                                                                                                                                                                                                                                                                                   |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `layout/`   | `PortfolioPage.tsx`: shared page heading, navigation, setup/error states. `NavigationProgress.tsx`: starts and ends page-change feedback. `StonkLoader.tsx`: decorative SVG animation.                                                                                                                                                                                       |
+| `overview/` | `OverviewDashboard.tsx`: page composition and refresh. `PortfolioHero.tsx`: value, currency, and chart. `AccountList.tsx`, `AllocationDonut.tsx`, `TopHoldings.tsx`, and `OverviewActivityList.tsx`: content cards. `Overview.module.css`: scoped design tokens and layout.                                                                                                  |
+| `accounts/` | `AccountsDashboard.tsx`: Accounts page composition and refresh. `AccountsTable.tsx`: four-column accounts and mobile cards with expandable estimates/buying power. `CurrencyTotal.tsx`: top combined estimate and rate popover. `AllocationBar.tsx`: teal allocation based on reported totals. `ConnectionStatus.tsx`: retained optional component, currently not displayed. |
+| `cash/`     | `CashDashboard.tsx`: page states and refresh. `CashSummary.tsx`: native cash totals and currency selection. `CashAccountsTable.tsx`: banking/cash-only account identities and reported figures, with mobile cards.                                                                                                                                                           |
+| `holdings/` | `PositionsTable.tsx`: server-rendered account groups. `SortableHoldingsTable.tsx`: local column sorting. `PositionsTabs.tsx`: switches between holdings and options.                                                                                                                                                                                                         |
+| `options/`  | `OptionsDetails.tsx`: contract cards, expiry information, premiums, return, and available moneyness.                                                                                                                                                                                                                                                                         |
+| `activity/` | `OrdersList.tsx`: recent orders. `ActivityList.tsx`: recent transactions and activity.                                                                                                                                                                                                                                                                                       |
+| `charts/`   | `HoldingsPieChart.tsx`: allocation by security/currency. `IndustryPieChart.tsx`: combined industry allocation. `AllocationPie.tsx`: shared smooth SVG pie renderer.                                                                                                                                                                                                          |
+| `shared/`   | `SectionState.tsx`: empty/error states and warning notices. `SecurityIcon.tsx`: Logo.dev image with a ticker-badge fallback.                                                                                                                                                                                                                                                 |
 
-## Security
+The components render data rather than fetching brokerage data. Most render on the server. Files beginning with `"use client"` handle browser interactions, such as tabs, sorting, image fallback, or navigation feedback. Expanding an account and switching/sorting loaded rows do not request more brokerage data.
 
-- `.env.local` and other environment files are ignored; `.env.example` has empty names only.
-- `src/server/*` imports `server-only`. The SDK is initialized only in `snaptrade.ts` and only read methods are exposed.
-- No registration, signing implementation, user secret, trading endpoint, database, persistent response cache, analytics, remote fonts, or telemetry integration is included.
-- The dynamic page is excluded from static rendering. Responses use private/no-store headers; raw financial responses and upstream errors are not logged or sent to the browser.
-- ESLint bans trading method names and `NEXT_PUBLIC_SNAPTRADE*` references in application code. These checks are guardrails, not a security sandbox for arbitrary future code.
-- The Personal API key itself may have trading privileges; this application's read-only design does not change the key's permissions.
-- Account identifiers are displayed as suffixes. Browser-rendered financial data is still sensitive.
+The shared navigation lives in `components/layout/DashboardNavigation.tsx`, with its own `DashboardNavigation.module.css` for dropdown and mobile styles. Four main controls group the pages: Overview; Portfolio (investing accounts, cash/chequing, holdings/options); Performance (account history and holding returns); and Activity. `lib/navigation.ts` supplies the shared destinations. Other detailed pages use `PortfolioPage.tsx`; Accounts uses `AccountsDashboard.tsx` and Overview uses `OverviewDashboard.tsx` for its distinct header, status area, refresh control, and 12-column card layout. Its CSS module contains the surface, border, text, brand, positive, negative, neutral, and chart color tokens.
 
-## Checking live data
+## Server files
 
-With local credentials configured, compare the accounts, currencies, balances, and holdings against your SnapTrade dashboard. Check that browser source/network responses contain neither credential. Check stale and disabled connections before interpreting discrepancies. Live brokerage correctness cannot be verified without your locally configured account access.
+| File                       | Responsibility                                                                                             |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `server/snaptrade.ts`      | The only place the SnapTrade SDK is initialized; exposes read-only account and history operations.         |
+| `server/load-portfolio.ts` | Concurrent fetching, partial failures, and account selection. Scope is `investing`, `cash`, or `overview`. |
+| `server/normalize.ts`      | Masks account numbers, preserves currencies, and prepares positions, costs, returns, orders, and activity. |
+| `server/exchange-rate.ts`  | Validates the latest public Bank of Canada daily CAD-per-USD rate.                                         |
+| `server/security-logo.ts`  | Builds Logo.dev image URLs from a publishable `pk_` key; rejects secret keys.                              |
 
-## Troubleshooting
+`import "server-only"` prevents these files from being imported into browser code. Never move credentials into a component or shared helper.
 
-- **Setup screen:** ensure both variables are populated in `.env.local` at the project root and restart Next.js. Do not prefix them with `NEXT_PUBLIC_`.
-- **Unavailable section:** refresh after checking your network, Personal API key, API access, and brokerage connection. Errors intentionally omit upstream response bodies.
-- **Disabled/incomplete connection:** repair it in the [SnapTrade dashboard](https://dashboard.snaptrade.com). The app does not mutate connections.
-- **Old values:** some brokerages provide daily data; retrieval does not guarantee a fresh brokerage sync.
-- **Unknown currency or unsupported instrument:** the app reports unavailable values rather than assuming USD or guessing valuation conventions.
-- **Port in use:** stop the other server or use `npm run dev -- --port 3001`.
+## Shared types and helpers
 
-## Security logos
+Paths below are relative to `src/lib/`. This folder stays small and flat so the shared calculations are easy to find.
 
-Position tables use Logo.dev’s ticker API, with cropped logo badges to the left of the ticker. Configure `LOGO_DEV_PUBLISHABLE_KEY` in `.env.local` using the `pk_` image key from the [Logo.dev dashboard](https://www.logo.dev/dashboard). The server rejects missing keys and secret `sk_` keys before constructing any browser-facing URL. The valid publishable key is included in image URLs and is intentionally visible in the browser; never use a SnapTrade credential here.
+| File                     | Responsibility                                                                                           |
+| ------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `types.ts`               | Display types, including `Money`, `PositionView`, `AccountData`, and `Result<T>`.                        |
+| `format.ts`              | Currency, quantity, date, and signed-return formatting.                                                  |
+| `currency-totals.ts`     | Separate native CAD/USD estimates and combined USD totals; avoids counting cash equivalents twice.       |
+| `holdings.ts`            | Positive holdings allocation by currency and option-kind recognition.                                    |
+| `industry-allocation.ts` | Combines positive stock/fund values into industry groups in USD.                                         |
+| `security-industries.ts` | Editable industry classifications, issuer sources, and review date. Unknown tickers remain unclassified. |
+| `option-details.ts`      | Calendar days to expiry, matching underlying position prices, and moneyness.                             |
+| `sort-positions.ts`      | Numeric, stable sorting with unavailable values always last.                                             |
 
-Next.js's image optimizer fetches from `img.logo.dev/ticker/` using only the ticker, publishable image key, and image settings. No brokerage account identifiers, balances, or quantities are sent. Logo.dev sees the requested tickers and the server’s image requests. Public logos may be cached by the image optimizer; financial API responses remain uncached. The request uses 64-pixel PNGs with retina rendering and `fallback=404`. Unavailable logos, unsupported option/crypto symbols, and missing configuration show a locally rendered ticker badge. No logo request is made to SnapTrade.
+Financial assumptions, exclusions, stale-data rules, average-cost calculations, and provider limitations are described in [Security and data behavior](security-and-data.md).
 
-The image integration follows the [official ticker API](https://www.logo.dev/products/stock-ticker-logos). A small Logo.dev attribution link appears on the Holdings page.
+## Where to make a change
 
-## Average cost and net return in the position tables
+| If you want to…                                          | Start with…                                                                 |
+| -------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Change the overview layout or cards                      | `src/components/overview/OverviewDashboard.tsx`                             |
+| Change the navigation order                              | `src/lib/navigation.ts` and `src/components/layout/DashboardNavigation.tsx` |
+| Change colors, spacing, table density, or mobile styling | `src/app/globals.css`                                                       |
+| Change fonts                                             | `src/app/layout.tsx`, then the typography sections in `globals.css`         |
+| Change the investing account table                       | `src/components/accounts/AccountsTable.tsx`                                 |
+| Change the cash account table                            | `src/components/cash/CashAccountsTable.tsx`                                 |
+| Change holdings columns or sort buttons                  | `src/components/holdings/SortableHoldingsTable.tsx`                         |
+| Change option cards or moneyness badge styling           | `src/components/options/OptionsDetails.tsx`, then `globals.css`             |
+| Change a stock's industry group                          | `src/lib/security-industries.ts`                                            |
+| Understand a missing balance                             | `src/server/load-portfolio.ts`, then `normalize.ts` and the relevant tests  |
 
-Average cost uses the position endpoint's per-share/per-unit `cost_basis`, in the currency reported for price and cost. It is not the total cost of the position or a tax lot's total cost basis. The table labels net return as **unrealized**: `(last price − average cost) × signed units × instrument multiplier`. The percentage divides this value by the absolute entry cost of the current position. Short quantities reverse profit/loss direction; options use the reported multiplier. A zero entry cost has no defined percentage return. Missing/invalid costs, prices, quantities, currencies, or unsupported multipliers leave return unavailable. No additional API requests are needed.
+## Tests
 
-This calculation measures price gain/loss on current open positions, not lifetime total return or tax gain. It does not separately adjust for dividends, realized gains, fees, taxes, or FX changes. Broker-reported average costs may already include adjustments. Check them against your brokerage if values differ.
+Tests use invented examples, never your live account. The running dashboard does not use those examples as fallback data.
 
-## Options data availability
+- `tests/server/`: normalization, partial failures, account scopes, and publishable logo-key validation.
+- `tests/lib/`: currencies, cash-equivalent handling, option dates/moneyness, security and industry allocation, and numeric sorting.
+- `tests/components/`: SVG rendering and overview cash totals.
+- `tests/helpers/server-only.ts`: a test-only replacement that allows testing server functions outside Next.js. `vitest.config.ts` applies it only during tests.
 
-The option position response supplies contract metadata, not current Greeks or IV. The Current options panel displays call/put, underlying ticker, strike, expiration, calendar days remaining, signed quantity, multiplier, per-unit premium/cost, market value, and unrealized return where available. Futures-option metadata is displayed when supplied, but its existing unsupported valuation remains unavailable.
+Run `npm test` to run the full suite. After changing imports or moving files, also run `npm run typecheck` and `npm run build`.
 
-Moneyness uses the latest available held underlying position with matching instrument ID (or exact symbol/kind if no ID), currency, and a recent snapshot from a non-stale, complete account. No external underlying quote is fetched. Missing, stale, or mismatched data yields unavailable; a price snapshot can still be delayed. Calls are ITM above strike and puts below strike; ATM is defined here as within 0.5% of strike. This classification does not depend on whether the position is long or short and is not the position's gain/loss. Expired contracts are labelled expired rather than suggesting exercise status.
+## Configuration and generated files
 
-Greeks and IV remain unavailable by the user's choice to proceed without another provider. SnapTrade's [retired option quote endpoint](https://docs.snaptrade.com/reference/Trading/Trading_getUserAccountOptionQuotes) returns 410 Gone after October 1, 2026. No replacement data, guessed IV, or model-derived Greeks are substituted. No new credentials, request signing, or trading calls were introduced.
+Keep framework configuration at the project root, where the tools expect it.
 
-## Aggregated industry allocation
+| File or folder                             | Why it exists                                                         |
+| ------------------------------------------ | --------------------------------------------------------------------- |
+| `package.json`                             | App commands and required packages.                                   |
+| `package-lock.json`                        | Exact dependency versions; maintained by npm and committed to Git.    |
+| `next.config.ts`                           | Next.js settings, allowed image source, and private-response headers. |
+| `tsconfig.json`                            | TypeScript checks and the `@/` import shortcut.                       |
+| `eslint.config.mjs`                        | Coding rules, including the read-only restrictions.                   |
+| `vitest.config.ts`                         | Test settings and aliases.                                            |
+| `.prettierignore`                          | Files the code formatter skips.                                       |
+| `.env.example`                             | Empty variable names for local setup; safe to commit.                 |
+| `.env.local`                               | Your private values; ignored by Git.                                  |
+| `.vscode/settings.json`                    | Hides generated folders in the editor without deleting them.          |
+| `next-env.d.ts`                            | Generated Next.js type references.                                    |
+| `node_modules/`, `.next/`, `*.tsbuildinfo` | Generated package/build files; not code you normally edit.            |
+| `.git/`                                    | Git's repository history and bookkeeping.                             |
 
-This view uses one common currency (USD), converting CAD position values with the existing Bank of Canada reference-rate loader. It combines included positive stock/fund values across visible investing accounts. It is not net portfolio value or delta-adjusted risk: options, cash, crypto, shorts, unsupported currencies, and unavailable valuations are excluded. Failures and stale data remain flagged, and a missing rate prevents a mixed-currency chart rather than silently dropping CAD holdings.
+Fonts are bundled locally through `next/font/local`: Cormorant Garamond for editorial headings, Inter for body/data, and League Spartan for labels. The font packages supply their own files; no remote font request is needed.
 
-Industry groups are simplified, app-maintained classifications based on issuer descriptions, not a licensed GICS taxonomy or a live external classification feed. The mapping includes issuer-source URLs and a review date. Symbols retain exchange suffixes. Unclassified stocks remain in an Unclassified slice. Fund, sector-fund, and precious-metals-trust groups are distinct from operating-company industries, with no claim to ETF look-through allocation or overlap adjustment. Holdings and classification sources can be expanded under the chart. The chart shows the top three groups plus an Other slice, with remaining groups listed in a bounded scrollable dropdown.
+## A few useful terms
 
-## Balance visibility
+| Term                   | Meaning here                                                      |
+| ---------------------- | ----------------------------------------------------------------- |
+| Component              | A function that produces part of the screen.                      |
+| Props                  | Input data passed to a component.                                 |
+| API / SDK              | The service interface and package used to request SnapTrade data. |
+| View model / normalize | A small display object, and the conversion that creates it.       |
+| `Result<T>`            | Either successful data of type `T`, or an error message.          |
+| `null`                 | A missing value; different from zero.                             |
+| `.tsx` / `.ts`         | TypeScript with screen markup / TypeScript without screen markup. |
 
-The header's Hide balances/Show balances control replaces amounts, sensitive quantities, and return percentages with `.....` across the app. Figures are replaced in visible and accessible rendered text, without a tooltip containing the original amount. The app stores only `balances-hidden=1` or `0` in a same-site preference cookie and uses it for server rendering to avoid a flash of visible amounts after reload. No financial values are stored in this preference.
+Try one small change, save it, and inspect the result with `npm run dev`. Keep secrets in `.env.local` and all brokerage access in `src/server/`.
 
-This feature is for screen privacy. Financial data remains part of the app's loaded data and may be inspected in browser/network tools. Names, tickers, contract identifiers, dates, position direction, chart proportions/allocation percentages, and public exchange rates remain visible; it is not a screenshot anonymizer or authentication mechanism.
+## Hiding balances
+
+`components/shared/BalancePrivacy.tsx` provides the header toggle, shared visibility state, and `PrivateValue` display wrapper. Wrap new monetary figures (and sensitive quantities/return percentages) in `PrivateValue` to make them respect the setting. Layout reads the `balances-hidden` cookie for the first render, so a saved hidden preference does not briefly show amounts on reload. Only the boolean preference is stored; no amounts are saved. The root provider persists across page navigation. Account names, tickers, dates, counts, chart proportions, and public FX rates stay visible.
+
+This is display privacy for people viewing the screen, not an access-control boundary: data is still retrieved and available to the app in browser/network payloads. The toggle does not make API calls or change any calculation. `tests/components/balance-privacy.test.tsx` checks hidden rendering and sensitive table fields.
 
 ## Historical performance
 
-The Performance page reads [historical account values](https://docs.snaptrade.com/reference/Experimental%20endpoints/AccountInformation_getAccountBalanceHistory) and [brokerage-reported return rates](https://docs.snaptrade.com/reference/Account%20Information/AccountInformation_getUserAccountReturnRates). Account Value History is beta, disabled by default, and limited to one year; the beta schema may change. The app does not enable add-ons automatically. History errors show setup/access guidance rather than mock values.
+`app/performance/page.tsx` loads current visible investing accounts and calls `server/load-performance.ts`. The SDK stays initialized only in `server/snaptrade.ts`, which now also exposes read-only history and reported-return methods. `load-performance.ts` normalizes them independently so a disabled history add-on does not hide a successfully retrieved return, or vice versa.
 
-The graph shows estimated daily **account value**, including cash, deposits, withdrawals, and transfers. Its dollar/percentage change is not a time-weighted or money-weighted investment return. Genuine brokerage-reported returns are displayed separately per account when supplied, using exact 1D, 1M, YTD, or 1Y periods. Weekly returns are not substituted for 5D. No aggregate return is invented by averaging account percentages.
+`components/performance/PerformanceDashboard.tsx` provides the account/range selectors and separate reported returns. `HistoryChart.tsx` provides a responsive SVG with pointer inspection, a keyboard-accessible date slider, and an expandable daily-value table. Date changes work from the loaded history and add no requests. Monetary values and return percentages respect Hide balances.
 
-Only currently visible investing accounts participate. Cash & chequing and accounts excluded by the existing empty/zero filters are not included; this is not a lifetime history of closed accounts. Accounts aggregate by history currency, requiring an actual snapshot for every successful included account on each plotted date. Failed account histories are omitted with a partial-coverage warning. Dates with missing snapshots are omitted, not carried forward or zero-filled. Historical currencies are not converted using today's rate.
+`lib/performance.ts` applies calendar cutoffs and aggregates only shared dates within each currency, without filling missing account values or combining unlike currencies. Daily value change is labelled as including cash flows, not as investment return. 1D is the latest available daily interval; 5D is up to five observed daily intervals. Five Year is visibly disabled because the source has a one-year maximum. Broker-return periods are matched exactly and never averaged across accounts.
 
-1D shows the latest two available daily snapshots; 5D shows up to six snapshots/five observed intervals, not necessarily five calendar days. Other ranges use Toronto calendar dates and clamped calendar-month boundaries. Actual plotted date endpoints remain visible. 5 Year is disabled with an explanation; intraday and five-year history are not fabricated. Source data can be incomplete, delayed, or contain gaps. Reported-return timestamps are shown.
+SnapTrade Account Value History is beta, disabled by default, and can be enabled in its dashboard's add-ons. Its schema may change; history can have gaps. Intraday and five-year account performance require another source. Only the Performance page requests this history; no raw responses are stored. Tests in `tests/lib/performance.test.ts` and `tests/server/load-performance.test.ts` cover aggregation, ranges, date handling, missing data, and independent endpoint failures.
 
-History is fetched only on the Performance page, with one history and one return request per included account. Range/account selection, hovering, and keyboard inspection use already-loaded view models. No raw financial responses are persisted, no polling or synchronization request is introduced, and upstream error bodies are never logged. Hide balances masks chart values, value changes, tables, and return percentages; relative line shapes and dates remain visible.
+## Reading the holding-returns feature
+
+1. `app/returns/page.tsx` loads investing accounts using the `history` scope, which retains zero-balance and cash-only investing accounts for historical analysis.
+2. `server/load-holding-returns.ts` reads transaction pages through the private SDK adapter, normalizes security transactions, and records missing-history problems.
+3. `server/return-exchange-rates.ts` estimates eligible cross-currency cash flows using dated public Bank of Canada observations, with explicit FX-estimate notes.
+4. `lib/reconcile-transfers.ts` matches internal zero-cash transfers only when the original cost and both ending share counts reconcile. `lib/holding-returns.ts` then matches purchases/sales per account and aggregates by ticker/native currency.
+5. `components/returns/HoldingReturnsDashboard.tsx` renders currency filters, profit/percentage ranking, sale details, reconciliation warnings, and the pending historical-price chart controls. Sorting and tab changes happen locally.
+
+Profit equals realized plus unrealized gains/losses, plus reported dividends, minus separately attributed charges. The percentage denominator is cumulative purchase outflows across all recorded purchases, including repeat trades. It is not an annualized or time-weighted investment return. The leaderboard includes supported stocks and funds; options and shorts are excluded.
+
+## Overview data adapter and states
+
+`lib/overview.ts` converts existing overview data into a typed view model. `adaptOverview()` keeps unavailable fields null; `presentOverview()` converts reported investing totals into the chosen display currency, aggregates positive assets by class, and picks the five largest positive holdings. Cash/chequing contributes to the cash card, not the investing portfolio total. Cash-equivalent positions are excluded to avoid counting cash twice. Missing values, FX, shorts, and stale data produce partial-coverage notices.
+
+`lib/overview-preview.ts` is the explicitly marked development-only sample adapter. See the README for `?preview=` URLs covering sample, skeleton loading, refreshing, empty, error/reconnect, and hidden balances. The preview error simulates a disabled connection; live connection/error handling uses the existing portfolio result. No new dependencies, brokerage calls, trading operations, or persisted financial records were added.
+
+`StatCard`, `ChangeBadge`, `RangeToggle`, and `OverviewMoney` are reusable presentation pieces. `PrivateValue` accepts an optional placeholder; Overview uses `••••`, while other pages keep their existing display. `useBalancePrivacy()` supplies the chart blur and toggle state. The existing preference cookie persists only visibility, never balances.
+
+## Accounts presentation
+
+`components/accounts/Accounts.module.css` controls the four-column desktop table, stacked cards below 768px, rate popover, expandable details, and teal/gray allocation bars. It uses Overview's existing scoped design tokens for color, typography, surfaces, borders, and shadows. `components/layout/WorkspaceHeader.tsx` now supplies the same status, visibility, and ghost refresh controls to both pages. The Accounts page still requests `loadPortfolio(undefined, ["balances", "positions"])` and `loadExchangeRate()` once in parallel.
+
+`Reported total` remains the primary figure per account. `Estimated from holdings` is a separate calculation from positions plus cash; it appears inside each account's details. Buying power is reported separately and never added to value. `CurrencyTotal` retains the existing calculation while moving its rate, date, fees/spread disclaimer, and partial-data explanation into an accessible native details popover. Allocation keeps its non-negative reported-total calculation within each currency, with a text list as its alternative.
+
+`AccountsLoading.tsx` is the real Suspense skeleton fallback. Development-only fixtures in `lib/accounts-preview.ts` exercise sample, loading, refreshing, empty, disabled-connection error, and hidden-balance states. The README lists preview URLs; no fixture becomes a fallback for live account failures.
+
+## Cash page and shared controls
+
+`app/cash/page.tsx` still calls `loadPortfolio(undefined, ["balances"], "cash")` exactly once. It adds no FX or transaction requests. `lib/cash.ts` sums native cash per currency, distinguishes comparable same-currency discrepancies from mixed-currency totals, and chooses whether sync timestamps belong once in the header or individually on account rows.
+
+`CashSummary` reuses `StatCard`, `OverviewMoney`, and the shared `CurrencyToggle`. Overview's currency buttons now use that same `CurrencyToggle` component. `WorkspaceHeader` uses shared `StatusChip` and the existing balance-visibility context; Overview, Accounts, and Cash share these controls. `InfoPopover` supplies native keyboard-accessible disclosures, outside-click dismissal, and Escape-to-close with focus returned to the trigger. The cash table reuses the Accounts responsive table/card styles, with its own three-column widths and institution-initial identity layout.
+
+Cash values are not reconciled by silently replacing one field with another. The summary uses cash balances, not buying power or the reported account total. Account identities use the explicit DEPOSIT category for “Deposit / banking”; other cash-only investing accounts use the user-requested “HYSA” display label, with a higher-than-chequing yield assumption in the tooltip. The reported account type stays unchanged, and no interest rate or earnings are invented. Common account sync timestamps are displayed once; differing times are retained per row. The header falls back to retrieval time when there is no common valid sync, which the footer explains.
+
+`CashLoading.tsx` is the real skeleton fallback. `lib/cash-preview.ts` provides labelled development-only previews for sample, loading, refreshing, empty, error, and hidden states without loading brokerage data. See the README for URLs.
+
+## Cash accounts display and consistency checks
+
+The cash redesign preserves its original data load, account visibility rules, and read-only behavior. CAD/USD selection changes only the headline native-cash subtotal. The other currency's subtotal remains visible, and no exchange-rate request or conversion is introduced. Missing currency records stay unavailable rather than becoming zero. Other currencies remain visible per account but are excluded from the CAD/USD summary and noted explicitly.
+
+Cash and reported account totals are displayed exactly as normalized from SnapTrade. The app compares them only when all nonzero cash amounts are in the reported total's currency and the fields are available. Differences greater than roughly one cent are flagged as “Figures differ,” with possible scope/snapshot explanations. Mixed-currency totals are not directly added together or declared erroneous. A mismatch is an observation about separate reported fields, not proof that the brokerage's value is wrong. No financial values are overwritten.
+
+The summary popover retains the full classification/exclusion explanation. DEPOSIT accounts are labelled Deposit / banking. By explicit user preference, confirmed cash-only investing accounts are labelled HYSA, with an assumed higher yield than chequing. This is a personal display classification; the original reported type remains available in the popover. No APY or interest earnings are calculated from that assumption. Header Updated uses a shared valid account sync when all rows match; otherwise it uses retrieval time and individual row times are shown when they differ. This is available account/holdings-sync metadata, not a claim of independently verified cash-price freshness.
+
+Monetary values use the shared visibility context and `••••` placeholder; account count, names, and dates stay visible. Privacy remains display-only. Development-only cash previews use invented data and do not query SnapTrade; they are never a fallback after a real error.

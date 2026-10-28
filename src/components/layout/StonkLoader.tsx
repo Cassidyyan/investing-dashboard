@@ -51,9 +51,7 @@ export function StonkLoader({
             : "Your page is ready"}
         </span>
       </div>
-      <small className="stonk-disclaimer">
-        Illustration only · not live market data
-      </small>
+      <small className="stonk-disclaimer">STONKS ONLY GO UP!</small>
     </div>
   );
 }

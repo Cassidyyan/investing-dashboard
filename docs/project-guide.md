@@ -59,7 +59,7 @@ You open /accounts
     → server/load-portfolio.ts requests the required sections
       → server/snaptrade.ts makes read-only API calls
     → server/normalize.ts converts responses into display objects
-  → components/layout/PortfolioPage.tsx supplies navigation and warning states
+  → components/accounts/AccountsDashboard.tsx supplies navigation, refresh, and warning states
   → components/accounts/AccountsTable.tsx displays the rows
 ```
 
@@ -69,19 +69,21 @@ The **server** is the local Node.js process started by `npm run dev`. The **brow
 
 Paths below are relative to `src/components/`.
 
-| Folder      | Files and responsibilities                                                                                                                                                                                       |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `layout/`   | `PortfolioPage.tsx`: shared page heading, navigation, setup/error states. `NavigationProgress.tsx`: starts and ends page-change feedback. `StonkLoader.tsx`: decorative SVG animation.                           |
-| `overview/` | `SummaryCards.tsx`: investing totals, cash across investing and banking accounts, investing account count.                                                                                                       |
-| `accounts/` | `AccountsTable.tsx`: account balances. `CurrencyTotal.tsx`: combined CAD/USD estimate. `AllocationBar.tsx`: allocation by account. `ConnectionStatus.tsx`: retained optional component, currently not displayed. |
-| `cash/`     | `CashAccountsTable.tsx`: banking and confirmed cash-only accounts.                                                                                                                                               |
-| `holdings/` | `PositionsTable.tsx`: server-rendered account groups. `SortableHoldingsTable.tsx`: local column sorting. `PositionsTabs.tsx`: switches between holdings and options.                                             |
-| `options/`  | `OptionsDetails.tsx`: contract cards, expiry information, premiums, return, and available moneyness.                                                                                                             |
-| `activity/` | `OrdersList.tsx`: recent orders. `ActivityList.tsx`: recent transactions and activity.                                                                                                                           |
-| `charts/`   | `HoldingsPieChart.tsx`: allocation by security/currency. `IndustryPieChart.tsx`: combined industry allocation. `AllocationPie.tsx`: shared smooth SVG pie renderer.                                              |
-| `shared/`   | `SectionState.tsx`: empty/error states and warning notices. `SecurityIcon.tsx`: Logo.dev image with a ticker-badge fallback.                                                                                     |
+| Folder      | Files and responsibilities                                                                                                                                                                                                                                                                                                                                                   |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `layout/`   | `PortfolioPage.tsx`: shared page heading, navigation, setup/error states. `NavigationProgress.tsx`: starts and ends page-change feedback. `StonkLoader.tsx`: decorative SVG animation.                                                                                                                                                                                       |
+| `overview/` | `OverviewDashboard.tsx`: page composition and refresh. `PortfolioHero.tsx`: value, currency, and chart. `AccountList.tsx`, `AllocationDonut.tsx`, `TopHoldings.tsx`, and `OverviewActivityList.tsx`: content cards. `Overview.module.css`: scoped design tokens and layout.                                                                                                  |
+| `accounts/` | `AccountsDashboard.tsx`: Accounts page composition and refresh. `AccountsTable.tsx`: four-column accounts and mobile cards with expandable estimates/buying power. `CurrencyTotal.tsx`: top combined estimate and rate popover. `AllocationBar.tsx`: teal allocation based on reported totals. `ConnectionStatus.tsx`: retained optional component, currently not displayed. |
+| `cash/`     | `CashDashboard.tsx`: page states and refresh. `CashSummary.tsx`: native cash totals and currency selection. `CashAccountsTable.tsx`: banking/cash-only account identities and reported figures, with mobile cards.                                                                                                                                                           |
+| `holdings/` | `HoldingsDashboard.tsx`: filters, tabs, grouping and refresh. `SummaryStrip.tsx`: three summary tiles. `HoldingsTable.tsx` / `HoldingRow.tsx`: sortable flat rows and mobile cards. `AllocationCard.tsx`, `AllocationDonut.tsx`, `AllocationBars.tsx`, `ExcludedPositionsPopover.tsx`: allocation views and exclusions. Legacy position components remain for older uses.    |
+| `options/`  | `OptionsDetails.tsx`: contract cards, expiry information, premiums, return, and available moneyness.                                                                                                                                                                                                                                                                         |
+| `activity/` | `OrdersList.tsx`: recent orders. `ActivityList.tsx`: recent transactions and activity.                                                                                                                                                                                                                                                                                       |
+| `charts/`   | `HoldingsPieChart.tsx`: allocation by security/currency. `IndustryPieChart.tsx`: combined industry allocation. `AllocationPie.tsx`: shared smooth SVG pie renderer.                                                                                                                                                                                                          |
+| `shared/`   | `SectionState.tsx`: empty/error states and warning notices. `SecurityIcon.tsx`: Logo.dev image with a ticker-badge fallback.                                                                                                                                                                                                                                                 |
 
 The components render data rather than fetching brokerage data. Most render on the server. Files beginning with `"use client"` handle browser interactions, such as tabs, sorting, image fallback, or navigation feedback. Expanding an account and switching/sorting loaded rows do not request more brokerage data.
+
+The shared navigation lives in `components/layout/DashboardNavigation.tsx`, with its own `DashboardNavigation.module.css` for dropdown and mobile styles. Four main controls group the pages: Overview; Portfolio (investing accounts, cash/chequing, holdings/options); Performance (account history and holding returns); and Activity. `lib/navigation.ts` supplies the shared destinations. Other detailed pages use `PortfolioPage.tsx`; Accounts uses `AccountsDashboard.tsx` and Overview uses `OverviewDashboard.tsx` for its distinct header, status area, refresh control, and 12-column card layout. Its CSS module contains the surface, border, text, brand, positive, negative, neutral, and chart color tokens.
 
 ## Server files
 
@@ -114,18 +116,18 @@ Financial assumptions, exclusions, stale-data rules, average-cost calculations, 
 
 ## Where to make a change
 
-| If you want to…                                          | Start with…                                                                |
-| -------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Change an overview heading or shortcut                   | `src/app/page.tsx`                                                         |
-| Change the navigation order                              | `src/components/layout/PortfolioPage.tsx`                                  |
-| Change colors, spacing, table density, or mobile styling | `src/app/globals.css`                                                      |
-| Change fonts                                             | `src/app/layout.tsx`, then the typography sections in `globals.css`        |
-| Change the investing account table                       | `src/components/accounts/AccountsTable.tsx`                                |
-| Change the cash account table                            | `src/components/cash/CashAccountsTable.tsx`                                |
-| Change holdings columns or sort buttons                  | `src/components/holdings/SortableHoldingsTable.tsx`                        |
-| Change option cards or moneyness badge styling           | `src/components/options/OptionsDetails.tsx`, then `globals.css`            |
-| Change a stock's industry group                          | `src/lib/security-industries.ts`                                           |
-| Understand a missing balance                             | `src/server/load-portfolio.ts`, then `normalize.ts` and the relevant tests |
+| If you want to…                                          | Start with…                                                                 |
+| -------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Change the overview layout or cards                      | `src/components/overview/OverviewDashboard.tsx`                             |
+| Change the navigation order                              | `src/lib/navigation.ts` and `src/components/layout/DashboardNavigation.tsx` |
+| Change colors, spacing, table density, or mobile styling | `src/app/globals.css`                                                       |
+| Change fonts                                             | `src/app/layout.tsx`, then the typography sections in `globals.css`         |
+| Change the investing account table                       | `src/components/accounts/AccountsTable.tsx`                                 |
+| Change the cash account table                            | `src/components/cash/CashAccountsTable.tsx`                                 |
+| Change holdings columns or sort buttons                  | `src/components/holdings/HoldingsTable.tsx`                                 |
+| Change option cards or moneyness badge styling           | `src/components/options/OptionsDetails.tsx`, then `globals.css`             |
+| Change a stock's industry group                          | `src/lib/security-industries.ts`                                            |
+| Understand a missing balance                             | `src/server/load-portfolio.ts`, then `normalize.ts` and the relevant tests  |
 
 ## Tests
 
@@ -189,3 +191,49 @@ This is display privacy for people viewing the screen, not an access-control bou
 `lib/performance.ts` applies calendar cutoffs and aggregates only shared dates within each currency, without filling missing account values or combining unlike currencies. Daily value change is labelled as including cash flows, not as investment return. 1D is the latest available daily interval; 5D is up to five observed daily intervals. Five Year is visibly disabled because the source has a one-year maximum. Broker-return periods are matched exactly and never averaged across accounts.
 
 SnapTrade Account Value History is beta, disabled by default, and can be enabled in its dashboard's add-ons. Its schema may change; history can have gaps. Intraday and five-year account performance require another source. Only the Performance page requests this history; no raw responses are stored. Tests in `tests/lib/performance.test.ts` and `tests/server/load-performance.test.ts` cover aggregation, ranges, date handling, missing data, and independent endpoint failures.
+
+## Reading the holding-returns feature
+
+1. `app/returns/page.tsx` loads investing accounts using the `history` scope, which retains zero-balance and cash-only investing accounts for historical analysis.
+2. `server/load-holding-returns.ts` reads transaction pages through the private SDK adapter, normalizes security transactions, and records missing-history problems.
+3. `server/return-exchange-rates.ts` estimates eligible cross-currency cash flows using dated public Bank of Canada observations, with explicit FX-estimate notes.
+4. `lib/reconcile-transfers.ts` matches internal zero-cash transfers only when the original cost and both ending share counts reconcile. `lib/holding-returns.ts` then matches purchases/sales per account and aggregates by ticker/native currency.
+5. `components/returns/HoldingReturnsDashboard.tsx` renders currency filters, profit/percentage ranking, sale details, reconciliation warnings, and the pending historical-price chart controls. Sorting and tab changes happen locally.
+
+Profit equals realized plus unrealized gains/losses, plus reported dividends, minus separately attributed charges. The percentage denominator is cumulative purchase outflows across all recorded purchases, including repeat trades. It is not an annualized or time-weighted investment return. The leaderboard includes supported stocks and funds; options and shorts are excluded.
+
+## Overview data adapter and states
+
+`lib/overview.ts` converts existing overview data into a typed view model. `adaptOverview()` keeps unavailable fields null; `presentOverview()` converts reported investing totals into the chosen display currency, aggregates positive assets by class, and picks the five largest positive holdings. Cash/chequing contributes to the cash card, not the investing portfolio total. Cash-equivalent positions are excluded to avoid counting cash twice. Missing values, FX, shorts, and stale data produce partial-coverage notices.
+
+`lib/overview-preview.ts` is the explicitly marked development-only sample adapter. See the README for `?preview=` URLs covering sample, skeleton loading, refreshing, empty, error/reconnect, and hidden balances. The preview error simulates a disabled connection; live connection/error handling uses the existing portfolio result. No new dependencies, brokerage calls, trading operations, or persisted financial records were added.
+
+`StatCard`, `ChangeBadge`, `RangeToggle`, and `OverviewMoney` are reusable presentation pieces. `PrivateValue` accepts an optional placeholder; Overview uses `••••`, while other pages keep their existing display. `useBalancePrivacy()` supplies the chart blur and toggle state. The existing preference cookie persists only visibility, never balances.
+
+## Accounts presentation
+
+`components/accounts/Accounts.module.css` controls the four-column desktop table, stacked cards below 768px, rate popover, expandable details, and teal/gray allocation bars. It uses Overview's existing scoped design tokens for color, typography, surfaces, borders, and shadows. `components/layout/WorkspaceHeader.tsx` now supplies the same status, visibility, and ghost refresh controls to both pages. The Accounts page still requests `loadPortfolio(undefined, ["balances", "positions"])` and `loadExchangeRate()` once in parallel.
+
+`Reported total` remains the primary figure per account. `Estimated from holdings` is a separate calculation from positions plus cash; it appears inside each account's details. Buying power is reported separately and never added to value. `CurrencyTotal` retains the existing calculation while moving its rate, date, fees/spread disclaimer, and partial-data explanation into an accessible native details popover. Allocation keeps its non-negative reported-total calculation within each currency, with a text list as its alternative.
+
+`AccountsLoading.tsx` is the real Suspense skeleton fallback. Development-only fixtures in `lib/accounts-preview.ts` exercise sample, loading, refreshing, empty, disabled-connection error, and hidden-balance states. The README lists preview URLs; no fixture becomes a fallback for live account failures.
+
+## Cash page and shared controls
+
+`app/cash/page.tsx` still calls `loadPortfolio(undefined, ["balances"], "cash")` exactly once. It adds no FX or transaction requests. `lib/cash.ts` sums native cash per currency, distinguishes comparable same-currency discrepancies from mixed-currency totals, and chooses whether sync timestamps belong once in the header or individually on account rows.
+
+`CashSummary` reuses `StatCard`, `OverviewMoney`, and the shared `CurrencyToggle`. Overview's currency buttons now use that same `CurrencyToggle` component. `WorkspaceHeader` uses shared `StatusChip` and the existing balance-visibility context; Overview, Accounts, and Cash share these controls. `InfoPopover` supplies native keyboard-accessible disclosures, outside-click dismissal, and Escape-to-close with focus returned to the trigger. The cash table reuses the Accounts responsive table/card styles, with its own three-column widths and institution-initial identity layout.
+
+Cash values are not reconciled by silently replacing one field with another. The summary uses cash balances, not buying power or the reported account total. Account identities use the explicit DEPOSIT category for “Deposit / banking”; other cash-only investing accounts use the user-requested “HYSA” display label, with a higher-than-chequing yield assumption in the tooltip. The reported account type stays unchanged, and no interest rate or earnings are invented. Common account sync timestamps are displayed once; differing times are retained per row. The header falls back to retrieval time when there is no common valid sync, which the footer explains.
+
+`CashLoading.tsx` is the real skeleton fallback. `lib/cash-preview.ts` provides labelled development-only previews for sample, loading, refreshing, empty, error, and hidden states without loading brokerage data. See the README for URLs.
+
+## Holdings page: follow the data
+
+1. `app/holdings/page.tsx` keeps the existing parallel positions and exchange-rate requests. It supplies server-built logo URLs and a loading boundary.
+2. `components/holdings/HoldingsDashboard.tsx` composes the shared header, navigation and cards. Browser state handles filters, tabs, grouping and sorting; these do not fetch brokerage data.
+3. `lib/holdings-view.ts` adapts the original `holdingAllocation()` and `industryAllocation()` helpers for the shared currency selection and stable chart colors. It preserves positive-value allocation scope and lists exclusions individually. Account allocation groups positive holdings, not reported account totals.
+4. `HoldingRow.tsx` expands native quantities/prices/costs and the existing `OptionsDetails` contract component. `ChangeBadge` renders existing unrealized returns.
+5. `Holdings.module.css` reuses Overview tokens, with an 8/4 desktop grid, sticky allocation, stacked mobile positions and visible mobile sort controls. `shared/PortfolioLinks.tsx` supplies sibling links on all three Portfolio pages.
+
+The summary is estimated positive holdings value; reported totals elsewhere may include cash and short positions. Industry excludes options, cash equivalents, crypto and derivatives, unlike the wider Holding/Account views. Missing day change is omitted; missing Greeks/IV are never mocked on live pages. Labelled development fixtures live in `lib/holdings-preview.ts`. Tests cover original-calculation parity, missing FX, exclusions, privacy and page states.

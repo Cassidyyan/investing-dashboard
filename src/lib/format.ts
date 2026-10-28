@@ -1,5 +1,12 @@
 // Display helpers shared by the components; these functions do not fetch data.
 import type { Money } from "@/lib/types";
+export function cashMoney(value: Money): string {
+  // Display preference only: preserve missing amounts in the data/calculations.
+  return value.currency === "USD" &&
+    (value.amount === 0 || value.amount === null)
+    ? "0"
+    : money(value);
+}
 export function money(value: Money): string {
   if (value.amount === null) return "Unavailable";
   if (!value.currency)

@@ -8,6 +8,7 @@ import type { AccountData, Portfolio } from "@/lib/types";
 import { date } from "@/lib/format";
 import { BalanceVisibilityToggle } from "@/components/shared/BalancePrivacy";
 import { StateNotice } from "@/components/shared/SectionState";
+import { DashboardNavigation } from "./DashboardNavigation";
 const pages = [
   {
     href: "/",
@@ -21,6 +22,12 @@ const pages = [
     label: "Performance",
     title: "Your portfolio over time.",
     description: "Daily account value history and brokerage-reported returns.",
+  },
+  {
+    href: "/returns",
+    label: "Holding returns",
+    title: "What has earned the most?",
+    description: "Lifetime holding estimates, including sales and dividends.",
   },
   {
     href: "/accounts",
@@ -95,18 +102,7 @@ export function PortfolioPage({
             </button>
           </form>
         </div>
-        <nav className="dashboard-nav" aria-label="Portfolio pages">
-          {pages.map((page) => (
-            <NavigationLink
-              key={page.href}
-              href={page.href}
-              prefetch={false}
-              aria-current={path === page.href ? "page" : undefined}
-            >
-              {page.label}
-            </NavigationLink>
-          ))}
-        </nav>
+        <DashboardNavigation key={path} path={path} />
         <div className="timestamp">
           Retrieved {date(portfolio.retrievedAt)} · America/Toronto
           <span>No trading · No stored brokerage data</span>
@@ -147,9 +143,11 @@ export function PortfolioPage({
             )}
             {!rows.length ? (
               <p className="empty">
-                {path === "/cash"
-                  ? "No banking or confirmed cash-only accounts to show. Accounts reporting 0 CAD or 0 USD remain hidden."
-                  : "No investing accounts to show. Accounts reporting 0 CAD or 0 USD are hidden; banking and confirmed cash-only accounts are on the Cash & chequing page."}
+                {path === "/returns"
+                  ? "No connected investing accounts are available for historical analysis."
+                  : path === "/cash"
+                    ? "No banking or confirmed cash-only accounts to show. Accounts reporting 0 CAD or 0 USD remain hidden."
+                    : "No investing accounts to show. Accounts reporting 0 CAD or 0 USD are hidden; banking and confirmed cash-only accounts are on the Cash & chequing page."}
               </p>
             ) : (
               children(rows)

@@ -349,3 +349,34 @@ it("loads investing and cash accounts together for the overview without duplicat
   expect(c.balances).toHaveBeenCalledTimes(3);
   expect(c.balances).not.toHaveBeenCalledWith("credit");
 });
+
+it("includes zero-balance and cash-only investing accounts for lifetime analysis, excluding deposit and credit accounts", async () => {
+  const c = client();
+  c.accounts.mockImplementation(() =>
+    response([
+      {
+        id: "sold",
+        account_category: "INVESTMENT",
+        balance: { total: { amount: 0, currency: "CAD" } },
+      },
+      { id: "cash-only", account_category: "INVESTMENT" },
+      { id: "bank", account_category: "DEPOSIT" },
+      { id: "credit", account_category: "LOC" },
+    ]),
+  );
+  c.positions.mockImplementation(() =>
+    response({ results: [], data_freshness: {} }),
+  );
+  const p = await loadPortfolio(
+    c as unknown as ReadClient,
+    ["positions"],
+    "history",
+  );
+  if (p.accounts.status !== "ok") throw Error("Expected accounts");
+  expect(p.accounts.data.map((a) => a.account.id)).toEqual([
+    "sold",
+    "cash-only",
+  ]);
+  expect(c.positions).toHaveBeenCalledTimes(2);
+  expect(c.activities).not.toHaveBeenCalled();
+});

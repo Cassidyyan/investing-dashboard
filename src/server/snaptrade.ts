@@ -48,6 +48,12 @@ export function getSnaptrade() {
         },
         options,
       ),
+    // No date filter: lifetime analysis needs every transaction known to SnapTrade.
+    transactionPage: (accountId: string, offset: number, limit: number) =>
+      client.accountInformation.getAccountActivities(
+        { accountId, offset, limit },
+        options,
+      ),
   };
 }
 export type ReadClient = NonNullable<ReturnType<typeof getSnaptrade>>;

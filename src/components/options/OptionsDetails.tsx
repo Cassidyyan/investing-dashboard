@@ -16,7 +16,7 @@ import {
 } from "@/lib/format";
 import { SectionState } from "@/components/shared/SectionState";
 
-function OptionCard({
+export function OptionCard({
   position,
   accounts,
 }: {
@@ -68,7 +68,7 @@ function OptionCard({
             {option?.type || "Option"}
           </span>
           <small>
-            <PrivateValue>
+            <PrivateValue placeholder="••••">
               {option ? money(option.strike) : "Strike unavailable"}
             </PrivateValue>{" "}
             · {formatExpiration(option?.expiration)}
@@ -88,7 +88,7 @@ function OptionCard({
           <div>
             <dt>Strike</dt>
             <dd>
-              <PrivateValue>
+              <PrivateValue placeholder="••••">
                 {money(option?.strike ?? unavailable)}
               </PrivateValue>
             </dd>
@@ -110,7 +110,9 @@ function OptionCard({
           <div>
             <dt>Contracts / direction</dt>
             <dd>
-              <PrivateValue>{quantity(position.units)}</PrivateValue>
+              <PrivateValue placeholder="••••">
+                {quantity(position.units)}
+              </PrivateValue>
               <small>
                 {position.units === null
                   ? "Unknown direction"
@@ -123,7 +125,7 @@ function OptionCard({
           <div>
             <dt>Contract multiplier</dt>
             <dd>
-              <PrivateValue>
+              <PrivateValue placeholder="••••">
                 {quantity(option?.multiplier ?? null)}
               </PrivateValue>
             </dd>
@@ -131,13 +133,15 @@ function OptionCard({
           <div>
             <dt>Last premium / unit</dt>
             <dd>
-              <PrivateValue>{money(position.price)}</PrivateValue>
+              <PrivateValue placeholder="••••">
+                {money(position.price)}
+              </PrivateValue>
             </dd>
           </div>
           <div>
             <dt>Average premium / unit</dt>
             <dd>
-              <PrivateValue>
+              <PrivateValue placeholder="••••">
                 {money(position.averageCost ?? unavailable)}
               </PrivateValue>
             </dd>
@@ -145,26 +149,24 @@ function OptionCard({
           <div>
             <dt>Estimated market value</dt>
             <dd>
-              <PrivateValue>{money(position.value)}</PrivateValue>
+              <PrivateValue placeholder="••••">
+                {money(position.value)}
+              </PrivateValue>
             </dd>
           </div>
           <div>
             <dt>Unrealized return</dt>
             <dd>
-              <PrivateValue>
+              <PrivateValue placeholder="••••">
                 {signedMoney(position.unrealizedReturn ?? unavailable)}
               </PrivateValue>
-              <small>
-                <PrivateValue>
-                  {signedPercent(position.unrealizedReturnPercent)}
-                </PrivateValue>
-              </small>
+              <small>{signedPercent(position.unrealizedReturnPercent)}</small>
             </dd>
           </div>
           <div>
             <dt>Underlying snapshot price</dt>
             <dd>
-              <PrivateValue>
+              <PrivateValue placeholder="••••">
                 {money(underlying?.price ?? unavailable)}
               </PrivateValue>
             </dd>

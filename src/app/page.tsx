@@ -1,66 +1,50 @@
-// Overview stays short; the other pages contain detailed tables and records.
-import { NavigationLink } from "@/components/layout/NavigationProgress";
 import { loadPortfolio } from "@/server/load-portfolio";
-import { PortfolioPage } from "@/components/layout/PortfolioPage";
-import { SummaryCards } from "@/components/overview/SummaryCards";
+import { loadExchangeRate } from "@/server/exchange-rate";
+import { adaptOverview } from "@/lib/overview";
+import {
+  createOverviewPreview,
+  overviewPreviews,
+  type OverviewPreview,
+} from "@/lib/overview-preview";
+import { OverviewDashboard } from "@/components/overview/OverviewDashboard";
+import { OverviewLoading } from "@/components/overview/OverviewLoading";
+import { Suspense } from "react";
+import { getSecurityLogoUrl } from "@/server/security-logo";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-export default async function Page() {
-  const portfolio = await loadPortfolio(undefined, ["balances"], "overview");
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ preview?: string }>;
+}) {
+  const { preview } = await searchParams;
+  if (
+    process.env.NODE_ENV === "development" &&
+    overviewPreviews.includes(preview as OverviewPreview)
+  ) {
+    return (
+      <OverviewDashboard
+        model={createOverviewPreview(preview as OverviewPreview)}
+        preview={preview as OverviewPreview}
+      />
+    );
+  }
   return (
-    <PortfolioPage portfolio={portfolio} path="/">
-      {(accounts) => (
-        <>
-          <SummaryCards
-            accounts={accounts.filter((a) => !a.cashOnly)}
-            cashAccounts={accounts}
-          />
-          <div className="overview-links">
-            {[
-              {
-                href: "/performance",
-                label: "Historical performance",
-                description:
-                  "Daily value charts and brokerage-reported returns.",
-                icon: "↗",
-              },
-              {
-                href: "/accounts",
-                label: "Your accounts",
-                description: "Balances, buying power, and account allocation.",
-                icon: "▦",
-              },
-              {
-                href: "/holdings",
-                label: "Holdings & options",
-                description: "Allocation charts and current positions.",
-                icon: "◈",
-              },
-              {
-                href: "/activity",
-                label: "Orders & activity",
-                description: "Recent orders and account transactions.",
-                icon: "≋",
-              },
-            ].map((item) => (
-              <NavigationLink
-                className="panel overview-link"
-                key={item.href}
-                href={item.href}
-                prefetch={false}
-              >
-                <span className="metric-icon" aria-hidden="true">
-                  {item.icon}
-                </span>
-                <h2>
-                  {item.label} <span aria-hidden="true">↗</span>
-                </h2>
-                <p className="muted">{item.description}</p>
-              </NavigationLink>
-            ))}
-          </div>
-        </>
-      )}
-    </PortfolioPage>
+    <Suspense fallback={<OverviewLoading />}>
+      <LiveOverview />
+    </Suspense>
   );
+}
+async function LiveOverview() {
+  // The live overview keeps its original data requests and account scope.
+  const [portfolio, exchangeRate] = await Promise.all([
+    loadPortfolio(undefined, ["balances"], "overview"),
+    loadExchangeRate(),
+  ]);
+  const model = adaptOverview(portfolio, exchangeRate);
+  model.holdings = model.holdings.map((holding) => ({
+    ...holding,
+    logoUrl: getSecurityLogoUrl(holding.symbol, holding.kind || "unknown"),
+  }));
+  return <OverviewDashboard model={model} />;
 }
