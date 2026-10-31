@@ -1,3 +1,4 @@
+import type { OptionsCurrencyPolicy } from "@/lib/config";
 import {
   absoluteDecimal,
   addDecimal,
@@ -12,7 +13,7 @@ import type { NormalizedTransaction } from "@/lib/financial/transactions";
 import { optionContractKey } from "./contracts";
 import { reconcileOptionExecutions } from "./reconcile-executions";
 import { executionCash } from "./execution-cash";
-import { assumeOptionsUsd } from "./currency";
+import { applyOptionsCurrency } from "./currency";
 import type {
   AnalyticsTrade,
   JournalExecution,
@@ -132,13 +133,16 @@ function weightedPrice(rows: JournalExecution[]) {
 export function buildOptionsLedger(
   histories: OptionsHistory[],
   asOf: string,
+  policy: OptionsCurrencyPolicy = "reported",
 ): OptionsLedger {
   const trades: AnalyticsTrade[] = [],
     issues: OptionsLedger["issues"] = [];
   for (const sourceHistory of histories) {
     const history = {
       ...sourceHistory,
-      records: sourceHistory.records.map(assumeOptionsUsd),
+      records: sourceHistory.records.map((row) =>
+        applyOptionsCurrency(row, policy),
+      ),
     };
     const identical = new Set<string>();
     const originals = history.records.filter((t) => {
@@ -200,7 +204,7 @@ export function buildOptionsLedger(
     );
     const executions = reconciliation.executions.map((e) => {
       const source = preparedById.get(e.transactionId)!;
-      const cash = executionCash(source);
+      const cash = executionCash(source, policy);
       const chargeRisk = [
         ...accountIssues,
         ...(affected.get(optionContractKey(e.contract)!) || []),

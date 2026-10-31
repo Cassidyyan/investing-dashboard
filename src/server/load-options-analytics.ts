@@ -9,10 +9,9 @@ import { transactionRecords } from "./transaction-pages";
 import { normalizeTransaction } from "./normalize-transactions";
 import { getSnaptrade, type ReadClient } from "./snaptrade";
 import { calendarToday } from "@/lib/performance/performance";
-import { reconcileCsvActivities } from "@/lib/imports/reconcile-activities";
+import { csvOptionsSource } from "./csv-options-source";
 import type { loadWealthsimpleDataset } from "./wealthsimple-import";
-import { csvOptionHistory } from "@/lib/imports/csv-option-history";
-import { OPTIONS_CURRENCY } from "@/lib/options/currency";
+import { getConfig } from "./config";
 
 export async function loadOptionsAnalytics(
   client: ReadClient | null = getSnaptrade(),
@@ -22,8 +21,9 @@ export async function loadOptionsAnalytics(
   const accounts =
     portfolio.accounts.status === "ok" ? portfolio.accounts.data : [];
   const histories: OptionsHistory[] = [];
+  const csv = dataset ? csvOptionsSource(dataset) : null;
   let rateLimited = false;
-  for (const { account } of accounts) {
+  for (const { account } of csv ? [] : accounts) {
     const history: OptionsHistory = {
       accountId: account.id,
       records: [],
@@ -74,21 +74,13 @@ export async function loadOptionsAnalytics(
       h.issues.push(
         "Brokerage connection is disabled; cached history may be stale.",
       );
-  const reconciled = dataset
-    ? reconcileCsvActivities(histories, dataset.activities)
-    : null;
-  const csv =
-    dataset && reconciled
-      ? csvOptionHistory(
-          reconciled.histories,
-          dataset.activities,
-          reconciled.accountMappings,
-        )
-      : null;
-  const ledger = buildOptionsLedger(
-    csv?.histories || reconciled?.histories || histories,
-    calendarToday(),
-  );
+  const ledger =
+    csv ||
+    buildOptionsLedger(
+      histories,
+      calendarToday(),
+      getConfig().settings.optionsCurrency,
+    );
   for (const row of accounts)
     if (row.positions.status === "error")
       ledger.issues.push({
@@ -98,9 +90,8 @@ export async function loadOptionsAnalytics(
       });
   return {
     ...ledger,
-    ...(reconciled
-      ? { importReconciliation: { ...reconciled.report, ...csv?.counts } }
-      : {}),
+    historySource: csv ? "csv" : "snaptrade",
+    importPreview: dataset?.preview,
     historyCoverage: histories.flatMap((h) =>
       h.coverage
         ? [
@@ -113,11 +104,14 @@ export async function loadOptionsAnalytics(
           ]
         : [],
     ),
-    accounts: accounts.map((a) => ({
-      id: a.account.id,
-      name: a.account.name,
-      suffix: a.account.suffix,
-    })),
+    accounts: [
+      ...(csv?.accounts || []),
+      ...accounts.map((a) => ({
+        id: a.account.id,
+        name: a.account.name,
+        suffix: a.account.suffix,
+      })),
+    ],
     openPositions: accounts.flatMap((a) =>
       a.positions.status === "ok"
         ? a.positions.data.rows
@@ -128,15 +122,23 @@ export async function loadOptionsAnalytics(
               symbol: p.symbol,
               right: p.optionDetails?.type || null,
               quantity: p.units,
-              currency: OPTIONS_CURRENCY,
+              currency: p.value.currency,
               value: p.value.amount,
             }))
         : [],
     ),
     updatedAt: portfolio.retrievedAt,
-    configured: portfolio.configured,
+    configured: portfolio.configured || !!csv,
     error:
-      portfolio.accounts.status === "error" ? portfolio.accounts.message : null,
-    reconnect,
+      !csv && portfolio.accounts.status === "error"
+        ? portfolio.accounts.message
+        : null,
+    snapshotError:
+      csv && portfolio.accounts.status === "error"
+        ? portfolio.accounts.message
+        : csv && reconnect
+          ? "The brokerage connection is disabled; its current snapshot may be stale."
+          : null,
+    reconnect: !csv && reconnect,
   };
 }

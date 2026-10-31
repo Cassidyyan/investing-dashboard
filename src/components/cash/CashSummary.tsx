@@ -1,3 +1,5 @@
+"use client";
+import { useAppSettings } from "@/components/shared/AppSettings";
 import type { AccountData } from "@/lib/types";
 import { cashSummary } from "@/lib/cash/cash";
 import { StatCard } from "@/components/shared/StatCard";
@@ -5,6 +7,7 @@ import { MoneyValue } from "@/components/shared/MoneyValue";
 import { InfoPopover } from "@/components/shared/InfoPopover";
 import styles from "./Cash.module.css";
 export function CashSummary({ accounts }: { accounts: AccountData[] }) {
+  const { cashOnlyAsHysa } = useAppSettings();
   const summary = cashSummary(accounts);
   return (
     <StatCard
@@ -17,9 +20,12 @@ export function CashSummary({ accounts }: { accounts: AccountData[] }) {
             <p>
               Banking accounts identified by the brokerage and accounts
               confirmed to have no open holdings appear here. Cash-only
-              investing accounts use your personal HYSA label, with an assumed
-              higher yield than chequing. Actual rates are not supplied by this
-              data, so no interest earnings are calculated.
+              investing accounts{" "}
+              {cashOnlyAsHysa
+                ? "use your configured personal HYSA label"
+                : "retain a generic classification"}
+              . This does not establish a savings product or yield. No interest
+              earnings are calculated.
             </p>
             <p>
               These accounts are excluded from investing totals. Accounts

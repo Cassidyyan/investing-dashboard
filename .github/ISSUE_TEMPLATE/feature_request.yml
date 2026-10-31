@@ -1,0 +1,16 @@
+name: Feature request
+description: Suggest a scoped improvement
+title: "[Feature] "
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What problem should this solve?
+      description: Do not include personal financial data.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior and data requirements
+      description: Describe unavailable source fields and whether a provider would be needed. Keep the app read-only.

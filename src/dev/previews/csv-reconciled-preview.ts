@@ -17,7 +17,7 @@ export function createCsvReconciledPreview(): OptionsData {
     new Map([["SYNTHETIC_ACCOUNT", new Set(["sample-options"])]]),
   );
   return {
-    ...buildOptionsLedger(csv.histories, "2026-10-31"),
+    ...buildOptionsLedger(csv.histories, "2026-10-31", "USD"),
     accounts: [
       { id: "sample-options", name: "Sample options account", suffix: "0000" },
     ],

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import type {
   Account,
   AllAccountPositionsResponse,
@@ -234,4 +234,16 @@ it("preserves recent-first activity ordering and the ticker description fallback
     "Synthetic dividend",
     "SYNTH",
   ]);
+});
+
+it("keeps reported option position currencies in a generic installation", () => {
+  vi.stubEnv("HOLDINGS_OPTIONS_CURRENCY", "reported");
+  try {
+    const row = normalizePositions(
+      position("option", { multiplier: "100" }, "-2"),
+    ).rows[0];
+    expect(row.value).toEqual({ amount: -600, currency: "CAD" });
+  } finally {
+    vi.unstubAllEnvs();
+  }
 });

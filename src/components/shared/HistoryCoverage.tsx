@@ -101,7 +101,7 @@ export function HistoryCoverage({ rows }: { rows: CoverageRow[] }) {
                 Counts apply only to relevant records, such as trade fees on
                 trades. Missing reference IDs or settlement dates are not
                 automatically financial errors. Source omissions cannot identify
-                whether Wealthsimple or SnapTrade omitted the field.
+                whether the brokerage or SnapTrade omitted the field.
               </p>
               <ul>
                 {row.coverage.fields.map((field) => (

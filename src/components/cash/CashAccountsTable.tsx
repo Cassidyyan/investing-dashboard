@@ -1,3 +1,5 @@
+"use client";
+import { useAppSettings } from "@/components/shared/AppSettings";
 import { Money } from "@/components/shared/Money";
 import { InfoPopover } from "@/components/shared/InfoPopover";
 import type { AccountData } from "@/lib/types";
@@ -12,6 +14,7 @@ export function CashAccountsTable({
   accounts: AccountData[];
   showSyncTimes?: boolean;
 }) {
+  const { cashOnlyAsHysa } = useAppSettings();
   return (
     <div className={accountStyles.accountsTableWrap}>
       <table
@@ -76,14 +79,22 @@ export function CashAccountsTable({
                         <strong title={a.account.name}>{a.account.name}</strong>
                         <InfoPopover
                           label={`Classification for ${a.account.name}`}
-                          trigger={deposit ? "Deposit / banking" : "HYSA"}
+                          trigger={
+                            deposit
+                              ? "Deposit / banking"
+                              : cashOnlyAsHysa
+                                ? "HYSA"
+                                : "Cash-only investing"
+                          }
                           badge
                           align="start"
                         >
                           <p>
                             {deposit
                               ? "The brokerage explicitly reports this account as deposit / banking (DEPOSIT)."
-                              : "By your preference, this cash-only investing account is treated as a high-yield savings account (HYSA), assumed to earn a higher yield than chequing. This is your personal classification, not a verified brokerage account type or interest rate. No APY or interest earnings are calculated without a supplied rate."}
+                              : !cashOnlyAsHysa
+                                ? "The brokerage reports an investing account with no open positions. This does not identify a savings product or an interest rate."
+                                : "By your preference, this cash-only investing account is treated as a high-yield savings account (HYSA), without asserting its yield relative to chequing. This is your personal classification, not a verified brokerage account type or interest rate. No APY or interest earnings are calculated without a supplied rate."}
                           </p>
                           <p>
                             Reported type: {a.account.type}. No account has been

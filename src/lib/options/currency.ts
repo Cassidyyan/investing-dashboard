@@ -1,7 +1,8 @@
+import type { OptionsCurrencyPolicy } from "@/lib/config";
 import type { FinancialField, MoneyField } from "@/lib/financial/types";
 import type { NormalizedTransaction } from "@/lib/financial/transactions";
 
-// Explicit user policy. This changes the assumed denomination, never the amount.
+// Optional installation policy. This changes the assumed denomination, never the amount.
 export const OPTIONS_CURRENCY = "USD" as const;
 export const OPTIONS_CURRENCY_NOTE =
   "All options are assumed to be USD. Amounts are unchanged; no currency conversion is applied.";
@@ -53,4 +54,16 @@ export function assumeOptionsUsd(
           : t.cashFlow.currency.value,
     },
   };
+}
+
+export function optionsCurrencyNote(policy: OptionsCurrencyPolicy) {
+  return policy === "USD"
+    ? OPTIONS_CURRENCY_NOTE
+    : "Options keep their reported currency. Missing currencies stay unavailable; native currencies are never combined without conversion.";
+}
+export function applyOptionsCurrency(
+  t: NormalizedTransaction,
+  policy: OptionsCurrencyPolicy,
+) {
+  return policy === "USD" ? assumeOptionsUsd(t) : t;
 }

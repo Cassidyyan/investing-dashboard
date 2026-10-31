@@ -234,7 +234,7 @@ export function optionsAnalytics(
       ...new Set(
         scoped
           .map((t) => t.currency)
-          .filter((c) => c && c !== "USD" && c !== "CAD"),
+          .filter((c) => c && c !== filters.currency),
       ),
     ],
   };

@@ -1,3 +1,4 @@
+import type { OptionsCurrencyPolicy } from "@/lib/config";
 import {
   absoluteDecimal,
   addDecimal,
@@ -8,13 +9,16 @@ import {
 } from "@/lib/financial/decimal";
 import type { NormalizedTransaction } from "@/lib/financial/transactions";
 import type { ExecutionCash } from "./analytics-types";
-import { assumeOptionsUsd, isAssumedOptionsCurrency } from "./currency";
+import { applyOptionsCurrency, isAssumedOptionsCurrency } from "./currency";
 const zero = decimal("0")!;
 // Source amount is a signed cash amount; with zero fees its gross/net ambiguity
 // vanishes. Nonzero fees require an explicit multiplier and an exact source-price
 // reconciliation. No default multiplier, inferred commission or implied price.
-export function executionCash(t: NormalizedTransaction): ExecutionCash {
-  t = assumeOptionsUsd(t);
+export function executionCash(
+  t: NormalizedTransaction,
+  policy: OptionsCurrencyPolicy = "reported",
+): ExecutionCash {
+  t = applyOptionsCurrency(t, policy);
   const amount = t.cashFlow.amount.value,
     fee = t.fee.amount.value;
   const currency = t.cashFlow.currency.value;

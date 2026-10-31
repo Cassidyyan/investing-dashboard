@@ -1,9 +1,7 @@
+import { useAppSettings } from "@/components/shared/AppSettings";
 import { Select } from "@/components/shared/Select";
 import { InfoPopover } from "@/components/shared/InfoPopover";
-import {
-  OPTIONS_CURRENCY,
-  OPTIONS_CURRENCY_NOTE,
-} from "@/lib/options/currency";
+import { optionsCurrencyNote } from "@/lib/options/currency";
 import type {
   OptionsData,
   OptionsFilters as Filters,
@@ -18,6 +16,15 @@ export function OptionsFilters({
   value: Filters;
   onChange: (value: Filters) => void;
 }) {
+  const { optionsCurrency } = useAppSettings();
+  const currencies = [
+    ...new Set(
+      [
+        ...data.trades.map((t) => t.currency),
+        ...data.openPositions.map((p) => p.currency),
+      ].filter((c): c is string => !!c),
+    ),
+  ].sort();
   const change = (key: keyof Filters, next: string) =>
     onChange({ ...value, [key]: next });
   return (
@@ -28,12 +35,37 @@ export function OptionsFilters({
           value={value.account}
           onChange={(e) => change("account", e.target.value)}
         >
-          <option value="all">All investing accounts</option>
-          {data.accounts.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.name}
-            </option>
-          ))}
+          <option value="all">All accounts</option>
+          {data.historySource === "csv" ? (
+            <>
+              <optgroup label="CSV history accounts">
+                {data.accounts
+                  .filter((a) => a.id.startsWith("csv-account-"))
+                  .map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+              </optgroup>
+              {data.accounts.some((a) => !a.id.startsWith("csv-account-")) && (
+                <optgroup label="SnapTrade snapshots only">
+                  {data.accounts
+                    .filter((a) => !a.id.startsWith("csv-account-"))
+                    .map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                </optgroup>
+              )}
+            </>
+          ) : (
+            data.accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))
+          )}
         </Select>
       </label>
       <label>
@@ -91,42 +123,56 @@ export function OptionsFilters({
           onChange={(e) => change("to", e.target.value)}
         />
       </label>
-      <div className={styles.currencyControl}>
-        <span className={styles.currencyLabel}>Currency</span>
-        <InfoPopover
-          label="Options currency: USD Assumed"
-          trigger={
-            <span className={styles.currencyPill}>
-              <strong>{OPTIONS_CURRENCY}</strong>{" "}
-              <span className={styles.currencyAssumption}>Assumed</span>
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 20 20"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                aria-hidden="true"
-              >
-                <circle cx="10" cy="10" r="7.5" />
-                <path d="M10 9v5" />
-                <circle
-                  cx="10"
-                  cy="6"
-                  r=".7"
-                  fill="currentColor"
-                  stroke="none"
-                />
-              </svg>
-            </span>
-          }
-        >
-          <p>
-            <strong>USD for all options</strong>
-          </p>
-          <p>{OPTIONS_CURRENCY_NOTE}</p>
-        </InfoPopover>
-      </div>
+      {optionsCurrency === "reported" ? (
+        <label>
+          Currency
+          <Select
+            value={value.currency}
+            onChange={(event) => change("currency", event.target.value)}
+          >
+            {[...new Set([value.currency, ...currencies])].map((currency) => (
+              <option key={currency}>{currency}</option>
+            ))}
+          </Select>
+        </label>
+      ) : (
+        <div className={styles.currencyControl}>
+          <span className={styles.currencyLabel}>Currency</span>
+          <InfoPopover
+            label="Options currency: USD Assumed"
+            trigger={
+              <span className={styles.currencyPill}>
+                <strong>{value.currency}</strong>{" "}
+                <span className={styles.currencyAssumption}>Assumed</span>
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  aria-hidden="true"
+                >
+                  <circle cx="10" cy="10" r="7.5" />
+                  <path d="M10 9v5" />
+                  <circle
+                    cx="10"
+                    cy="6"
+                    r=".7"
+                    fill="currentColor"
+                    stroke="none"
+                  />
+                </svg>
+              </span>
+            }
+          >
+            <p>
+              <strong>USD for all options</strong>
+            </p>
+            <p>{optionsCurrencyNote(optionsCurrency)}</p>
+          </InfoPopover>
+        </div>
+      )}
       <div className={styles.filterFooter}>
         <p>
           Realized P&amp;L uses realization dates; completed-trade stats use
@@ -138,7 +184,8 @@ export function OptionsFilters({
             onChange({
               account: "all",
               ticker: "all",
-              currency: OPTIONS_CURRENCY,
+              currency:
+                optionsCurrency === "USD" ? "USD" : currencies[0] || "USD",
               from: "",
               to: "",
               right: "all",

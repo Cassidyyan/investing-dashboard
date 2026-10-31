@@ -90,6 +90,7 @@ export function createOptionsPreview(state: OptionsPreview): OptionsData {
   const data = buildOptionsLedger(
     [{ accountId: "sample-options", records, issues: [] }],
     "2026-10-31",
+    "USD", // Fictional fixture explicitly exercises the optional legacy policy.
   );
   return {
     ...data,

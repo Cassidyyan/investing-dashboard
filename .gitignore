@@ -23,3 +23,20 @@ coverage/
 /private-data/
 # Protect CSV exports even when accidentally placed elsewhere in this project.
 *.[cC][sS][vV]
+
+# Local diagnostics, logs, databases, and tooling state.
+*.log
+*.db
+*.sqlite
+*.sqlite3
+*.db-*
+*.sqlite-*
+*.sqlite3-*
+*.pem
+*.key
+/local-audits/
+/playwright-report/
+/test-results/
+
+# Source-only distribution/review archives; never commit generated releases.
+/releases/

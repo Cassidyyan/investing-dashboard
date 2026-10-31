@@ -1,0 +1,27 @@
+.banner {
+  margin: 16px auto;
+  padding: 18px 24px;
+  max-width: 1360px;
+  border: 1px solid #c8dce0;
+  border-radius: 16px;
+  background: #eaf4f6;
+  color: #202b38;
+  font:
+    14px/1.6 var(--font-inter),
+    sans-serif;
+}
+.banner h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.banner p {
+  margin: 8px 0;
+}
+.banner a {
+  color: #125c69;
+  text-decoration: underline;
+}
+.banner a:focus-visible {
+  outline: 2px solid #146d7c;
+  outline-offset: 3px;
+}

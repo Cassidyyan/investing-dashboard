@@ -82,6 +82,8 @@ export type OpenOption = {
   value: number | null;
 };
 export type OptionsData = OptionsLedger & {
+  historySource?: "csv" | "snaptrade";
+  snapshotError?: string | null;
   importReconciliation?: import("@/lib/imports/wealthsimple-activity").ImportReconciliation;
   importPreview?:
     import("@/lib/imports/wealthsimple-activity").ActivityImportPreview | null;
@@ -100,7 +102,7 @@ export type OptionsData = OptionsLedger & {
 export type OptionsFilters = {
   account: string;
   ticker: string;
-  currency: "CAD" | "USD";
+  currency: string;
   from: string;
   to: string;
   right: "all" | "CALL" | "PUT";

@@ -1,3 +1,5 @@
+"use client";
+import { useAppSettings } from "@/components/shared/AppSettings";
 import { Money as Money } from "@/components/shared/Money";
 import { PrivateValue } from "@/components/shared/BalancePrivacy";
 import type { AccountData, PositionView } from "@/lib/types";
@@ -10,7 +12,7 @@ import {
 } from "@/lib/options/option-details";
 import { date, quantity, signedPercent } from "@/lib/format";
 import { SectionState } from "@/components/shared/SectionState";
-import { OPTIONS_CURRENCY_NOTE } from "@/lib/options/currency";
+import { optionsCurrencyNote } from "@/lib/options/currency";
 
 export function OptionCard({
   position,
@@ -208,6 +210,7 @@ export function OptionCard({
   );
 }
 export function OptionsDetails({ accounts }: { accounts: AccountData[] }) {
+  const { optionsCurrency } = useAppSettings();
   const rows = accounts.filter(
     (a) =>
       a.positions.status === "error" ||
@@ -222,7 +225,8 @@ export function OptionsDetails({ accounts }: { accounts: AccountData[] }) {
         Expand an account and contract to inspect it. Days remaining are
         calendar days in America/Toronto, not the exact trading cutoff. “At the
         money” means within 0.5% of strike. Moneyness describes the contract,
-        not whether your position is profitable. {OPTIONS_CURRENCY_NOTE}
+        not whether your position is profitable.{" "}
+        {optionsCurrencyNote(optionsCurrency)}
       </p>
       {rows.map((a) => (
         <details

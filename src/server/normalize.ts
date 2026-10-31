@@ -1,8 +1,9 @@
+import { getConfig } from "./config";
 import "server-only";
 
 // Convert SnapTrade responses into display objects; missing amounts remain null, not zero.
 
-import { OPTIONS_CURRENCY, assumeOptionsUsd } from "@/lib/options/currency";
+import { applyOptionsCurrency } from "@/lib/options/currency";
 import type {
   Account,
   Balance,
@@ -79,8 +80,9 @@ export function normalizePositions(data: AllAccountPositionsResponse): {
         rawPrice = numeric(p.price);
       const price = rawPrice !== null && rawPrice >= 0 ? rawPrice : null;
       const currency =
-        i.kind === "option" || i.kind === "future_option"
-          ? OPTIONS_CURRENCY
+        (i.kind === "option" || i.kind === "future_option") &&
+        getConfig().settings.optionsCurrency === "USD"
+          ? "USD"
           : p.currency ||
             ("currency" in i && typeof i.currency === "string"
               ? i.currency
@@ -216,7 +218,10 @@ export function normalizeActivities(
     total: numeric(data.pagination?.total),
     rows: data.data
       .map((t) => {
-        const row = assumeOptionsUsd(normalizeTransaction(t, accountId));
+        const row = applyOptionsCurrency(
+          normalizeTransaction(t, accountId),
+          getConfig().settings.optionsCurrency,
+        );
         return {
           description: row.description,
           type: row.type,

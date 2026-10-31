@@ -1,3 +1,4 @@
+import { selectedPreview, previewsEnabled } from "@/server/config";
 import { loadPortfolio } from "@/server/load-portfolio";
 import { loadHoldingTransactions } from "@/server/load-holding-returns";
 import { calculateHoldingReturns } from "@/lib/returns/holding-returns";
@@ -20,11 +21,9 @@ export default async function HoldingReturnsPage({
 }: {
   searchParams: Promise<{ preview?: string }>;
 }) {
-  const { preview } = await searchParams;
-  if (
-    process.env.NODE_ENV === "development" &&
-    returnsPreviews.includes(preview as ReturnsPreview)
-  )
+  const { preview: requested } = await searchParams;
+  const preview = selectedPreview(requested);
+  if (previewsEnabled() && returnsPreviews.includes(preview as ReturnsPreview))
     return (
       <HoldingReturnsDashboard
         {...createReturnsPreview(preview as ReturnsPreview)}

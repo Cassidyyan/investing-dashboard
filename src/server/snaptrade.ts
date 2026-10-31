@@ -2,6 +2,7 @@ import "server-only";
 
 // Private API connection. Credentials stay here; callers receive only read methods.
 
+import { getConfig } from "./config";
 import { createHash } from "node:crypto";
 import { createRequestProtection } from "./request-protection";
 import { Snaptrade, SnaptradeAuth } from "snaptrade-typescript-sdk";
@@ -18,9 +19,10 @@ export function historyCacheScope(client: object): object {
 }
 
 export function getSnaptrade() {
-  const clientId = process.env.SNAPTRADE_CLIENT_ID;
-  const consumerKey = process.env.SNAPTRADE_CONSUMER_KEY;
-  if (!clientId || !consumerKey) return null;
+  const config = getConfig();
+  if (config.settings.demo || !config.credentials || config.errors.length)
+    return null;
+  const { clientId, consumerKey } = config.credentials;
   const scope = createHash("sha256")
     .update(clientId)
     .update("\0")

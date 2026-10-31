@@ -1,240 +1,180 @@
-# Holdings — start here
+# holdings
 
-This is your private investing dashboard. It reads your existing SnapTrade accounts and displays balances, positions, orders, and activity. It cannot place trades.
+A locally hosted, read-only personal investing dashboard built with Next.js App Router, React, TypeScript and SnapTrade Personal. Each installation uses its operator's own credentials and brokerage connections. This is a single-owner local app, not a shared hosted service.
 
-The app uses **Next.js** (the web framework), **React** (the screen components), and **TypeScript** (JavaScript with checks for the shapes of your data).
+**Distribution status:** preparation is in progress. No project license has been selected. Review the [publication assessment](docs/open-source-readiness.md) before making a repository public or redistributing it.
 
-## Run the app
+## What it does
 
-Open a terminal in this folder. Use Node.js 24 LTS and npm.
+- **Overview:** brokerage-reported values, cash, top holdings, allocation and available history-backed changes.
+- **Investing accounts:** masked account suffixes, reported totals, cash/buying power and clearly labelled holdings estimates.
+- **Cash & chequing:** brokerage deposit accounts and confirmed cash-only investing accounts, with native currency balances.
+- **Holdings & options:** searchable, sortable positions, account filters, allocation by holding/industry/account, option contract details and available moneyness.
+- **Account performance:** available account-value history, date ranges and deposit-aware return estimates where funding evidence supports them.
+- **Holding returns:** lifetime realized/unrealized/dividend accounting from available evidence, with explicit explanations for unranked holdings. Compare-line controls exist, but historical per-stock return lines need a price provider and are not implemented.
+- **Activity:** recent orders and transactions. Orders are displayed, never submitted.
+- **Options Analytics:** quantity-matched lifecycles, cash-based P&L, premium flows, charts, filters and a trade journal. Optional Wealthsimple activity CSVs take precedence over API history. Incomplete trades remain review items.
+- Shared balance hiding, loading/empty/error states, keyboard controls and synthetic UI previews. Desktop is the current design priority.
 
-1. Install the packages the app needs:
+There are no trading, fund-transfer, credential-entry or Commercial user-registration endpoints.
 
-   ```sh
-   npm ci
-   ```
+## Screenshots
 
-2. If `.env.local` already exists, keep it. Otherwise, copy `.env.example` to a new file named `.env.local` in this folder. Enter your two SnapTrade Personal credentials directly in that local file. Keep `.env.example` empty so it is safe to share.
+The images below are generated from the explicit demo mode, using entirely fictional data. They are not the maintainer's portfolio.
 
-3. Confirm Git ignores your private file:
+![Fictional portfolio overview](docs/images/overview-demo.png)
 
-   ```sh
-   git check-ignore .env.local
-   ```
+![Fictional options analytics](docs/images/options-demo.png)
 
-   This must print `.env.local`. Never paste credentials into chat or commit them to Git.
+## Requirements
 
-4. Start the development server:
+- Node.js **24.x LTS** and npm **11.x**; `.nvmrc` and package engines specify the supported major versions. Keep your Node patch release current.
+- Git, a local browser, and access to npm for installation.
+- For live mode: your own SnapTrade **Personal** account, Personal client ID and consumer key, and a supported brokerage connected to that account.
+- No database, private export or other user's local files are required. Chromium is optional for browser tests/screenshots.
 
-   ```sh
-   npm run dev
-   ```
+macOS and Linux use the shell commands below. On Windows, use PowerShell for the equivalent copy commands. Native npm dependencies may require platform-specific tooling if a prebuilt binary is unavailable. A clean same-host macOS installation is validated; Windows/Linux clean-machine behavior is not claimed as tested locally.
 
-5. Open http://127.0.0.1:3000. Stop the server with **Ctrl+C** in the terminal. Restart it after changing `.env.local`.
+## Install and run
 
-Without credentials, you will see setup instructions. This app is meant to run on your own computer; it has no login system for remote access.
-
-## Optional security logos
-
-For ticker icons, get the **publishable** key (`pk_…`) from your [Logo.dev dashboard](https://www.logo.dev/dashboard). Add `LOGO_DEV_PUBLISHABLE_KEY=` to `.env.local` and enter its value directly in your editor, then restart the app. Do not use the secret `sk_` key. Do not replace your existing environment file or paste keys into chat.
-
-The publishable logo key is designed to appear in image URLs and is visible in browser requests. SnapTrade credentials stay server-only. Without a valid publishable key, or when a logo cannot load, the table shows a ticker badge. Logos are optional and do not affect portfolio data. Logo.dev supports exchange suffixes, so Canadian listings keep `.TO`, `.NE`, and other ticker suffixes.
-
-## Find your way around
-
-```text
-investing-dashboard/
-├── README.md                 Start here
-├── docs/                     Explanations for learning and maintenance
-├── src/                      The application code you edit
-│   ├── app/                  Pages, page layout, loading screen, and styles
-│   ├── components/           Screen elements grouped by feature
-│   │   ├── layout/           Page shell, navigation, and loading animation
-│   │   ├── overview/         Summary cards
-│   │   ├── performance/      Daily history charts and period controls
-│   │   ├── returns/          Lifetime holding-return leaderboard
-│   │   ├── accounts/         Investing account tables and totals
-│   │   ├── cash/             Cash & chequing table
-│   │   ├── holdings/         Position tables, sorting, and tabs
-│   │   ├── options/          Option contract cards
-│   │   ├── activity/         Orders and transactions
-│   │   └── shared/           Cards, money display, badges, privacy, controls
-│   ├── server/               Private code that reads SnapTrade data
-│   ├── lib/                  Types, formatting, and helpers grouped by feature
-│   ├── styles/               Shared dashboard design system
-│   └── dev/previews/         Invented development-only sample data
-├── tests/                    Checks grouped by the code they cover
-│   ├── components/           Rendered UI checks
-│   ├── server/               Fetching and normalization checks
-│   ├── lib/                  Calculation checks mirroring src/lib features
-│   └── helpers/              Test-only support files
-├── .env.example              Shareable template; empty variable names only
-├── .env.local                Your private credentials; ignored by Git
-├── .gitignore                Rules for what stays out of Git
-├── package.json              Commands and required packages
-└── package-lock.json         Exact package versions; keep this in Git
-```
-
-There are a few configuration files at the top level because the development tools look for them there. You usually won't need to edit them. The [project guide](docs/project-guide.md) explains each one.
-
-## Pages
-
-- **Overview** (`/`): portfolio hero with CAD/USD switching, cash, account balances, allocation, top holdings, and an activity availability state.
-- **Performance** (`/performance`): daily historical values with range controls and separate brokerage-reported returns. SnapTrade history is a beta add-on with a one-year limit; intraday and five-year histories are unavailable.
-- **Accounts** (`/accounts`): combined estimated USD value at the top, a four-column reported-account view, expandable CAD/USD estimates and buying power, and teal account allocation. Below 768px, accounts become stacked cards. Accounts with a reported total of 0 CAD or 0 USD remain hidden.
-- **Holdings & options** (`/holdings`): searchable, sortable positions with optional account grouping, expandable contract details, a currency-aware summary, and one Industry / Holding / Account allocation card. Mobile positions become stacked cards.
-- **Activity** (`/activity`): one date-grouped Transactions / Orders feed, with local account/type/search filters and Show more.
-
-**Cash & chequing** (`/cash`) shows a native CAD/USD cash summary and account count, followed by a three-column account view that becomes stacked cards below 768px. It includes brokerage-identified banking accounts and accounts confirmed to have no open holdings. They stay out of investing pages and totals. Zero-CAD and zero-USD accounts remain hidden. Failed holdings requests and incomplete data remain visible.
-
-Open a panel by clicking its heading. Expanding panels and switching position tabs do not make more API requests.
-
-## Read the code in this order
-
-1. [page.tsx](src/app/page.tsx): the overview page. It loads balances and shows summary cards and navigation links.
-2. [AccountsTable.tsx](src/components/accounts/AccountsTable.tsx): a component that turns account data into a table.
-3. [types.ts](src/lib/types.ts): definitions of the data the components expect.
-4. [load-portfolio.ts](src/server/load-portfolio.ts): requests account data and keeps successful sections when another section fails.
-5. [normalize.ts](src/server/normalize.ts): turns SnapTrade responses into simpler display data.
-6. [snaptrade.ts](src/server/snaptrade.ts): connects to SnapTrade using credentials that stay on the server.
-
-For a map of every source file, the data flow, and suggestions for first edits, see the [project guide](docs/project-guide.md).
-
-## Everyday commands
-
-| Command                | What it does                                              |
-| ---------------------- | --------------------------------------------------------- |
-| `npm run dev`          | Runs the app while you edit; saved changes appear locally |
-| `npm test`             | Checks calculations and behavior when requests fail       |
-| `npm run typecheck`    | Checks that code uses the expected data types             |
-| `npm run lint`         | Checks coding rules, including the read-only restrictions |
-| `npm run format`       | Makes indentation and spacing consistent                  |
-| `npm run format:check` | Checks formatting without changing files                  |
-| `npm run build`        | Checks that the app can be packaged for production        |
-| `npm start`            | Runs the last production build on localhost               |
-
-After a code change, run type checking, linting, and tests. Run a build before considering the app ready to use in production mode.
-
-## Private files and generated folders
-
-Edit `.env.local` only on your machine. Never put credentials in a `NEXT_PUBLIC_` variable: those variables can reach the browser. Existing brokerage connections are reused; no `userId` or `userSecret` is needed.
-
-`node_modules/`, `.next/`, and `*.tsbuildinfo` are generated by the tools. They are ignored by Git and hidden in VS Code's Explorer to reduce clutter. You can change that display preference in [.vscode/settings.json](.vscode/settings.json). Their contents remain on disk.
-
-Detailed currency rules, freshness behavior, security boundaries, and troubleshooting are in [Security and data behavior](docs/security-and-data.md). The integration follows the [SnapTrade Build with AI guide](https://docs.snaptrade.com/docs/build-with-ai.md).
-
-## Holding returns
-
-Open **Holding returns** for the lifetime leaderboard. It ranks by total profit by default, with an optional return-percentage ranking and separate CAD/USD views. Estimates include realized gains and losses, current unrealized profit, reported dividends, and separately attributed charges. Expand sale history to see profitable and losing sales.
-
-The page requests all transaction history known to SnapTrade, including connected investing accounts whose current balance is zero. Missing purchase history, unmatched transfers, splits, reinvestments, uncertain trade ordering, nonzero trade fees, and unavailable historical FX still require reconciliation. Uniquely matched internal share transfers carry the original recorded cost without counting a sale or another purchase. CAD/USD cash flows can use historical Bank of Canada daily reference rates; affected figures are clearly labelled FX estimates, not exact brokerage returns. “Lifetime” means available history, not verified all-time brokerage coverage.
-
-Brokerage sales with negative share quantities are supported. Transactions without a ticker appear as coverage warnings; ranked estimates cover matched records only, and missing older trades or dividends can still change them. The currency filter shows the number of ranked holdings in each currency.
-
-**Compare return lines** previews the 1D, 5D, 1M, 3M, 6M, YTD, and 1 Year controls. Actual lines require a historical stock-price provider, which has not been configured. No demo data or fabricated history is shown. The planned axes are duration since first recorded purchase and return percentage.
-
-## Overview design previews
-
-In development (`npm run dev`), open `/?preview=sample`, `/?preview=loading`, `/?preview=refreshing`, `/?preview=empty`, `/?preview=error`, or `/?preview=hidden`. These routes use explicitly labelled, invented data from `src/dev/previews/overview-preview.ts`; they skip brokerage requests. Production ignores the preview parameter. The live overview never falls back to sample figures.
-
-Overview now requests account history, available funding history and recent activity through the shared server loaders. The value chart, latest daily value changes, per-account changes, gain versus recorded net deposits and newest transactions use those live results. Failed sections retain their safe messages instead of falling back to sample data. `/?preview=history` demonstrates this connection using explicitly invented fixtures in development. Individual stock-return comparison lines still require a separate historical price provider.
-
-## Accounts design previews
-
-Development-only Accounts states are available at `/accounts?preview=sample`, `loading`, `refreshing`, `empty`, `error`, and `hidden` (use the same `?preview=` parameter for each). Invented fixtures live in `src/dev/previews/accounts-preview.ts`; previews do not query SnapTrade. Production ignores the preview parameter. Live fetching and account filters are unchanged.
-
-## Cash design previews
-
-Development-only cash states are available at `/cash?preview=sample`, `loading`, `refreshing`, `empty`, `error`, and `hidden` (use `?preview=` for each). Fixtures in `src/dev/previews/cash-preview.ts` are explicitly invented; the sample includes one deliberate cash-versus-reported difference to demonstrate the disclosure. They do not query the brokerage and are ignored in production.
-
-The cash currency toggle selects the native CAD or USD subtotal, without conversion or any new exchange-rate request. Reported account totals stay separate and unchanged. Classification and comparison explanations are in keyboard-accessible popovers; accounts with different sync timestamps retain their individual times.
-
-Cash-only investing accounts use your personal **HYSA** label, with an assumed higher yield than chequing explained in the tooltip. Brokerage classification, balances, and interest calculations are unchanged.
-
-## Holdings page
-
-The Holdings page uses the shared header, status, currency controls, cards and return badges. The Portfolio dropdown stays available; the secondary links connect Investing accounts, Cash & chequing and Holdings & options. Account and currency filters update the summary and allocation. Search and Holdings / Options tabs filter the list only; weights keep the full selected positive-position denominator.
-
-The original positions request, valuation helpers and daily Bank of Canada conversion remain unchanged. **Estimated holdings value** follows the existing positive-position allocation scope, including valued options, without cash balances or negative/zero/unavailable values. Shorts remain visible in the list. The exclusions popover explains each omitted position. Industry allocation uses only eligible equities/funds, so its total can be lower. Overview uses brokerage-reported investing totals; Accounts also shows an estimate from cash plus positions. Those totals can differ because their scopes and snapshots differ. Account details retain the original **Reported total**.
-
-Day change is not supplied by this page's existing load, so there is no day-change column. Greeks and IV still need a market-data provider; available contract and moneyness details are retained without invented values.
-
-In development only, `/holdings?preview=sample` uses explicitly labelled invented fixtures without brokerage requests. Other preview states are `loading`, `refreshing`, `empty`, `error`, and `hidden`. Live pages never fall back to fixtures. Balances-hidden masks amounts and quantities with **••••**, blurs charts, and leaves percentages visible.
-
-Missing cash displays **Unavailable**, including USD. Only an actual reported USD cash zero displays `0`; missing and zero values remain distinct in calculations and coverage indicators.
-
-## Historical performance hover
-
-Hover over the account-value line, or use the keyboard chart inspection, to inspect both **Gain vs net deposits** through that date and **Range return · cash-flow adjusted** from the first visible snapshot. The latter is a Modified Dietz estimate with end-of-day deposit/withdrawal timing. Changing the range changes its baseline; it does not discard earlier deposits from the cumulative metric.
-
-The app now reads available funding history for accounts whose charts load. Missing/incomplete funding, unsupported transfers or unconverted funding currencies produce an unavailable explanation, never an invented percentage. The value line and brokerage-reported returns stay separate. Estimates depend on available history and can miss older deposits. See [calculation details](docs/security-and-data.md#return-percentages-at-an-inspected-date).
-
-For local UI checks, `/performance?preview=sample` uses clearly labelled invented history/funding without calling SnapTrade. Production ignores this preview.
-
-## Shared live history on Overview
-
-`src/server/load-overview.ts` loads current snapshots and recent activity, then reuses the Performance history/funding loader once for investing accounts. It skips the legacy brokerage return-rate request because Overview's gain estimate comes from dated funding. Recent activity stays in each transaction's original currency.
-
-Historical values stay in their reported currency. If the selected current-total currency has no history, the chart shows an available native currency with an explicit label; for example, a USD current total can sit above clearly labelled CAD history. Today’s Bank of Canada rate converts current totals, never past snapshots. Historical account coverage, as-of dates, gaps and funding limitations are shown in the coverage disclosure. The chart uses shared observed dates only. Empty/failed histories do not erase successful account histories; excluded accounts are reflected in the coverage count.
-
-“Latest daily value change” includes funding flows and is not investment return. “Gain vs recorded net deposits” is an estimate from available funding, not verified lifetime profit. Unsupported transfers, missing historical funding or unconverted funding currencies can keep that metric unavailable even when the value chart works. Refresh repeats these read-only loads; there is no background polling or persisted financial history.
-
-## Performance page design
-
-Account performance uses the shared teal dashboard header/cards and shows **Data through** separately from retrieval time. Account selection and native CAD/USD tabs filter already-loaded histories; there is no combined or converted historical line. The shared range controls hide unsupported 5Y history. **Change in value** retains the existing calculation and includes funding flows; brokerage-reported returns remain a separate card.
-
-Hover, touch, or focus the chart and use ← / → (Home / End also work) to inspect dates. A Chart/Table switch exposes the same observations and previous-observation changes. Dashed segments mark missing calendar days; no missing values are created. Single observations show a short message, and available per-account histories appear below the hero. Funding-based gain/Modified Dietz estimates remain available in the tooltip and disclosure.
-
-Hidden balances render **••••** and blur charts while percentages remain visible. Loading, refresh, empty, reconnect and source-guidance states reuse the shared controls. Development-only examples: `/performance?preview=mixed`, `reported`, `single`, `empty`, `error`, `loading`, `refreshing`, and `hidden` (use `?preview=` for each). All preview figures are invented. Live fetching and calculations are unchanged.
-
-## Holding Returns page design
-
-The lifetime leaderboard uses the shared dashboard header, currency and range controls, cards and gain/loss badges. One coverage strip replaces the old warning banners; **Details** opens a keyboard-accessible estimates drawer containing methodology, account coverage warnings and the historical Bank of Canada rate explanation.
-
-Summary tiles and best/worst cards use ranked holdings in the selected native currency and account association. Charges are retained in total profit and shown as a separate negative component when present; refunds have the opposite impact. Unranked holdings and their dividends do not enter these summary totals. Search filters the lists, while sort works across the full matching set before the first ten are displayed. Expand a row for account names, available first-buy dates, sales and calculation notes. The needs-data card groups existing issues into reason filters without changing eligibility.
-
-Account association is a membership filter: each holding's original combined results remain intact. The data layer does not supply per-account profit splits, so these filtered totals must not be added together as independent account returns. Company names appear only when supplied by existing positions; names for sold holdings can be missing. Exact per-transaction FX rates are not exposed in the return rows; the available historical FX source notes are shown instead of a fabricated single rate. Compare return lines still requires historical stock prices.
-
-Profit totals differ from account values on Overview/Portfolio and current positive-position values on Holdings: lifetime profit includes eligible recorded sales, unrealized gains/losses, dividends and attributed charges. They have different coverage and units of meaning. No calculation, FX rule, account scope or live API call was changed for this redesign.
-
-Development-only Holding Returns previews: `/returns?preview=sample`, `complete`, `unranked`, `empty`, `loading`, `refreshing`, `error` and `hidden` (use `?preview=` for each). These figures are invented; production ignores them. Hidden amounts use **••••**, bars blur, and percentages stay visible. Logos retain their optional Logo.dev fallback and attribution.
-
-## Accessibility, sorting and refresh protection
-
-Holdings has **Sort positions** and **Sort direction** controls for quantity, average cost, last price, market value, net return, weight, holding and account. Monetary metrics follow the selected CAD/USD/combined reference conversion; quantities stay native. Missing/non-finite metrics sort last in either direction. Sorting remains local and does not request brokerage data.
-
-Manual refresh and retry actions share a 30-second cooldown across client navigation in the same browser tab. Refresh remains disabled while pending, and reads can still be rate-limited by the provider after the browser cooldown ends. A full browser reload resets this UI cooldown.
-
-The server deduplicates identical in-flight SnapTrade reads across adapter instances, permits at most three simultaneous brokerage requests per process/credential scope, and bounds the waiting queue. A 429 blocks new and queued reads until `Retry-After` (seconds or HTTP date), or 30 seconds when absent/invalid. The guard does not automatically retry or cache responses; full transaction histories have a separate, disclosed 60-second RAM cache. Separate server processes/tabs are not a distributed rate limiter; server protection still applies to browser reloads. No trading methods were added.
+Replace `YOUR-USER/YOUR-REPOSITORY` with the repository or fork you intend to clone:
 
 ```sh
-npm run test:browser
+git clone https://github.com/YOUR-USER/YOUR-REPOSITORY.git holdings
+cd holdings
+nvm install
+nvm use
+npm ci
+cp .env.example .env.local
+chmod 600 .env.local
 ```
 
-This runs desktop/tablet/mobile axe audits, loading/empty/error previews, keyboard disclosure checks, holdings-sort controls and refresh cooldown checks. It reuses the local server or starts one on port 3000. All eight routes, including Activity and Options Analytics, use invented development previews; default checks require the Sample data banner. Browser test artifacts stay in the ignored `screenshots-tool/.artifacts/` directory. Automated audits cover tested states and do not replace manual assistive-technology review.
+If you do not use nvm, install Node 24 and npm 11 separately. In PowerShell, use `Copy-Item .env.example .env.local` instead of `cp`, and restrict access with your Windows file permissions rather than `chmod`. **Do not overwrite an existing `.env.local`.**
 
-The presentation polish uses one privacy-aware Money renderer, lighter info controls and underline secondary tabs. Money cells reserve their footprint when hidden; percentages remain visible. Activity reuses the same read-only data requests and explicitly discloses its limited transaction/order coverage. Order execution amounts are not synthesized. `npm run test:browser` checks desktop, tablet and mobile layouts and accessibility.
+Open `.env.local` in your editor and enter your own Personal credentials. Never paste them in chat, issues, screenshots or a browser form. Then:
 
-## Phase 1 financial foundations
+```sh
+npm run check:config
+git check-ignore .env.local
+npm run dev
+```
 
-Start with the [architecture audit](docs/phase-1-audit.md), [options capabilities and matching rules](docs/options-data-foundation.md), and [proposed local history storage](docs/historical-storage-plan.md).
+Open **http://127.0.0.1:3000**. If the port is occupied, use the local URL printed by Next.js. Both dev and production scripts bind to `127.0.0.1`. The request guard accepts loopback hosts only; this app has no remote authentication. Do not expose it through a tunnel, reverse proxy, LAN binding or public hosting.
 
-Shared transaction normalization now retains native monetary inputs with source/status metadata. Position products use exact decimal arithmetic before their numeric display projection, and historical readers share strict pagination/duplicate checks. The new options matcher reconciles explicit opening/closing quantities only; it does not calculate options P&L or infer strategies. Historical entry delta stays unavailable. No database, extra brokerage endpoint, paid service or analytics page was added.
+For local production use:
 
-For synthetic-only UI captures, run `SCREENSHOTS_DATA_MODE=preview npm run screenshots` against the development server. Activity also supports `/activity?preview=sample`, `loading`, `empty`, `error`, and `hidden`; live request failures never use these fixtures as a fallback.
+```sh
+npm run build
+npm start
+```
 
-## Options Analytics
+Production still reads your local runtime environment; it is not a static site.
 
-Open **Options Analytics** in the shared navigation (`/options-analytics`). All options use the app's hardcoded **USD assumption**, without FX conversion; source amounts are unchanged. The page has realized-P&L and premium views, lifecycle statistics, interactive daily/monthly charts, account/ticker/date/put-call/status filters, a sortable underlying table, and an expandable trade journal. Stock, cash and reported account-total currencies keep their original behavior.
+## Try fictional data first
 
-Only reconciled quantities contribute to realized performance. Premium credits from open shorts are not profit. Missing fees, uncertain fee conventions, unallocated charges, incomplete history and unresolved assignment/exercise events stay excluded with explanations. Historical entry Greeks remain unavailable. No database, paid data service or trade operation was added.
+In `.env.local`, set `HOLDINGS_DEMO_MODE=true`, then restart the server. Credentials are unnecessary in this mode. All eight pages use existing synthetic view models, including holdings, cash, options, transactions and performance. Demo mode skips SnapTrade, local CSV reads, external logo URLs and Bank of Canada requests. CSV uploads are disabled so real exports cannot be mixed into demo data.
 
-Read [Options Analytics methodology and limitations](docs/options-analytics.md) before relying on the figures. For a synthetic review, open `/options-analytics?preview=sample` in development; `loading`, `empty`, `error` and `hidden` states also skip brokerage reads. Live errors never use sample data.
+The fictional options fixture explicitly exercises the optional USD policy; live installations default to reported currencies. Set the flag back to `false` and restart to use your accounts. Live request failures never fall back to invented data. Development-only `?preview=sample` and other documented preview states remain available; production ignores those query parameters unless explicit demo mode is enabled.
 
-## Historical data coverage
+## SnapTrade Personal setup
 
-Account-value history and transaction history have different limits. [The recovery audit](docs/history-recovery-audit.md) verifies multiple years of activity on the connected feed, explains missing options directions, and documents the safe corrections. Transaction reads now continue beyond 10,000 records and share a bounded 60-second in-memory snapshot; coverage disclosures show source-read time, sync flags, field gaps and partial failures. No database or importer was added.
+1. Create/sign in to your own [SnapTrade Personal account](https://dashboard.snaptrade.com/).
+2. Connect your own supported brokerage using SnapTrade's dashboard/Connection Portal. Choose read-only permissions where offered. This app does not generate portal URLs or request trading access.
+3. Obtain your own Personal API `clientId` and `consumerKey` from SnapTrade and save them in `.env.local`.
+4. Restart holdings. It retrieves the accounts associated with that Personal key.
 
-### Optional local activity CSV preview
+The installed SDK is initialized only in `src/server/snaptrade.ts`, using `SnaptradeAuth.personalApiKey({ clientId, consumerKey })`. Requests omit Commercial `userId` and `userSecret`; the app never registers a SnapTrade user. This matches the [official Personal integration model](https://docs.snaptrade.com/docs/personal-vs-commercial) and [personal app guide](https://docs.snaptrade.com/docs/build-with-ai).
 
-Place Wealthsimple custom activity CSVs in the git-ignored `private-data/wealthsimple/` folder. **Options Analytics → Wealthsimple CSV preview → Review imported options activity** displays source rows with generic account aliases. Uniquely corroborated account matches support CSV-based option trade estimates for covered dates and evidence-based stock reconciliation in Holding Returns. Reported net cash includes commission; overlapping API observations are not counted twice. Unallocated account/FX fees and incomplete lifecycles remain outside trade figures, and CSV-only stock additions need ending-share reconciliation. See [private import instructions](docs/private-imports.md) and [reconciliation results and source policy](docs/csv-reconciliation.md). Source files are excluded from deployment tracing; no database, normalized archive or personal account mapping is created.
+Each person runs an independent copy with their own key. Sharing a hosted installation is a different product model. SnapTrade's guidance recommends OAuth when an app connects other Personal users; confirm that distribution of independently operated local copies is permitted for your intended launch. See [provider and license checks](docs/third-party-notices.md).
+
+## Configuration
+
+All names are in `.env.example`; it contains no credentials. Empty optional variables use the defaults below. Restart after changing settings.
+
+| Variable                     | Purpose / default                                                                                                                                         |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SNAPTRADE_CLIENT_ID`        | Required in live mode: your own Personal client ID. Server only.                                                                                          |
+| `SNAPTRADE_CONSUMER_KEY`     | Required in live mode: your own Personal consumer key. Server only.                                                                                       |
+| `HOLDINGS_DEMO_MODE`         | Optional `true`/`false`; default `false`. Fictional data only when enabled.                                                                               |
+| `HOLDINGS_OPTIONS_CURRENCY`  | Optional `reported`/`USD`; default `reported`. `USD` explicitly relabels option amounts without FX conversion; it is not appropriate for every brokerage. |
+| `HOLDINGS_CASH_ONLY_AS_HYSA` | Optional `true`/`false`; default `false`. Personal display label only, not proof of account type, APY or higher yield.                                    |
+| `LOGO_DEV_PUBLISHABLE_KEY`   | Optional Logo.dev `pk_` key. Empty disables logo requests. Never enter an `sk_` key. The publishable key is intentionally included in image URLs.         |
+
+`npm run check:config` validates local settings without printing values or calling SnapTrade. It does not verify whether a key is accepted by the provider. Do not use `NEXT_PUBLIC_SNAPTRADE*` variables. Brokerages other than Wealthsimple can supply the supported SnapTrade fields, but feature coverage varies; there is no claim that every brokerage has been live-tested.
+
+## CSV imports
+
+**Options Analytics → Import Wealthsimple activity** accepts drag-and-drop or file selection. Use an activity export, not a realized gain/loss report. Limits: 20 files, 10 MB total and 20,000 rows. A successful batch replaces the previous upload; include every file you want to analyze.
+
+The CSV is the primary historical ledger. API fills are not appended, even outside the export dates. SnapTrade current positions remain separate; CSV account aliases are not automatically linked to them. Missing fees, openings and settlement evidence stay unavailable. All monetary calculations retain exact decimal inputs before display rounding.
+
+Uploads are processed temporarily by the local app and returned to the current page's memory. They are not saved to disk or Git; full reload clears them. **Remove uploaded CSV** restores the original source. Failed uploads keep your previous view. Uploads do not alter Holding Returns.
+
+For persistent local imports, optionally create `private-data/wealthsimple/` outside `public/` and place your activity exports there. That git-ignored folder also supports the existing corroborated Holding Returns reconciliation. Removing a file removes its contribution on the next load. See [private imports](docs/private-imports.md) and [CSV methodology](docs/csv-reconciliation.md).
+
+## Privacy and security
+
+- SnapTrade credentials stay in server-side environment variables. They are not sent to client JavaScript. A Personal key may authorize trading elsewhere; protect it even though holdings exposes read methods only.
+- Data is not intentionally sent to the repository maintainer. Live mode contacts SnapTrade and, for CAD/USD estimates, the Bank of Canada. Optional Logo.dev image requests disclose requested ticker symbols and network information to that provider. No external logos are requested without a publishable key.
+- Fonts are installed and served locally. No Google Fonts runtime request is required. `NEXT_TELEMETRY_DISABLED=1` disables Next.js framework telemetry when desired.
+- Brokerage history is reused in bounded process memory (typically 60 seconds, shorter for partial reads), with credential/account scoping and no disk archive. Process loss clears these caches.
+- Files you choose to keep in `private-data/wealthsimple/` remain on disk. The browser privacy toggle stores a `balances-hidden` preference cookie; it hides display values, not network payloads or developer tools.
+- Optional screenshot tooling writes screenshots and saved browser state to ignored locations. These are sensitive local artifacts, not suitable for automatic publication. Only synthetic screenshots belong in public documentation.
+- `.env.local`, private exports, generated output, local databases and screenshot/auth artifacts are ignored. Ignore rules do not remove already committed history or prevent force-add.
+
+Read [SECURITY.md](SECURITY.md), [security and data boundaries](docs/security-and-data.md), and the [readiness assessment](docs/open-source-readiness.md). Secret scanners reduce risk; they do not prove every file is safe.
+
+## Limitations
+
+Brokerage/API fields, synchronization, historical coverage and permissions differ. Available pages do not prove complete lifetime history. Account-value history can have a shorter window than transaction history; missing valuation points are not reconstructed from today's portfolio. Recent activity is a deliberately limited display feed, not the full analytical ledger.
+
+Reported account totals and estimated holdings values have different scopes and timestamps and can differ legitimately. CAD/USD conversions use Bank of Canada daily reference rates, not live brokerage quotes or execution FX; historical conversions are labelled estimates. Other native currencies are retained where supplied but CAD/USD aggregate views are limited to those currencies.
+
+Account classification relies on explicit provider categories and confirmed empty positions; it does not infer banking status from a failed positions request. Zero CAD/USD accounts are hidden in current views but retained in history scope. Industry labels are app-maintained, not official GICS; ETFs are not looked through. A narrowly documented CAD trust valuation exception remains in normalization.
+
+Historical Greeks, entry IV, historical stock return lines, automatic options strategy detection, verified assignment/exercise P&L, and missing basis/fees are not manufactured. Missing per-share CSV quote conventions can leave entry/exit prices unavailable even where signed cash supports trade estimates.
+
+## Troubleshooting
+
+| Problem                          | What to check                                                                                                                                                                        |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Setup banner / missing variables | Create `.env.local` from the template, enter your own keys locally, run `npm run check:config`, restart. Or explicitly enable demo.                                                  |
+| Invalid credentials / 401 or 403 | Use Personal keys, not Commercial user credentials. Check values and permissions privately in SnapTrade, then restart. No value is printed by the setup utility.                     |
+| No accounts or holdings          | Connect your own brokerage in SnapTrade; allow its sync to complete. Check Cash & chequing and hidden zero-balance filters. Empty is different from a failed request.                |
+| Disabled connection              | Reconnect in SnapTrade, then refresh once. Existing snapshots may be stale.                                                                                                          |
+| 429 / refresh unavailable        | Respect the cooldown. Reads are deduplicated and concurrency-limited; repeated refreshes do not force a brokerage synchronization.                                                   |
+| Unsupported history/fields       | Check provider capabilities and coverage notes. Unavailable data remains unavailable; use supported CSV evidence where appropriate.                                                  |
+| CSV rejected                     | Use Wealthsimple activity columns, valid CSV quoting, complete account IDs and limits above. Other brokerage/gain-loss schemas are not supported by this importer.                   |
+| Logos missing                    | Leave the optional key empty for initials, or use your own valid publishable `pk_` key. Preserve Logo.dev attribution.                                                               |
+| Install/build errors             | Use Node 24/npm 11, keep the lockfile, run `npm ci` with registry access. Install platform dependencies if prebuilt binaries are unavailable. Do not share `.env.local` or raw logs. |
+| Local request rejected           | Use the loopback URL printed by Next.js, with the same scheme/host/port. Cross-origin access and remote hostnames are deliberately blocked.                                          |
+
+## Development and verification
+
+```sh
+npm run lint
+npm run typecheck
+npm test
+npm run format:check
+npm run build
+npm run check:distribution
+```
+
+Unit tests use synthetic fixtures and explicitly ignore live environment credentials. GitHub Actions runs installation, configuration validation, lint, types, unit tests, build and the redacted distribution scan without financial credentials. Browser checks are optional:
+
+```sh
+npx playwright install chromium
+npm run test:browser -- --project=desktop
+```
+
+For synthetic screenshot tooling, see [screenshots-tool/README.md](screenshots-tool/README.md). For code navigation, see [the project guide](docs/project-guide.md). Please read [CONTRIBUTING.md](CONTRIBUTING.md) before proposing changes.
+
+## Prepare a source-only snapshot
+
+After committing a reviewed, clean tree, `npm run release:export` creates an ignored source archive without `.git`, history, credentials, private exports or generated artifacts. A committed project license is required. While license approval is pending, `npm run release:export -- --review` creates a **private review-only** snapshot. Neither command publishes anything. Use a separate new repository for a fresh public history after the [release checklist](docs/release-checklist.md) is complete; do not expose this repository's older private audit summaries.
+
+## License and disclaimer
+
+**No project license has been selected or granted yet.** MIT is recommended for consideration; it will only be applied after the owner's approval. Public visibility alone does not make this an open-source licensed project. Dependency/font licenses remain in force; see [third-party notices](docs/third-party-notices.md).
+
+holdings is an independent analytics project, not officially affiliated with or endorsed by SnapTrade, Wealthsimple, Logo.dev or any brokerage. It provides informational estimates, not investment, tax or legal advice. Verify figures with your brokerage before relying on them.

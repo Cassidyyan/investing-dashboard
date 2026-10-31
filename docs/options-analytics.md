@@ -2,26 +2,30 @@
 
 Open **Options Analytics** in the shared navigation, or visit `/options-analytics`. It uses the existing read-only SnapTrade adapter, account-history scope, validated transaction pagination and request protection. No order/trading operation, database, paid provider, background polling or historical-Greeks source was added.
 
+## CSV-first history and uploads
+
+The **Import Wealthsimple activity** card accepts drag-and-drop or file selection. Uploaded activity exports replace the historical ledger in the current page's memory; full reload clears them and **Remove uploaded CSV** restores the original source. Local `private-data/wealthsimple/` exports remain supported on initial load. Both paths use CSV as the entire primary historical source and never append API fills. SnapTrade history is requested only when there are no CSV options. Current brokerage positions remain a separate snapshot; CSV aliases are not automatically mapped to them. Missing cash/fees remain unavailable, including expiry settlement fields previously supplied by API counterparts. See [private import instructions](private-imports.md) for limits, privacy and supported fields.
+
 ## Follow the data
 
 ```text
 app/options-analytics/page.tsx
   → server/load-options-analytics.ts
-    → existing account/position loader + transactionRecords
-    → normalizeTransaction
+    → existing account/position loader
+    → csv-options-source when CSV exists, otherwise transactionRecords + normalizeTransaction
     → lib/options/ledger.ts + execution-cash.ts
   → components/options-analytics/OptionsAnalyticsDashboard.tsx
     → lib/options/analytics.ts applies local filters and aggregates
     → summary, charts, underlying table, journal and coverage
 ```
 
-The ledger and metrics are pure helpers. UI components do not fetch or manufacture cash flows. The page fetches current positions and full available activities for investing accounts, including zero-balance accounts, so sold contracts can contribute. Orders are cumulative snapshots and are never counted as executions. Reads are sequential by history page/account; after a 429, subsequent histories are skipped. Failed history coverage blocks that account's performance without removing successful other accounts.
+The ledger and metrics are pure helpers. UI components do not manufacture cash flows. The upload component sends only selected files to the stateless import endpoint; it does not fetch brokerage data. The page fetches current positions. When CSV options exist, their independently built ledger supplies history; otherwise it fetches full available activities for investing accounts, including zero-balance accounts, so sold contracts can contribute. Orders are cumulative snapshots and are never counted as executions. Reads are sequential by history page/account; after a 429, subsequent histories are skipped. Failed history coverage blocks that account's performance without removing successful other accounts.
 
 ## What is eligible
 
 Trades require account-scoped transaction identity, a consistent contract key, an explicit action or documented CSV-side classification, usable dates and matched quantities. The Phase 1 matcher separates accounts, contracts and long/short direction. FIFO quantity edges support multiple fills and partial closes. Continuous exposure from opening to flat is one lifecycle; reopening after flat starts another. Different roll legs remain separate, with source references retained but no inferred strategy.
 
-Cash accounting requires reported cash and explicit nonnegative fees. Missing fee is not zero. Option denomination follows the explicit USD-only user assumption; missing or different reported currency does not alone block option accounting. Original currency remains in source metadata, and no amounts are FX-converted. There are three evidence paths:
+Cash accounting requires reported cash and explicit nonnegative fees. Missing fee is not zero. New installations retain reported option currencies by default; missing currencies remain unavailable. Explicit `HOLDINGS_OPTIONS_CURRENCY=USD` enables the prior USD-only personal assumption, without converting amounts. Original currency remains in source metadata, and no amounts are FX-converted. There are three evidence paths:
 
 1. **Reported fee is exactly zero:** the signed source cash amount has the same gross/net meaning either way. It can support cash-based P&L without guessing a multiplier or deriving a missing execution price. Average entry/exit prices remain unavailable if source prices are missing. A contradictory available price/multiplier blocks the record.
 2. **Reported fee is nonzero:** source price × quantity × an explicit confirmed multiplier must exactly reconcile either to the reported signed gross cash or to gross cash less fee. Deduct the fee once when the amount is gross; retain already-net cash otherwise. If neither convention reconciles, the trade needs review. No tolerance or implicit fee/multiplier assumption is inserted.

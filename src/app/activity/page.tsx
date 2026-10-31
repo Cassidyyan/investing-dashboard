@@ -1,3 +1,4 @@
+import { selectedPreview, previewsEnabled } from "@/server/config";
 import {
   activityPreviews,
   createActivityPreview,
@@ -18,9 +19,10 @@ export default async function ActivityPage({
 }: {
   searchParams: Promise<{ preview?: string }>;
 }) {
-  const { preview } = await searchParams;
+  const { preview: requested } = await searchParams;
+  const preview = selectedPreview(requested);
   if (
-    process.env.NODE_ENV === "development" &&
+    previewsEnabled() &&
     activityPreviews.includes(preview as ActivityPreview)
   )
     return (

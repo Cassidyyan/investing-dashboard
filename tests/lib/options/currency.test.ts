@@ -71,6 +71,7 @@ it("uses the explicit USD assumption for a missing currency while keeping missin
   const result = buildOptionsLedger(
     [{ accountId: "synthetic-account", records: [open, close], issues: [] }],
     "2026-10-31",
+    "USD",
   );
   expect(result.trades[0]).toMatchObject({
     currency: "USD",
@@ -99,6 +100,7 @@ it("uses the explicit USD assumption for a missing currency while keeping missin
         },
       ],
       "2026-10-31",
+      "USD",
     ).trades[0].realizedPnl,
   ).toBeNull();
 });
@@ -115,4 +117,20 @@ it("preserves stock currencies and source identity matching inputs", () => {
   );
   expect(assumeOptionsUsd(stock)).toBe(stock);
   expect(stock.cashFlow.currency.value).toBe("CAD");
+});
+it("reported mode preserves native CAD currency and does not invent missing currency", () => {
+  const raw = option("CAD");
+  const report = buildOptionsLedger(
+    [{ accountId: "synthetic-account", records: [raw], issues: [] }],
+    "2026-10-31",
+    "reported",
+  );
+  expect(report.trades[0].currency).toBe("CAD");
+  const missing = buildOptionsLedger(
+    [{ accountId: "synthetic-account", records: [option()], issues: [] }],
+    "2026-10-31",
+    "reported",
+  );
+  expect(missing.trades[0].realizedPnl).toBeNull();
+  expect(missing.trades[0].currency).toBeNull();
 });

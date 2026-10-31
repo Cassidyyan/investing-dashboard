@@ -52,9 +52,14 @@ test.describe("Phase 2 desktop completion", () => {
     await expect(
       page.getByRole("button", { name: "CAD", exact: true }),
     ).toHaveCount(0);
-    await expect(
-      page.getByLabel("Options currency: USD Assumed", { exact: true }),
-    ).toContainText("USD");
+    const assumption = page.getByLabel("Options currency: USD Assumed", {
+      exact: true,
+    });
+    if (await assumption.count()) await expect(assumption).toContainText("USD");
+    else
+      await expect(
+        page.getByRole("combobox", { name: "Currency", exact: true }),
+      ).toHaveValue("USD");
     await page.getByLabel("Underlying", { exact: true }).selectOption("MAPLE");
     await page
       .getByRole("combobox", { name: /^Contract/ })

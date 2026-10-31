@@ -63,3 +63,18 @@ it("reuses completed histories across adapters in the same credential scope with
   await loadTransactionSnapshot("account", getSnaptrade()!);
   expect(sdk.activities).toHaveBeenCalledTimes(2);
 });
+it("uses only the installed Personal API auth mechanism, omitting Commercial user credentials", async () => {
+  vi.stubEnv("SNAPTRADE_CLIENT_ID", "synthetic-personal-client");
+  vi.stubEnv("SNAPTRADE_CONSUMER_KEY", "test-key");
+  sdk.accounts.mockResolvedValue({ data: [] });
+  const adapter = getSnaptrade()!;
+  await adapter.accounts();
+  const { SnaptradeAuth } = await import("snaptrade-typescript-sdk");
+  expect(SnaptradeAuth.personalApiKey).toHaveBeenCalledWith({
+    clientId: "synthetic-personal-client",
+    consumerKey: "test-key",
+  });
+  expect(sdk.accounts.mock.calls[0][0]).toEqual({});
+  expect(Object.keys(adapter)).not.toContain("trading");
+  expect(Object.keys(adapter)).not.toContain("registerSnapTradeUser");
+});

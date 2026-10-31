@@ -1,4 +1,5 @@
 import "server-only";
+import { getConfig } from "./config";
 
 // The image API uses a publishable pk_ key. Reject secret keys before any URL
 // reaches browser props. SnapTrade credentials are never used for logos.
@@ -6,6 +7,7 @@ export function getSecurityLogoUrl(
   symbol: string,
   kind: string,
 ): string | null {
+  if (getConfig().settings.demo) return null;
   const key = process.env.LOGO_DEV_PUBLISHABLE_KEY?.trim();
   if (!key || !/^pk_[A-Za-z0-9_-]+$/.test(key)) return null;
   if (!["stock", "adr", "cef", "etf", "mutualfund", "other"].includes(kind))

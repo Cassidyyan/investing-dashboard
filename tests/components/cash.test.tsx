@@ -1,3 +1,4 @@
+import { AppSettingsProvider } from "@/components/shared/AppSettings";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it, vi } from "vitest";
 import { CashDashboard } from "@/components/cash/CashDashboard";
@@ -7,15 +8,15 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
   usePathname: () => "/cash",
 }));
-it("keeps three columns and distinguishes the personal HYSA assumption from brokerage-reported banking", () => {
+it("keeps three columns with generic cash-only investing and reported banking labels", () => {
   const html = renderToStaticMarkup(
     <CashDashboard portfolio={createCashPreview("sample")} preview="sample" />,
   );
   expect(html.match(/scope="col"/g)).toHaveLength(3);
   expect(html).toContain("Deposit / banking");
-  expect(html).toContain("HYSA");
+  expect(html).toContain("Cash-only investing");
   expect(html).not.toContain("HYSA (assumed)");
-  expect(html).toContain("assumed to earn a higher yield than chequing");
+  expect(html).not.toContain("assumed to earn a higher yield than chequing");
   expect(html).toContain("reported total differs");
   expect(html).toContain("invented sample data");
   expect(html).toContain("does not convert currencies");
@@ -65,4 +66,23 @@ it("supports skeletons, empty links to Portfolio, reconnect errors, and disabled
   expect(refreshing).toContain("Refreshing…");
   expect(refreshing).toContain('aria-busy="true"');
   expect(refreshing).toContain("disabled");
+});
+
+it("uses the personal HYSA label only when the installation explicitly enables it", () => {
+  const html = renderToStaticMarkup(
+    <AppSettingsProvider
+      settings={{
+        demo: false,
+        optionsCurrency: "reported",
+        cashOnlyAsHysa: true,
+      }}
+    >
+      <CashDashboard portfolio={createCashPreview("sample")} />
+    </AppSettingsProvider>,
+  );
+  expect(html).toContain("HYSA");
+  expect(html).toContain(
+    "not a verified brokerage account type or interest rate",
+  );
+  expect(html).not.toContain("assumed to earn a higher yield than chequing");
 });

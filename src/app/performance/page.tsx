@@ -1,3 +1,4 @@
+import { selectedPreview, previewsEnabled } from "@/server/config";
 import { loadPortfolio } from "@/server/load-portfolio";
 import { loadPerformance } from "@/server/load-performance";
 import { calendarToday } from "@/lib/performance/performance";
@@ -13,7 +14,8 @@ export default async function PerformancePage({
 }: {
   searchParams: Promise<{ preview?: string }>;
 }) {
-  const { preview } = await searchParams;
+  const { preview: requested } = await searchParams;
+  const preview = selectedPreview(requested);
   const previews = [
     "sample",
     "empty",
@@ -25,10 +27,7 @@ export default async function PerformancePage({
     "mixed",
     "reported",
   ];
-  if (
-    process.env.NODE_ENV === "development" &&
-    previews.includes(preview || "")
-  ) {
+  if (previewsEnabled() && previews.includes(preview || "")) {
     const sample = createPerformancePreview(preview as PerformancePreview);
     return (
       <PerformanceDashboard

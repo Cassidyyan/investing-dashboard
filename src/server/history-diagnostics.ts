@@ -1,4 +1,5 @@
 import "server-only";
+import { getConfig } from "./config";
 import { getSnaptrade, type ReadClient } from "./snaptrade";
 import { loadTransactionSnapshot } from "./transaction-pages";
 import { transactionSync } from "./history-quality";
@@ -85,6 +86,7 @@ export async function historyDiagnostics(
           },
         ],
         calendarToday(),
+        getConfig().settings.optionsCurrency,
       );
       options = {
         completed: ledger.trades.filter((t) => t.status === "closed").length,

@@ -1,0 +1,72 @@
+.dropzone {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px;
+  border: 1px dashed var(--ov-brand);
+  border-radius: 12px;
+  background: var(--ov-canvas);
+  color: var(--ov-text);
+}
+.dropzone svg {
+  flex-shrink: 0;
+  color: var(--ov-brand);
+}
+.dropzone strong {
+  font-size: 15px;
+}
+.dropzone p,
+.note,
+.status {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.dropzone p {
+  margin: 4px 0 0;
+}
+.dragging {
+  outline: 2px solid var(--ov-brand);
+  outline-offset: 3px;
+}
+.choose,
+.remove {
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 24px;
+  border: 1px solid var(--ov-border);
+  background: var(--ov-surface, white);
+  color: var(--ov-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.choose {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.choose:focus-visible,
+.remove:focus-visible {
+  outline: 2px solid var(--ov-brand);
+  outline-offset: 3px;
+}
+.choose:disabled,
+.remove:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.note {
+  margin: 12px 0 0;
+  color: var(--ov-secondary);
+}
+.status:empty {
+  display: none;
+}
+@media (max-width: 767px) {
+  .dropzone {
+    flex-wrap: wrap;
+  }
+  .choose {
+    margin-left: 0;
+  }
+}

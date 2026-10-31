@@ -1,3 +1,4 @@
+import { selectedPreview, previewsEnabled } from "@/server/config";
 import { loadOverview } from "@/server/load-overview";
 import {
   createOverviewPreview,
@@ -14,9 +15,10 @@ export default async function Page({
 }: {
   searchParams: Promise<{ preview?: string }>;
 }) {
-  const { preview } = await searchParams;
+  const { preview: requested } = await searchParams;
+  const preview = selectedPreview(requested);
   if (
-    process.env.NODE_ENV === "development" &&
+    previewsEnabled() &&
     overviewPreviews.includes(preview as OverviewPreview)
   ) {
     return (

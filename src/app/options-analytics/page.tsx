@@ -1,3 +1,4 @@
+import { selectedPreview, previewsEnabled } from "@/server/config";
 import { Suspense } from "react";
 import { loadOptionsAnalytics } from "@/server/load-options-analytics";
 import { OptionsAnalyticsDashboard } from "@/components/options-analytics/OptionsAnalyticsDashboard";
@@ -24,11 +25,9 @@ export default async function OptionsPage({
 }: {
   searchParams: Promise<{ preview?: string }>;
 }) {
-  const { preview } = await searchParams;
-  if (
-    process.env.NODE_ENV === "development" &&
-    optionsPreviews.includes(preview as OptionsPreview)
-  )
+  const { preview: requested } = await searchParams;
+  const preview = selectedPreview(requested);
+  if (previewsEnabled() && optionsPreviews.includes(preview as OptionsPreview))
     return (
       <OptionsAnalyticsDashboard
         data={createOptionsPreview(preview as OptionsPreview)}

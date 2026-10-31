@@ -1,0 +1,25 @@
+name: Bug report
+description: Report a reproducible problem using synthetic data only
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: "Never include credentials, account IDs, private CSVs, live screenshots or raw provider logs. Use SECURITY.md for private security reports."
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction with demo or synthetic fixtures
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Commit, operating system, Node and npm versions
+    validations:
+      required: true

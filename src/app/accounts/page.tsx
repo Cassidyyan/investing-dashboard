@@ -1,3 +1,4 @@
+import { selectedPreview, previewsEnabled } from "@/server/config";
 import { Suspense } from "react";
 import { loadExchangeRate } from "@/server/exchange-rate";
 import { loadPortfolio } from "@/server/load-portfolio";
@@ -15,9 +16,10 @@ export default async function AccountsPage({
 }: {
   searchParams: Promise<{ preview?: string }>;
 }) {
-  const { preview } = await searchParams;
+  const { preview: requested } = await searchParams;
+  const preview = selectedPreview(requested);
   if (
-    process.env.NODE_ENV === "development" &&
+    previewsEnabled() &&
     accountsPreviews.includes(preview as AccountsPreviewState)
   )
     return (

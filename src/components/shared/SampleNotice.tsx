@@ -1,6 +1,9 @@
+"use client";
+import { useAppSettings } from "./AppSettings";
 import { NavigationLink } from "@/components/layout/NavigationProgress";
 import styles from "@/styles/dashboard.module.css";
 export function SampleNotice({ href }: { href: string }) {
+  if (useAppSettings().demo) return null;
   return (
     <div className={styles.previewBanner} role="status">
       <span>Sample data</span>

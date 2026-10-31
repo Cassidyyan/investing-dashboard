@@ -1,3 +1,5 @@
+import { getConfig } from "@/server/config";
+import { AppSettingsProvider } from "@/components/shared/AppSettings";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { cookies } from "next/headers";
@@ -33,6 +35,10 @@ export default async function Layout({
 }: {
   children: React.ReactNode;
 }) {
+  const config = getConfig();
+  const settings = config.settings.demo
+    ? { ...config.settings, optionsCurrency: "USD" as const }
+    : config.settings;
   const hidden = (await cookies()).get("balances-hidden")?.value === "1";
   return (
     <html
@@ -40,9 +46,13 @@ export default async function Layout({
       className={`${inter.variable} ${editorial.variable} ${labels.variable}`}
     >
       <body>
-        <BalancePrivacyProvider initialHidden={hidden}>
-          <NavigationProgress>{children}</NavigationProgress>
-        </BalancePrivacyProvider>
+        <AppSettingsProvider
+          settings={{ ...settings, setupErrors: config.errors }}
+        >
+          <BalancePrivacyProvider initialHidden={hidden}>
+            <NavigationProgress>{children}</NavigationProgress>
+          </BalancePrivacyProvider>
+        </AppSettingsProvider>
       </body>
     </html>
   );

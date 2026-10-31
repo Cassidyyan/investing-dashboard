@@ -184,6 +184,18 @@ function AccountsContent({
                   Zero CAD/USD accounts and accounts confirmed to have no open
                   holdings are hidden. Cash-only accounts are listed separately.
                 </p>
+                <p>
+                  If you have not connected a brokerage yet,{" "}
+                  <a
+                    href="https://dashboard.snaptrade.com/"
+                    style={{ textDecoration: "underline" }}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    connect your own account in SnapTrade
+                  </a>{" "}
+                  with read-only access, then refresh.
+                </p>
                 <NavigationLink className={shared.ghostButton} href="/cash">
                   View Cash & chequing
                 </NavigationLink>

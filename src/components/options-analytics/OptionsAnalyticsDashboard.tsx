@@ -23,7 +23,8 @@ import { TradeJournal } from "./TradeJournal";
 import { OptionsCoverage } from "./OptionsCoverage";
 import { ImportPreview } from "./ImportPreview";
 import { ImportReconciliationNotice } from "@/components/shared/ImportReconciliationNotice";
-import { OPTIONS_CURRENCY } from "@/lib/options/currency";
+import { CsvUpload } from "./CsvUpload";
+import { useAppSettings } from "@/components/shared/AppSettings";
 import shared from "@/styles/dashboard.module.css";
 import styles from "./OptionsAnalytics.module.css";
 export function OptionsAnalyticsDashboard({
@@ -35,38 +36,85 @@ export function OptionsAnalyticsDashboard({
   preview?: string;
   isLoading?: boolean;
 }) {
-  if (preview === "hidden")
-    return (
-      <BalancePrivacyProvider initialHidden>
-        <Dashboard data={data} preview={preview} isLoading={isLoading} />
-      </BalancePrivacyProvider>
-    );
-  return <Dashboard data={data} preview={preview} isLoading={isLoading} />;
+  const [uploaded, setUploaded] = useState<OptionsData | null>(null);
+  const effective = uploaded
+    ? {
+        ...uploaded,
+        openPositions: preview ? [] : data.openPositions,
+        accounts: [
+          ...uploaded.accounts,
+          ...(preview
+            ? []
+            : data.accounts.filter((a) => !a.id.startsWith("csv-account-"))),
+        ],
+        snapshotError: preview
+          ? "Current brokerage positions are not loaded in the sample view."
+          : data.error ||
+            data.snapshotError ||
+            (data.reconnect
+              ? "The brokerage connection is disabled; current positions may be stale."
+              : null),
+      }
+    : data;
+  const dashboard = (
+    <Dashboard
+      data={effective}
+      preview={uploaded ? undefined : preview}
+      isLoading={isLoading}
+      onImport={setUploaded}
+      onRemove={
+        uploaded
+          ? () => {
+              setUploaded(null);
+              return data;
+            }
+          : undefined
+      }
+    />
+  );
+  return preview === "hidden" ? (
+    <BalancePrivacyProvider initialHidden>{dashboard}</BalancePrivacyProvider>
+  ) : (
+    dashboard
+  );
 }
+
 function Dashboard({
   data,
   preview,
   isLoading,
+  onImport,
+  onRemove,
 }: {
+  onImport: (data: OptionsData) => void;
+  onRemove?: () => OptionsData;
   data: OptionsData;
   preview?: string;
   isLoading: boolean;
 }) {
+  const { optionsCurrency, demo } = useAppSettings();
+  const defaultCurrency =
+    optionsCurrency === "USD"
+      ? "USD"
+      : data.trades.find((t) => t.currency)?.currency || "USD";
   const [selection, setSelection] = useState<Filters>({
     account: "all",
     ticker: "all",
-    currency: OPTIONS_CURRENCY,
+    currency: defaultCurrency,
     from: "",
     to: "",
     right: "all",
     status: "all",
   });
   const filters = useMemo(
-    () => ({ ...selection, currency: OPTIONS_CURRENCY }),
-    [selection],
+    () =>
+      optionsCurrency === "USD" ? { ...selection, currency: "USD" } : selection,
+    [selection, optionsCurrency],
   );
   const setFilters = (next: Filters) =>
-    setSelection({ ...next, currency: OPTIONS_CURRENCY });
+    setSelection(
+      optionsCurrency === "USD" ? { ...next, currency: "USD" } : next,
+    );
   const stats = useMemo(() => optionsAnalytics(data, filters), [data, filters]);
   const { pending, refresh, cooldown } = useProtectedRefresh();
   const positions = data.openPositions.filter(
@@ -149,13 +197,68 @@ function Dashboard({
                 .
               </p>
             )}
-            {data.importPreview && (
+            <CsvUpload
+              onImport={(next) => {
+                setSelection({
+                  account: "all",
+                  ticker: "all",
+                  currency:
+                    optionsCurrency === "USD"
+                      ? "USD"
+                      : next.trades.find((t) => t.currency)?.currency || "USD",
+                  from: "",
+                  to: "",
+                  right: "all",
+                  status: "all",
+                });
+                onImport(next);
+              }}
+              onRemove={
+                onRemove
+                  ? () => {
+                      const original = onRemove();
+                      setSelection({
+                        account: "all",
+                        ticker: "all",
+                        currency:
+                          optionsCurrency === "USD"
+                            ? "USD"
+                            : original.trades.find((t) => t.currency)
+                                ?.currency || "USD",
+                        from: "",
+                        to: "",
+                        right: "all",
+                        status: "all",
+                      });
+                    }
+                  : undefined
+              }
+            />
+            {data.historySource === "csv" && (
+              <aside className={shared.notice} aria-label="CSV primary source">
+                <strong>History source: Wealthsimple CSV</strong>
+                <p>
+                  Historical analytics use CSV activity only. SnapTrade history
+                  is not merged or counted again. Export coverage does not prove
+                  lifetime completeness. CSV accounts are aliases and are not
+                  automatically linked to current brokerage accounts.
+                </p>
+                {data.snapshotError && (
+                  <p>{data.snapshotError} CSV history remains available.</p>
+                )}
+              </aside>
+            )}
+            {data.importPreview && !demo && (
               <ImportPreview
                 data={data.importPreview}
                 reconciliation={data.importReconciliation}
+                primary={data.historySource === "csv"}
+                temporary={!!onRemove}
               />
             )}
-            <ImportReconciliationNotice report={data.importReconciliation} />
+            {data.historySource !== "csv" && (
+              <ImportReconciliationNotice report={data.importReconciliation} />
+            )}
             <OptionsFilters data={data} value={filters} onChange={setFilters} />
             {filters.from && filters.to && filters.from > filters.to ? (
               <p role="alert">
@@ -173,7 +276,8 @@ function Dashboard({
                 {stats.otherCurrencies.length > 0 && (
                   <p className={shared.notice}>
                     Other native currencies ({stats.otherCurrencies.join(", ")})
-                    are retained but excluded from CAD/USD views.
+                    stay separate from the selected currency. Change the
+                    currency filter to view them.
                   </p>
                 )}
                 {!data.error && !data.trades.length && (
@@ -206,8 +310,9 @@ function Dashboard({
         )}
         <footer className={shared.footer}>
           Read-only activity snapshots may lag. No trading. Optional CSV exports
-          stay local and git-ignored. Premium is not realized profit; entry
-          Greeks and automatic strategy classification are unavailable.
+          on disk stay local and git-ignored; uploads are temporary. Premium is
+          not realized profit; entry Greeks and automatic strategy
+          classification are unavailable.
         </footer>
       </main>
     </div>

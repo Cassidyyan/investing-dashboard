@@ -26,7 +26,9 @@ async function settle<T>(
       message:
         status === 429
           ? "Brokerage rate limit reached. Wait before refreshing; available sections remain visible."
-          : "Could not retrieve this section. Check your connection and try refreshing.",
+          : status === 401 || status === 403
+            ? "SnapTrade rejected this read. Verify your own Personal credentials in .env.local, restart the server, and check connection permissions in SnapTrade."
+            : "Could not retrieve this section. Check your connection and try refreshing.",
     };
   }
 }

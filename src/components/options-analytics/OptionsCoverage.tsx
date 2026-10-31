@@ -1,3 +1,5 @@
+"use client";
+import { useAppSettings } from "@/components/shared/AppSettings";
 import { StatCard } from "@/components/shared/StatCard";
 import { InfoPopover } from "@/components/shared/InfoPopover";
 import { Money } from "@/components/shared/Money";
@@ -8,7 +10,7 @@ import type {
 } from "@/lib/options/analytics-types";
 import styles from "./OptionsAnalytics.module.css";
 import { HistoryCoverage } from "@/components/shared/HistoryCoverage";
-import { OPTIONS_CURRENCY_NOTE } from "@/lib/options/currency";
+import { optionsCurrencyNote } from "@/lib/options/currency";
 export function OptionsCoverage({
   data,
   filters,
@@ -16,6 +18,7 @@ export function OptionsCoverage({
   data: OptionsData;
   filters: OptionsFilters;
 }) {
+  const { optionsCurrency } = useAppSettings();
   const dates = data.trades
     .flatMap((t) => t.executions.map((e) => e.tradeDate))
     .sort();
@@ -39,8 +42,10 @@ export function OptionsCoverage({
           <InfoPopover label="Current positions scope">
             Current brokerage positions are a separate snapshot. Account,
             ticker, currency and put/call filters apply; historical date and
-            lifecycle status apply to the ledger, not this snapshot. Missing
-            position requests are disclosed in coverage.
+            lifecycle status apply to the ledger, not this snapshot. CSV account
+            aliases are not linked to brokerage accounts; selecting one does not
+            show a matched current snapshot. Missing position requests are
+            disclosed in coverage.
           </InfoPopover>
         }
       >
@@ -74,20 +79,28 @@ export function OptionsCoverage({
         action={
           <InfoPopover label="Options accounting methodology">
             This page uses transaction activities only; cumulative order
-            snapshots are not counted as fills. {OPTIONS_CURRENCY_NOTE} A
-            matched local CSV can supply trade history for its covered dates;
-            figures are source-labelled trade estimates, and unrelated account
-            fees are not allocated. No currency conversion is used.
-            Zero-settlement expiration needs an explicit event, quantity,
-            currency and zero fee. Assignments and exercises require settlement
-            reconciliation. Entry delta, collateral returns and automatic
-            strategy classifications are unavailable.
+            snapshots are not counted as fills.{" "}
+            {optionsCurrencyNote(optionsCurrency)} A Wealthsimple CSV is the
+            primary history source whenever available; CSV-ledger mode does not
+            merge API trades or require account matching; figures are
+            source-labelled trade estimates, and unrelated account fees are not
+            allocated. No currency conversion is used. Zero-settlement
+            expiration needs an explicit event, quantity, currency and zero fee.
+            Assignments and exercises require settlement reconciliation. Entry
+            delta, collateral returns and automatic strategy classifications are
+            unavailable.
           </InfoPopover>
         }
       >
         <p>
-          {data.accounts.length} investing accounts · {data.trades.length}{" "}
-          observed lifecycles/events ·{" "}
+          {data.historySource === "csv"
+            ? data.accounts.filter((a) => a.id.startsWith("csv-account-"))
+                .length
+            : data.accounts.length}{" "}
+          {data.historySource === "csv"
+            ? "CSV source accounts"
+            : "investing accounts"}{" "}
+          · {data.trades.length} observed lifecycles/events ·{" "}
           {data.trades.filter((t) => t.status === "needs-review").length} need
           review.
         </p>
@@ -95,9 +108,10 @@ export function OptionsCoverage({
           {dates.length
             ? `Dated execution coverage: ${dates[0]} through ${dates.at(-1)}.`
             : "No reliably dated option executions are available."}{" "}
-          Earliest/latest observations do not prove complete history. Account
-          history paginates without a year or record-count cutoff. A two-minute
-          read budget can leave partial coverage explicitly flagged.
+          Earliest/latest observations do not prove complete history.{" "}
+          {data.historySource === "csv"
+            ? "CSV activity is used as exported; missing fields and incomplete lifecycles are not filled from SnapTrade. Unallocated account and FX fees are excluded from trade P&L."
+            : "Account history paginates without a year or record-count cutoff. A two-minute read budget can leave partial coverage explicitly flagged."}
         </p>
         <details>
           <summary>Calculation notes and excluded trades</summary>

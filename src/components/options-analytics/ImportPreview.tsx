@@ -1,4 +1,5 @@
 "use client";
+import { useAppSettings } from "@/components/shared/AppSettings";
 import { useState } from "react";
 import type {
   ActivityImportPreview,
@@ -9,18 +10,20 @@ import { Money } from "@/components/shared/Money";
 import { PrivateValue } from "@/components/shared/BalancePrivacy";
 import { StatCard } from "@/components/shared/StatCard";
 import styles from "./ImportPreview.module.css";
-import {
-  OPTIONS_CURRENCY,
-  OPTIONS_CURRENCY_NOTE,
-} from "@/lib/options/currency";
+import { optionsCurrencyNote } from "@/lib/options/currency";
 
 export function ImportPreview({
   data,
   reconciliation,
+  primary = false,
+  temporary = false,
 }: {
+  primary?: boolean;
+  temporary?: boolean;
   data: ActivityImportPreview;
   reconciliation?: ImportReconciliation;
 }) {
+  const { optionsCurrency } = useAppSettings();
   const active =
     reconciliation?.optionsSource === "csv" && !!reconciliation.csvOptionRows;
   const [search, setSearch] = useState(""),
@@ -39,9 +42,12 @@ export function ImportPreview({
     (r) => ["BUY", "SELL"].includes(r.action) && !r.explicitAction,
   ).length;
   const candidates = data.rows.filter((r) => r.candidateAction).length;
-  const money = (value: Decimal | null) => (
+  const money = (value: Decimal | null, currency: string | null) => (
     <Money
-      value={{ amount: decimalNumber(value), currency: OPTIONS_CURRENCY }}
+      value={{
+        amount: decimalNumber(value),
+        currency: optionsCurrency === "USD" ? "USD" : currency,
+      }}
       signed
     />
   );
@@ -51,7 +57,9 @@ export function ImportPreview({
       action={
         <span>
           {active
-            ? "Source for CSV-based trade estimates"
+            ? primary
+              ? "Primary history source"
+              : "Source for CSV-based trade estimates"
             : "Not applied to returns"}
         </span>
       }
@@ -67,9 +75,13 @@ export function ImportPreview({
         </p>
       )}
       <p>
-        {OPTIONS_CURRENCY_NOTE}{" "}
+        {optionsCurrencyNote(optionsCurrency)}{" "}
         {active ? (
-          "Account matches and source precedence are listed in the reconciliation results below. These are source activities, not separate profit figures; incomplete lifecycles remain excluded."
+          primary ? (
+            "These exports are the primary historical ledger, independent of SnapTrade account matching. API fills are not added. Account aliases separate CSV activity from the current brokerage snapshot; incomplete lifecycles remain excluded."
+          ) : (
+            "Account matches and source precedence are listed in the reconciliation results below. These are source activities, not separate profit figures; incomplete lifecycles remain excluded."
+          )
         ) : (
           <>
             Preview only. CSV accounts are aliases and have not been matched to
@@ -177,14 +189,15 @@ export function ImportPreview({
                         </small>
                         <details>
                           <summary>Source details</summary>
-                          <p>Unit price: {money(r.price)}</p>
-                          {r.currency !== OPTIONS_CURRENCY && (
-                            <p>
-                              Reported source currency:{" "}
-                              {r.currency || "Unavailable"}. The app assumes
-                              USD.
-                            </p>
-                          )}
+                          <p>Unit price: {money(r.price, r.currency)}</p>
+                          {optionsCurrency === "USD" &&
+                            r.currency !== "USD" && (
+                              <p>
+                                Reported source currency:{" "}
+                                {r.currency || "Unavailable"}. The app assumes
+                                USD.
+                              </p>
+                            )}
                           <ul>
                             {r.issues.map((issue) => (
                               <li key={issue}>{issue}</li>
@@ -215,8 +228,8 @@ export function ImportPreview({
                           {r.quantity ?? "Unavailable"}
                         </PrivateValue>
                       </td>
-                      <td>{money(r.netCash)}</td>
-                      <td>{money(r.commission)}</td>
+                      <td>{money(r.netCash, r.currency)}</td>
+                      <td>{money(r.commission, r.currency)}</td>
                     </tr>
                   ))}
               </tbody>
@@ -245,9 +258,10 @@ export function ImportPreview({
         )}
       </details>
       <p>
-        Original exports remain in the git-ignored private-data/wealthsimple
-        folder. No source account IDs or filenames are embedded in application
-        code.
+        {temporary
+          ? "Uploaded exports are temporary and are not saved to disk. A full reload clears them."
+          : "Original exports remain in the git-ignored private-data/wealthsimple folder."}{" "}
+        No source account IDs or filenames are embedded in application code.
       </p>
     </StatCard>
   );

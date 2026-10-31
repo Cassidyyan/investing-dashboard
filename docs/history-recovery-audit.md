@@ -2,29 +2,13 @@
 
 October 31, 2026 · desktop-first · SnapTrade SDK 13.1.11. This audit preserves the pending Phase 2 implementation. No database, provider subscription, account synchronization mutation or trading operation was introduced.
 
-## Findings from the actual connection
+## Generalized findings
 
-A read-only, server-side diagnostic inspected all **33 connected accounts**. It retrieved **1,631 unique transactions**, dated **2022-10-23 through 2026-10-30**. All account paginations completed; the largest account response contained 618 records. Eleven accounts returned transactions; 22 returned explicit empty activity arrays. Every account reported initial transaction synchronization complete and an enabled connection. Metadata sync dates were October 25 or October 29; these dates do not prove the feed is current or that brokerage lifetime history is complete.
+Private connection-derived counts, dates and account aliases have been removed from this working document for distribution. Earlier commits still contain aggregate audit metadata; publication requires the owner's history review. No rewrite is performed automatically. Current diagnostics belong in ignored local artifacts, not public documentation.
 
-For nonempty accounts, the provider's first_transaction_date matched the earliest retrieved activity date. That is evidence of consistency with the provider's available dataset, not evidence of the true account-opening date or every transaction ever made.
+Available transaction history can span multiple years while account-value history has a shorter window. Successful pagination establishes only that the available API pages were consumed, not that the brokerage supplied every lifetime event. Holdings and transactions have separate sync metadata; provider account creation is not brokerage account opening.
 
-The local, git-ignored [per-account diagnostic report](../screenshots-tool/.artifacts/history-diagnostics.md) contains aliases, date ranges, page/record counts, sync status, beta valuation coverage and missing-field counts. Its JSON companion uses the same whitelist. Neither contains account names/numbers/IDs, ticker values, transaction amounts, descriptions or credentials. No raw transaction archive was written. Aliases follow this diagnostic run's account order and are not permanent identifiers.
-
-### Why options returns remain incomplete
-
-The source returned **182 option-related records** across three account aliases:
-
-| Alias      | Option-related records | Buy/sell records missing explicit open/close direction | Explicit multipliers missing | Rows missing contract ID/symbol/strike/expiry |
-| ---------- | ---------------------: | -----------------------------------------------------: | ---------------------------: | --------------------------------------------: |
-| Account 7  |                     46 |                                                45 / 45 |                      46 / 46 |                                             0 |
-| Account 11 |                     65 |                                                45 / 45 |                      65 / 65 |                                             2 |
-| Account 32 |                     71 |                                                47 / 47 |                      71 / 71 |                                             3 |
-
-The follow-up checked full buy/sell-to-open/close phrases in source descriptions, recognized top-level action values and supplemental action/side/open_close fields. None supplied an explicit direction. No descriptions or values were logged. The sampled source supplied trade fees, quantities, prices, amounts and currencies; missing fees were **not** the main observed problem. Nonzero fees still need a verified multiplier/convention before cash can be classified. Brokerage references were absent from 1,630 of 1,631 records. Source event counts were six expirations, zero assignments and zero exercises; zero returned events does not prove none occurred at the brokerage.
-
-Follow-up correction: that initial event counter recognized canonical labels only. The later [CSV reconciliation audit](csv-reconciliation.md) found broker-native `OPTIONS_SHORT_EXPIRY` and `OPTIONS_ASSIGN` records. Parsing and coverage counts now normalize those observed aliases; the initial zero assignment count must not be read as absence of assignment evidence. Explicit opening/closing action omissions in ordinary BUY/SELL records remain a separate issue. CSV-side classifications and covered-period source precedence now enable supported option trade estimates.
-
-The normalization check found zero dropped raw symbols or option contract IDs after the metadata-preservation fix. Buying/selling by itself does not establish opening/closing intent, and missing opening history cannot be converted into a winning trade. No historical option lifecycle could be finalized safely from this returned evidence. Recent cumulative orders cannot repair older activity without a verified execution relationship.
+Options BUY/SELL activities may lack explicit opening/closing intent, multipliers and contract metadata. Broker-native expiry/assignment aliases require normalization. Missing basis, fees or settlements cannot be replaced with zeros, and recent cumulative orders do not repair earlier fills. Compare official exports or ask the provider when source evidence is incomplete. Options Analytics can now use an independent CSV-first ledger; see [source policy](csv-reconciliation.md).
 
 ## Limits by source
 
@@ -41,7 +25,7 @@ The normalization check found zero dropped raw symbols or option contract IDs af
 
 Official references: [activities](https://docs.snaptrade.com/reference/Account%20Information/AccountInformation_getAccountActivities), [general orders](https://docs.snaptrade.com/reference/Account%20Information/AccountInformation_getUserAccountOrders), [recent orders](https://docs.snaptrade.com/reference/Account%20Information/AccountInformation_getUserAccountRecentOrders), [beta account values](https://docs.snaptrade.com/reference/Account%20Information/AccountInformation_getAccountBalanceHistory). Activities are provider-cached daily; re-reading is not forcing a brokerage synchronization.
 
-The one-year graph limitation originates from the account-value endpoint. The app did have a separate 10,000-record safety ceiling, but **that ceiling did not truncate this live dataset**: every account had fewer than 1,000 records. Missing directions/details are absent from the received SnapTrade response; this audit cannot determine whether Wealthsimple omitted them or SnapTrade's integration dropped them. That distinction needs comparison with an official export or provider investigation.
+A source window and an application pagination limit are separate constraints. Transaction pagination now has no fixed year or record-count cutoff, but time budgets and incomplete sync remain explicit limitations. This generalized report does not include a personal connection's coverage dates or totals.
 
 ## Safe corrections implemented
 
@@ -57,7 +41,7 @@ The one-year graph limitation originates from the account-value endpoint. The ap
 
 ## Recovery beyond the returned data
 
-Transaction rows available back to 2022 can already support eligible funding and stock-return calculations. Earlier account-value curves cannot be reconstructed from those rows alone. Reconstruction needs starting cash/positions, complete corporate actions and cash flows, historical security/option prices and dated FX; provenance must identify estimates rather than broker-reported values.
+Available older transaction rows can support eligible funding and stock-return calculations. Earlier account-value curves cannot be reconstructed from those rows alone. Reconstruction needs starting cash/positions, complete corporate actions and cash flows, historical security/option prices and dated FX; provenance must identify estimates rather than broker-reported values.
 
 Recommended source classes for future history are distinct: directly broker-reported statements, observed local snapshots with actual capture/as-of times, source-generated beta estimates, internally reconstructed estimates with versioned inputs, and unavailable periods. Never forward-fill today's portfolio into missing years. Do not stitch changing beta reconstructions together as if they were historical observations.
 

@@ -1,6 +1,8 @@
 import { expect, it, vi } from "vitest";
 import { loadOptionsAnalytics } from "@/server/load-options-analytics";
 import type { ReadClient } from "@/server/snaptrade";
+import { createWealthsimpleDataset } from "@/server/wealthsimple-import";
+import { optionsCsv } from "../helpers/options-csv";
 function client() {
   return {
     accounts: vi.fn(async () => ({
@@ -67,6 +69,40 @@ it("loads paginated activities and current positions without requesting order sn
   expect(c.activities).not.toHaveBeenCalled();
   expect(c.balances).not.toHaveBeenCalled();
   expect(c.transactionPage).toHaveBeenCalledWith("a", 0, 1000);
+});
+it("uses CSV history first without requesting SnapTrade transactions or requiring account matches", async () => {
+  const c = client();
+  c.transactionPage.mockRejectedValue(new Error("History unavailable"));
+  const data = await loadOptionsAnalytics(
+    c as unknown as ReadClient,
+    createWealthsimpleDataset([{ text: optionsCsv }]),
+  );
+  expect(data.historySource).toBe("csv");
+  expect(data.trades.map((t) => t.realizedPnl)).toEqual(["57"]);
+  expect(c.transactionPage).not.toHaveBeenCalled();
+  expect(c.positions).toHaveBeenCalled();
+  expect(data.historyCoverage).toEqual([]);
+});
+it("keeps CSV returns available with no brokerage configuration", async () => {
+  const data = await loadOptionsAnalytics(
+    null,
+    createWealthsimpleDataset([{ text: optionsCsv }]),
+  );
+  expect(data.configured).toBe(true);
+  expect(data.error).toBeNull();
+  expect(data.snapshotError).toContain("Configure");
+  expect(data.trades[0].realizedPnl).toBe("57");
+});
+it("keeps CSV missing fees unavailable instead of filling them with API values", async () => {
+  const c = client();
+  const data = await loadOptionsAnalytics(
+    c as unknown as ReadClient,
+    createWealthsimpleDataset([
+      { text: optionsCsv.replace(",1,0.4,1,-41,", ",1,0.4,,-41,") },
+    ]),
+  );
+  expect(data.trades.every((t) => t.realizedPnl === null)).toBe(true);
+  expect(c.transactionPage).not.toHaveBeenCalled();
 });
 it("preserves the successful account when another history request fails, redacting upstream text", async () => {
   const c = client();

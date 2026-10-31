@@ -1,3 +1,4 @@
+import { selectedPreview, previewsEnabled } from "@/server/config";
 import { Suspense } from "react";
 import { loadPortfolio } from "@/server/load-portfolio";
 import { CashDashboard } from "@/components/cash/CashDashboard";
@@ -14,11 +15,9 @@ export default async function CashPage({
 }: {
   searchParams: Promise<{ preview?: string }>;
 }) {
-  const { preview } = await searchParams;
-  if (
-    process.env.NODE_ENV === "development" &&
-    cashPreviews.includes(preview as CashPreviewState)
-  )
+  const { preview: requested } = await searchParams;
+  const preview = selectedPreview(requested);
+  if (previewsEnabled() && cashPreviews.includes(preview as CashPreviewState))
     return (
       <CashDashboard
         portfolio={createCashPreview(preview as CashPreviewState)}
