@@ -154,6 +154,15 @@ export function DashboardNavigation({ path }: { path: string }) {
         );
       })}
       <NavigationLink
+        href="/options-analytics"
+        className={`${styles.control} ${path === "/options-analytics" ? styles.active : ""}`}
+        aria-current={path === "/options-analytics" ? "page" : undefined}
+        onClick={() => setOpen(null)}
+      >
+        <NavIcon kind="performance" />
+        Options Analytics
+      </NavigationLink>
+      <NavigationLink
         href="/activity"
         className={`${styles.control} ${path === "/activity" ? styles.active : ""}`}
         aria-current={path === "/activity" ? "page" : undefined}

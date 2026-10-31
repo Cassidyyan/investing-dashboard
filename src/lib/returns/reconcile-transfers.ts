@@ -5,6 +5,8 @@ import type {
   SecurityTransaction,
   TransactionHistory,
 } from "@/lib/returns/holding-returns";
+import { verifiedClosedSnapshot } from "./closed-snapshot";
+import { reconcileTransferChains } from "./reconcile-transfer-chains";
 const near = (a: number, b: number) =>
   Math.abs(a - b) <= Math.max(0.00001, Math.abs(b) * 0.000001);
 const transfer = (t: SecurityTransaction) =>
@@ -19,6 +21,7 @@ export function reconcileTransfers(
   accounts: AccountData[],
   histories: TransactionHistory[],
 ): TransactionHistory[] {
+  histories = reconcileTransferChains(accounts, histories);
   const replacements = new Map<SecurityTransaction, SecurityTransaction>();
   const candidates = histories.flatMap((h) =>
     h.transactions.filter(transfer).map((t) => ({ h, t })),
@@ -33,7 +36,7 @@ export function reconcileTransfers(
       h.issues.length ||
       account.positions.status !== "ok" ||
       account.account.incomplete ||
-      account.account.stale
+      (account.account.stale && !verifiedClosedSnapshot(account, h, t.symbol))
     )
       return null;
     const rows = h.transactions.filter((r) => r.symbol === t.symbol);
@@ -122,6 +125,11 @@ export function reconcileTransfers(
           : null;
     if (!source) continue;
     const destination = source === candidate ? other : candidate;
+    if (
+      source.t.transferDirection === "in" ||
+      destination.t.transferDirection === "out"
+    )
+      continue;
     let units = 0,
       basis = 0,
       valid = true;

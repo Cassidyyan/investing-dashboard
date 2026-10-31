@@ -1,9 +1,15 @@
-// Shared display data shapes. Result<T> carries either usable data or a safe error message.
+import type {
+  TransactionCoverage,
+  TransactionSync,
+} from "@/lib/financial/history-coverage";
+// Shared display data shapes. Partial error data is evidence, never eligible input.
 export type Result<T> =
-  { status: "ok"; data: T } | { status: "error"; message: string };
+  | { status: "ok"; data: T }
+  | { status: "error"; message: string; partialData?: T };
 export type ExchangeRate = { cadPerUsd: number; asOf: string };
 export type Money = { amount: number | null; currency: string | null };
 export type AccountView = {
+  transactionSync?: TransactionSync;
   category?: string | null;
   id: string;
   name: string;
@@ -88,7 +94,10 @@ export type FundingEvent = {
   currency: string | null;
   issue?: string;
 };
-export type AccountFunding = { events: FundingEvent[] };
+export type AccountFunding = {
+  events: FundingEvent[];
+  coverage?: TransactionCoverage;
+};
 export type PerformanceAccount = {
   id: string;
   name: string;

@@ -24,6 +24,7 @@ import { PerformanceHero } from "./PerformanceHero";
 import { AccountPerformanceList } from "./AccountPerformanceList";
 import { ReportedReturnsCard } from "./ReportedReturnsCard";
 import { SetupBanner } from "./SetupBanner";
+import { HistoryCoverage } from "@/components/shared/HistoryCoverage";
 import shared from "@/styles/dashboard.module.css";
 import styles from "./Performance.module.css";
 export type PerformancePreview =
@@ -250,6 +251,28 @@ function PerformanceContent({
                 refreshing={refreshing || cooldown}
               />
               <div className={styles.cards}>
+                <HistoryCoverage
+                  rows={selected.flatMap((a) => {
+                    const data =
+                      a.funding?.status === "ok"
+                        ? a.funding.data
+                        : a.funding?.partialData;
+                    return data?.coverage
+                      ? [
+                          {
+                            label: a.name,
+                            coverage: data.coverage,
+                            sync:
+                              portfolio?.accounts.status === "ok"
+                                ? portfolio.accounts.data.find(
+                                    (row) => row.account.id === a.id,
+                                  )?.account.transactionSync
+                                : undefined,
+                          },
+                        ]
+                      : [];
+                  })}
+                />
                 {points.length ? (
                   <PerformanceHero
                     key={`${accountId}-${currency}-${range}`}

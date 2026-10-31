@@ -75,6 +75,25 @@ export function compareDecimal(a: Decimal, b: Decimal): number {
 export function absoluteDecimal(value: Decimal): Decimal {
   return value.replace(/^-/, "") as Decimal;
 }
+// Explicit half-away-from-zero rounding; accounting allocation assigns any residual
+// to the final quantity so a split never creates or loses source money.
+export function divideDecimal(a: Decimal, b: Decimal, places = 12): Decimal {
+  if (!Number.isInteger(places) || places < 0 || places > 18)
+    throw new RangeError("Decimal places must be between 0 and 18.");
+  const l = parts(a),
+    r = parts(b);
+  if (r.coefficient === 0n) throw new RangeError("Cannot divide by zero.");
+  const numerator = l.coefficient * 10n ** BigInt(r.scale + places);
+  const denominator = r.coefficient * 10n ** BigInt(l.scale);
+  let result = numerator / denominator;
+  const remainder = numerator % denominator;
+  if (
+    (remainder < 0n ? -remainder : remainder) * 2n >=
+    (denominator < 0n ? -denominator : denominator)
+  )
+    result += numerator < 0n !== denominator < 0n ? -1n : 1n;
+  return render(result, places);
+}
 // Used only by existing numeric view models, never as the accounting representation.
 export function decimalNumber(value: Decimal | null): number | null {
   if (value === null) return null;

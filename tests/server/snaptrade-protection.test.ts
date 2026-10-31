@@ -1,12 +1,16 @@
 import { afterEach, expect, it, vi } from "vitest";
-const sdk = vi.hoisted(() => ({ accounts: vi.fn() }));
+const sdk = vi.hoisted(() => ({ accounts: vi.fn(), activities: vi.fn() }));
 vi.mock("snaptrade-typescript-sdk", () => ({
   Snaptrade: class {
-    accountInformation = { listUserAccounts: sdk.accounts };
+    accountInformation = {
+      listUserAccounts: sdk.accounts,
+      getAccountActivities: sdk.activities,
+    };
   },
   SnaptradeAuth: { personalApiKey: vi.fn(() => ({})) },
 }));
 import { getSnaptrade } from "@/server/snaptrade";
+import { loadTransactionSnapshot } from "@/server/transaction-pages";
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.clearAllMocks();
@@ -38,4 +42,24 @@ it("does not share an in-flight read across different credential scopes", async 
   expect(first).not.toBe(second);
   await Promise.all([first, second]);
   expect(sdk.accounts).toHaveBeenCalledTimes(2);
+});
+it("reuses completed histories across adapters in the same credential scope without date filters", async () => {
+  vi.stubEnv("SNAPTRADE_CLIENT_ID", "history-client");
+  vi.stubEnv("SNAPTRADE_CONSUMER_KEY", "synthetic-history-key");
+  sdk.activities.mockResolvedValue({
+    data: { data: [{ id: "one" }], pagination: { total: 1 } },
+  });
+  const first = await loadTransactionSnapshot("account", getSnaptrade()!),
+    second = await loadTransactionSnapshot("account", getSnaptrade()!);
+  expect(first.coverage.cache).toBe("fresh");
+  expect(second.coverage.cache).toBe("cached");
+  expect(sdk.activities).toHaveBeenCalledTimes(1);
+  expect(sdk.activities.mock.calls[0][0]).toEqual({
+    accountId: "account",
+    offset: 0,
+    limit: 1000,
+  });
+  vi.stubEnv("SNAPTRADE_CONSUMER_KEY", "other-synthetic-history-key");
+  await loadTransactionSnapshot("account", getSnaptrade()!);
+  expect(sdk.activities).toHaveBeenCalledTimes(2);
 });

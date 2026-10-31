@@ -76,7 +76,7 @@ The UI's existing daily history range is limited to its available source, with f
 
 ### Return percentages at an inspected date
 
-Performance and Overview conditionally read funding transactions for accounts with historical value points. It uses the existing read-only transaction adapter, fetching up to 10,000 available transactions per account with no date filter. Funding reads are sequential, skip accounts without charts, and stop after a rate limit. Incomplete pagination, missing IDs, repeated IDs and request failures make funding-based returns unavailable without removing the value line.
+Performance and Overview conditionally read funding transactions for accounts with historical value points. It uses the existing read-only transaction adapter, fetching available transactions per account with no date or record-count filter. Funding reads are sequential, skip accounts without charts, and stop after a rate limit. Incomplete pagination, missing IDs, conflicting IDs and request failures make funding-based returns unavailable without removing the value line.
 
 Cash CONTRIBUTION amounts increase net deposits; signed WITHDRAWAL amounts decrease them. Trades, dividends, interest, fees and taxes are investment activity, not external funding. Unknown transactions, transfers, in-kind contributions, unexpected signs, fee-bearing funding and foreign-currency funding need reconciliation rather than being guessed. Events after the inspected date never affect earlier metrics. An undated funding issue blocks the calculation because its timing cannot be established.
 
@@ -143,7 +143,7 @@ Hidden amounts and share quantities render **••••**, profit bars blur, a
 
 ## Request and refresh protection
 
-`server/request-protection.ts` shares identical in-flight reads and limits concurrency to three, with at most 100 queued distinct reads, within the current Node.js process and credential scope. Keys and in-flight promises are removed after success or failure; completed responses are not cached. The adapter scopes protection using a credential digest held only in server memory. Changing credentials creates a separate scope.
+`server/request-protection.ts` shares identical in-flight reads and limits concurrency to three, with at most 100 queued distinct reads, within the current Node.js process and credential scope. Keys and in-flight promises are removed after success or failure; this guard does not cache completed responses. The separate history snapshot cache is described below. The adapter scopes protection using a credential digest held only in server memory. Changing credentials creates a separate scope.
 
 HTTP 429 responses start a shared server cooldown using `Retry-After` seconds or HTTP date, with a minimum one second and a 30-second fallback. Queued requests check the cooldown before reaching the SDK. No automatic retry or disk persistence is introduced. This protects one running process; it does not coordinate multiple deployments.
 
@@ -162,3 +162,23 @@ All currency displays use the shared Money renderer. Hiding balances removes the
 New financial domain records retain validated decimal strings, source status/provenance and a whitelist of original scalar monetary fields in memory. No raw-response archive or storage implementation was added. Existing numeric UI models remain projections; they are not a precision-safe accounting ledger. Shared transaction-page validation rejects missing IDs, repeated records, cross-account records and inconsistent coverage rather than silently double counting or accepting incomplete history.
 
 See [the audit](phase-1-audit.md) for exact formula changes and remaining floating-point limits, [options foundations](options-data-foundation.md) for conservative matching and unavailable fields, and [the storage proposal](historical-storage-plan.md) for decisions requiring future approval.
+
+## Options Analytics data rules
+
+`/options-analytics` uses the existing history account scope (including zero-balance investing accounts), current positions and bounded paginated activities. It never merges order snapshots into executions. Filters operate locally; refresh uses existing cooldown/concurrency/rate-limit protection. No additional storage, provider, polling or trade method was added.
+
+Cash-based realized P&L requires matched native-currency quantities and verified fees. Explicit zero-fee signed cash can support accounting without an assumed multiplier; nonzero fees need source-price/quantity/explicit-multiplier reconciliation. Related or unallocated charges block affected accounting, including premium classification. Missing data, unresolved settlement, uncertain sequencing and incomplete history never become zero profit or winners. Assignments/exercises remain unresolved evidence, and expiration requires an explicit zero-settlement event. Full rules and differing date scopes are in [Options Analytics methodology](options-analytics.md).
+
+All monetary chart inspections and expanded journal values use global balance masking. Hidden charts omit financial geometry. Sample/error/empty/loading/hidden development previews are synthetic and bypass brokerage calls; production does not activate them. No real brokerage records are used in the new tests or QA captures.
+
+## Historical coverage and transient cache
+
+The recovery audit removes the old 10,000-record ceiling, accepts short pages, requires an explicit end when no total is supplied, and preserves partial source evidence on failure. Exact duplicates are ignored; conflicts and non-progress are blocking. Funding calculations do not consume partial error evidence.
+
+Credential-scoped whole-history snapshots are reused in server RAM for up to 60 seconds (10 seconds for partial reads), bounded by entry/record counts. They are not a disk cache or database. Coverage shows original read time and reuse; Refresh within the TTL may reuse history. Existing provider cooldown/concurrency protections still apply. Transaction sync metadata is separate from holdings sync. SnapTrade beta valuation estimates are labelled as such.
+
+The local diagnostic report is git-ignored and contains aliases, dates, counts and field-availability flags only. No raw transactions, account identifiers/numbers/names, tickers, amounts or credentials were saved. Tests and screenshots remain strictly synthetic. See [the audit](history-recovery-audit.md) for source limitations and the proposed import workflow.
+
+## User-supplied local CSV exports
+
+The optional [Wealthsimple activity import](private-imports.md) reads user-supplied exports from the ignored `private-data/wealthsimple/` folder. This is an explicit exception for files the user chooses to store locally, not automatic persistence of API responses. Raw source account IDs, descriptions and filenames stay server-side; generic source aliases and normalized ledger/display fields reach the client. Runtime matches can reference existing app account IDs, but no personal mapping is hardcoded or saved. No upload service, public file endpoint, normalized archive or database is added. Files are excluded from Git, formatting and Next.js deployment tracing. [Reconciliation](csv-reconciliation.md) uses multiple corroborating trade matches, explicit source precedence, duplicate safeguards and ending-share evidence; it does not manufacture missing opening basis, fees or settlement cash. Tests use generated synthetic files in temporary directories, never this real-data folder.

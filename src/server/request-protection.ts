@@ -8,7 +8,8 @@ class CooldownError extends Error {
   }
 }
 
-// Process-local protection only. Completed responses and brokerage data are never cached.
+// Process-local request protection. Completed transaction histories have a
+// separate bounded memory cache in transaction-pages.ts, with coverage metadata.
 export function createRequestProtection(concurrency = 3, now = Date.now) {
   if (!Number.isInteger(concurrency) || concurrency < 1)
     throw new RangeError("Concurrency must be a positive integer.");

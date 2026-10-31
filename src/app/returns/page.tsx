@@ -11,6 +11,8 @@ import type { ReturnsPreview } from "@/components/returns/HoldingReturnsDashboar
 import { HoldingReturnsDashboard } from "@/components/returns/HoldingReturnsDashboard";
 import { loadReturnExchangeRates } from "@/server/return-exchange-rates";
 import { getSecurityLogoUrl } from "@/server/security-logo";
+import { loadWealthsimpleDataset } from "@/server/wealthsimple-import";
+import { reconcileHoldingImport } from "@/server/reconcile-holding-import";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export default async function HoldingReturnsPage({
@@ -40,7 +42,11 @@ async function LiveHoldingReturns() {
   const accounts =
     portfolio.accounts.status === "ok" ? portfolio.accounts.data : [];
   const histories = await loadHoldingTransactions(accounts);
-  const fx = await loadReturnExchangeRates(histories);
+  const dataset = await loadWealthsimpleDataset();
+  const imported = dataset
+    ? reconcileHoldingImport(histories, dataset.activities, accounts)
+    : null;
+  const fx = await loadReturnExchangeRates(imported?.histories || histories);
   const rows = calculateHoldingReturns(accounts, fx.histories).map((row) => ({
     ...row,
     // Lifetime results also include sold securities whose current kind is absent.
@@ -64,6 +70,21 @@ async function LiveHoldingReturns() {
   return (
     <HoldingReturnsDashboard
       rows={rows}
+      importReconciliation={imported?.report}
+      historyCoverage={histories.flatMap((h) =>
+        h.coverage
+          ? [
+              {
+                label:
+                  accounts.find((a) => a.account.id === h.accountId)?.account
+                    .name || "Account",
+                coverage: h.coverage,
+                sync: accounts.find((a) => a.account.id === h.accountId)
+                  ?.account.transactionSync,
+              },
+            ]
+          : [],
+      )}
       issues={[...new Set([...issues, ...fx.warnings])]}
       portfolio={portfolio}
       names={names}

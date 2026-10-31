@@ -31,7 +31,7 @@ async function settle<T>(
   }
 }
 function mapResult<T, U>(r: Result<T>, map: (data: T) => U): Result<U> {
-  if (r.status === "error") return r;
+  if (r.status === "error") return { status: "error", message: r.message };
   try {
     return { status: "ok", data: map(r.data) };
   } catch {
@@ -80,7 +80,7 @@ export async function loadPortfolio(
     return {
       configured: true,
       retrievedAt: new Date().toISOString(),
-      accounts,
+      accounts: { status: "error", message: accounts.message },
       connections: mapResult(connections, normalizeConnections),
     };
   // Current views hide zero totals. History keeps them for fully sold holdings.

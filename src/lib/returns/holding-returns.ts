@@ -1,11 +1,15 @@
 import type { NormalizedTransaction } from "@/lib/financial/transactions";
+import type { TransactionCoverage } from "@/lib/financial/history-coverage";
 // Lifetime estimates from reported cash flows, with average-cost sale matching.
 // This is an analytical return on total purchases, not TWR, IRR, or tax reporting.
 import type { AccountData } from "@/lib/types";
 import { reconcileTransfers } from "@/lib/returns/reconcile-transfers";
+import { verifiedClosedSnapshot } from "./closed-snapshot";
 
 export type SecurityTransaction = {
   sourceRecord?: NormalizedTransaction;
+  reportedNet?: boolean;
+  transferDirection?: "in" | "out";
   id: string;
   symbol: string;
   currency: string;
@@ -25,6 +29,8 @@ export type SecurityTransaction = {
   fxAsOf?: string;
 };
 export type TransactionHistory = {
+  sourceRecords?: NormalizedTransaction[];
+  coverage?: TransactionCoverage;
   accountId: string;
   transactions: SecurityTransaction[];
   issues: string[];
@@ -32,6 +38,7 @@ export type TransactionHistory = {
 };
 export type SaleReturn = { date: string; units: number; profit: number };
 export type HoldingReturn = {
+  importedActivities?: number;
   logoUrl?: string | null;
   key: string;
   symbol: string;
@@ -48,6 +55,13 @@ export type HoldingReturn = {
   sales: SaleReturn[];
   issues: string[];
   notes?: string[];
+  sourceGaps?: {
+    account: string;
+    earliest: string | null;
+    latest: string | null;
+    firstEvent: string | null;
+    issues: string[];
+  }[];
 };
 const positionKinds = new Set(["stock", "adr", "etf", "cef", "mutualfund"]);
 export function supportsReturnPosition(p: { kind: string; symbol: string }) {
@@ -93,7 +107,8 @@ export function calculateHoldingReturns(
         if (
           account.positions.status === "error" ||
           account.account.incomplete ||
-          account.account.stale
+          (account.account.stale &&
+            !verifiedClosedSnapshot(account, history, symbol))
         )
           issues.add("Current holdings are incomplete, stale, or unavailable.");
         if (currency === "Unknown")
@@ -162,7 +177,7 @@ export function calculateHoldingReturns(
           }
           // Use reported signed cash amounts. Nonzero embedded fees are uncertain:
           // never subtract the fee twice or silently assume a gross/net convention.
-          if (t.fee !== null && t.fee !== 0)
+          if (t.fee !== null && t.fee !== 0 && !t.reportedNet)
             issues.add("Trade fees require cash-amount reconciliation.");
           if (t.type === "BUY") {
             if (t.amount >= 0) {
@@ -256,6 +271,9 @@ export function calculateHoldingReturns(
           issues: [],
         };
         result.accounts.push(account.account.name);
+        result.importedActivities =
+          (result.importedActivities || 0) +
+          rows.filter((t) => t.sourceRecord?.importEvidence).length;
         result.firstPurchase =
           result.firstPurchase && firstPurchase
             ? result.firstPurchase < firstPurchase
@@ -267,10 +285,32 @@ export function calculateHoldingReturns(
         result.charges += charges;
         result.sales.push(...sales);
         result.issues = [...new Set([...result.issues, ...issues])];
+        if (issues.size) {
+          const dated = rows
+            .filter((t) => t.date)
+            .sort((a, b) => a.order.localeCompare(b.order));
+          result.sourceGaps = [
+            ...(result.sourceGaps || []),
+            {
+              account: account.account.name,
+              earliest: dated[0]?.date || null,
+              latest: dated.at(-1)?.date || null,
+              firstEvent:
+                dated[0]?.sourceRecord?.type || dated[0]?.type || null,
+              issues: [...issues],
+            },
+          ];
+        }
         result.notes = [
           ...new Set([
             ...(result.notes || []),
             ...rows.flatMap((t) => (t.note ? [t.note] : [])),
+            ...(account.account.stale &&
+            verifiedClosedSnapshot(account, history, symbol)
+              ? [
+                  "Closed holding: completed transaction history reconciles to zero shares in an older brokerage snapshot. No stale market quote is used.",
+                ]
+              : []),
           ]),
         ];
         result.realized =

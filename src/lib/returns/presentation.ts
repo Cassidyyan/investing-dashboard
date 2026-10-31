@@ -39,6 +39,9 @@ export function sumReturns(
 }
 export function reasonCategory(issue: string) {
   if (/currency|\bfx\b|exchange rate/i.test(issue)) return "FX / currency";
+  if (/stale|snapshot|current holdings.*unavailable/i.test(issue))
+    return "Snapshot freshness";
+  if (/no matching purchase history/i.test(issue)) return "No purchase basis";
   if (/transfer/i.test(issue)) return "Transfer reconciliation";
   if (/short/i.test(issue)) return "Short sale";
   if (
@@ -56,6 +59,28 @@ export function reasonCategory(issue: string) {
   )
     return "Trades don’t reconcile";
   return "Incomplete history";
+}
+export function recoveryAction(category: string): string {
+  switch (category) {
+    case "FX / currency":
+      return "Retry the historical rate lookup. If unavailable, obtain the dated brokerage conversion rate; today's rate cannot fill this gap.";
+    case "Snapshot freshness":
+      return "Check the brokerage connection and refresh after its holdings sync completes. A closed holding can use an older empty snapshot only when completed transaction history proves the position is flat.";
+    case "Transfer reconciliation":
+      return "Check both accounts' transfer entries and the original purchases. Automatic matching requires one provable share-and-cost path; an external transfer needs original cost records.";
+    case "No purchase basis":
+      return "Obtain the earlier purchase or transfer-in cost from brokerage activity exports or trade confirmations. A sale without its purchase is not proof of a short sale.";
+    case "Corporate action":
+      return "Obtain the split or reinvestment statement, including dates, share quantities and cost adjustments.";
+    case "Fees / charges":
+      return "Use the trade confirmation to verify fees and whether reported cash already includes them; fees must not be counted twice.";
+    case "Short sale":
+      return "Short-position returns require a separate borrow and closing-cost ledger and are excluded from this long-holdings ranking.";
+    case "Trades don’t reconcile":
+      return "Compare dated trades and transfers with the brokerage share count. Missing fills or execution ordering need supporting records.";
+    default:
+      return "Check transaction synchronization and available history coverage, then compare the missing period with a brokerage activity export.";
+  }
 }
 export function groupedReasons(row: HoldingReturn) {
   const groups = new Map<string, string[]>();

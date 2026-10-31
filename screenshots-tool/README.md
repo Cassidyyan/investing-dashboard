@@ -10,7 +10,7 @@ npx playwright install chromium
 npm run screenshots
 ```
 
-The default run saves **at most 10 screenshots**: all seven current pages on desktop, plus Overview, Holdings and Performance on mobile. It captures only their default state, with masking enabled. Tablet and expanded/loading/empty/error/focus/range states are intentionally omitted from this quick review.
+The default run saves **at most 10 screenshots**: all eight current pages on desktop, then mobile Overview and Holdings until the ten-image limit is reached. It captures only their default state, with masking enabled. Tablet and expanded/loading/empty/error/focus/range states are intentionally omitted from this quick review.
 
 ```sh
 npm run screenshots                 # quick review, maximum 10 images
@@ -40,7 +40,7 @@ SCREENSHOTS_DATA_MODE=live npm run screenshots
 SCREENSHOTS_DATA_MODE=preview npm run screenshots
 ```
 
-Default `auto` mode uses the app's existing `?preview=sample`, `?preview=loading`, `?preview=empty` and `?preview=error` states where they are active. All seven routes, including Activity, have these **development-only invented fixtures**. Production ignores preview parameters, so auto mode captures its real view instead. For synthetic-only QA, use `SCREENSHOTS_DATA_MODE=preview npm run screenshots`: this requires an active preview and records a route failure rather than silently capturing live data. `live` mode never selects fixture query parameters.
+Default `auto` mode uses the app's existing `?preview=sample`, `?preview=loading`, `?preview=empty` and `?preview=error` states where they are active. All eight routes, including Activity and Options Analytics, have these **development-only invented fixtures**. Production ignores preview parameters, so auto mode captures its real view instead. For synthetic-only QA, use `SCREENSHOTS_DATA_MODE=preview npm run screenshots`: this requires an active preview and records a route failure rather than silently capturing live data. `live` mode never selects fixture query parameters.
 
 Masking is a screenshot-only CSS overlay for `.private-value`, detected account suffixes and other currency amounts. It also blurs financial graphics and masks login inputs. It preserves layout and the actual app balance-toggle state, so default and balances-hidden remain separate UI states. Native option/SVG text is redacted directly where CSS pseudo-elements cannot work; this changes no control values, calculations or requests. Account names, tickers and percentages can remain visible. Review screenshots before sharing; `--no-mask` permits real amounts and account numbers. Output/session directories are git-ignored; do not commit them.
 

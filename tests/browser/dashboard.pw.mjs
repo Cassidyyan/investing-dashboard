@@ -8,6 +8,7 @@ const routes = [
   "/performance",
   "/returns",
   "/activity",
+  "/options-analytics",
 ];
 async function checkAccessibility(page) {
   await page.waitForLoadState("networkidle");
@@ -168,4 +169,73 @@ test("allocation rows and profit components keep their geometry", async ({
     await eta.evaluate((n) => n.getBoundingClientRect().height),
   ).toBeLessThan(page.viewportSize().width < 768 ? 200 : 90);
   await checkAccessibility(page);
+});
+
+test("options journal, filters and hidden chart preserve financial privacy", async ({
+  page,
+}) => {
+  await page.goto("/options-analytics?preview=sample");
+  await expect(page.getByText("Sample data", { exact: true })).toBeVisible();
+  const inspect = page.getByLabel("Inspect options realization date", {
+    exact: true,
+  });
+  await inspect.selectOption("2026-08-10");
+  await expect(page.locator('[class*="inspection"]')).toContainText(
+    "2026-08-10",
+  );
+  const row = page.getByRole("button", {
+    name: /^(View|Close) trade details for ALPHA/,
+  });
+  await row.click();
+  await expect(row).toHaveAttribute("aria-expanded", "true");
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(page.viewportSize().width);
+  await expect(
+    page.getByText("Execution evidence", { exact: true }),
+  ).toBeVisible();
+  await checkAccessibility(page);
+  await page
+    .getByRole("button", { name: "Hide balances", exact: true })
+    .click();
+  await expect(
+    page.getByLabel("Realized P&L chart hidden", { exact: true }),
+  ).toBeVisible();
+  expect(await page.locator('main [class*="lineChart"]').count()).toBe(0);
+  const money = await page.locator("main .private-value").allTextContents();
+  expect(money.every((value) => /^[•]+$/.test(value.trim()))).toBe(true);
+  await page
+    .getByRole("button", { name: "Show balances", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Filter options by ALPHA", exact: true })
+    .click();
+  await expect(page.getByLabel("Underlying", { exact: true })).toHaveValue(
+    "ALPHA",
+  );
+  await checkAccessibility(page);
+  await page.getByLabel("From", { exact: true }).fill("2026-10-01");
+  await expect(
+    page.getByText("No option trades match these filters.", { exact: false }),
+  ).toBeVisible();
+});
+
+test("holding returns explains how to recover missing evidence with keyboard-accessible reasons", async ({
+  page,
+}) => {
+  await page.goto("/returns?preview=unranked");
+  await page.waitForLoadState("networkidle");
+  const reason = page
+    .locator("summary")
+    .filter({ hasText: "No purchase basis" })
+    .first();
+  await reason.focus();
+  await reason.press("Enter");
+  const panel = reason.locator("..").getByRole("note");
+  await expect(panel).toContainText("Next step:");
+  await expect(panel).toContainText("earlier purchase or transfer-in cost");
+  await checkAccessibility(page);
+  await reason.press("Escape");
+  await expect(reason.locator("..")).not.toHaveAttribute("open", "");
+  await expect(reason).toBeFocused();
 });

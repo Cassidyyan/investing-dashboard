@@ -115,6 +115,7 @@ export function reconcileOptionExecutions(
       fee: t.fee,
       tradeDate: t.tradeDate.day,
       instant: t.tradeDate.instant,
+      sourceOrder: t.tradeDate.sourceOrder,
       entryDelta: t.entryDelta,
       externalReferenceId: t.externalReferenceId,
     });
@@ -162,10 +163,15 @@ export function reconcileOptionExecutions(
         });
       continue;
     }
-    const allTimed = rows.every((e) => e.instant !== null);
+    const localClock = rows[0].sourceOrder?.clock;
+    const local =
+      !!localClock && rows.every((e) => e.sourceOrder?.clock === localClock);
+    const time = (e: OptionExecution) =>
+      local ? e.sourceOrder!.key : e.instant;
+    const allTimed = rows.every((e) => time(e) !== null);
     const sorted = [...rows].sort((a, b) =>
       allTimed
-        ? a.instant!.localeCompare(b.instant!)
+        ? time(a)!.localeCompare(time(b)!)
         : a.tradeDate.localeCompare(b.tradeDate) ||
           (a.instant || "").localeCompare(b.instant || ""),
     );
@@ -182,9 +188,9 @@ export function reconcileOptionExecutions(
         tied: false,
       };
       date.count++;
-      if (e.instant) {
-        date.tied ||= date.times.has(e.instant);
-        date.times.add(e.instant);
+      if (time(e)) {
+        date.tied ||= date.times.has(time(e)!);
+        date.times.add(time(e)!);
       } else date.missingTime = true;
       dates.set(e.tradeDate, date);
     }
@@ -195,7 +201,9 @@ export function reconcileOptionExecutions(
       ) ||
         sorted.some(
           (e, index) =>
-            e.instant !== null && e.instant === sorted[index - 1]?.instant,
+            index > 0 &&
+            time(e) !== null &&
+            time(e) === time(sorted[index - 1]),
         ));
     if (ambiguous) {
       for (const e of sorted)

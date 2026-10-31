@@ -205,13 +205,13 @@ Holdings has **Sort positions** and **Sort direction** controls for quantity, av
 
 Manual refresh and retry actions share a 30-second cooldown across client navigation in the same browser tab. Refresh remains disabled while pending, and reads can still be rate-limited by the provider after the browser cooldown ends. A full browser reload resets this UI cooldown.
 
-The server deduplicates identical in-flight SnapTrade reads across adapter instances, permits at most three simultaneous brokerage requests per process/credential scope, and bounds the waiting queue. A 429 blocks new and queued reads until `Retry-After` (seconds or HTTP date), or 30 seconds when absent/invalid. It does not automatically retry requests or cache completed brokerage responses. Separate server processes/tabs are not a distributed rate limiter; server protection still applies to browser reloads. No trading methods were added.
+The server deduplicates identical in-flight SnapTrade reads across adapter instances, permits at most three simultaneous brokerage requests per process/credential scope, and bounds the waiting queue. A 429 blocks new and queued reads until `Retry-After` (seconds or HTTP date), or 30 seconds when absent/invalid. The guard does not automatically retry or cache responses; full transaction histories have a separate, disclosed 60-second RAM cache. Separate server processes/tabs are not a distributed rate limiter; server protection still applies to browser reloads. No trading methods were added.
 
 ```sh
 npm run test:browser
 ```
 
-This runs desktop/tablet/mobile axe audits, loading/empty/error previews, keyboard disclosure checks, holdings-sort controls and refresh cooldown checks. It reuses the local server or starts one on port 3000. All seven routes, including Activity, use invented development previews; default checks require the Sample data banner. Browser test artifacts stay in the ignored `screenshots-tool/.artifacts/` directory. Automated audits cover tested states and do not replace manual assistive-technology review.
+This runs desktop/tablet/mobile axe audits, loading/empty/error previews, keyboard disclosure checks, holdings-sort controls and refresh cooldown checks. It reuses the local server or starts one on port 3000. All eight routes, including Activity and Options Analytics, use invented development previews; default checks require the Sample data banner. Browser test artifacts stay in the ignored `screenshots-tool/.artifacts/` directory. Automated audits cover tested states and do not replace manual assistive-technology review.
 
 The presentation polish uses one privacy-aware Money renderer, lighter info controls and underline secondary tabs. Money cells reserve their footprint when hidden; percentages remain visible. Activity reuses the same read-only data requests and explicitly discloses its limited transaction/order coverage. Order execution amounts are not synthesized. `npm run test:browser` checks desktop, tablet and mobile layouts and accessibility.
 
@@ -222,3 +222,19 @@ Start with the [architecture audit](docs/phase-1-audit.md), [options capabilitie
 Shared transaction normalization now retains native monetary inputs with source/status metadata. Position products use exact decimal arithmetic before their numeric display projection, and historical readers share strict pagination/duplicate checks. The new options matcher reconciles explicit opening/closing quantities only; it does not calculate options P&L or infer strategies. Historical entry delta stays unavailable. No database, extra brokerage endpoint, paid service or analytics page was added.
 
 For synthetic-only UI captures, run `SCREENSHOTS_DATA_MODE=preview npm run screenshots` against the development server. Activity also supports `/activity?preview=sample`, `loading`, `empty`, `error`, and `hidden`; live request failures never use these fixtures as a fallback.
+
+## Options Analytics
+
+Open **Options Analytics** in the shared navigation (`/options-analytics`). All options use the app's hardcoded **USD assumption**, without FX conversion; source amounts are unchanged. The page has realized-P&L and premium views, lifecycle statistics, interactive daily/monthly charts, account/ticker/date/put-call/status filters, a sortable underlying table, and an expandable trade journal. Stock, cash and reported account-total currencies keep their original behavior.
+
+Only reconciled quantities contribute to realized performance. Premium credits from open shorts are not profit. Missing fees, uncertain fee conventions, unallocated charges, incomplete history and unresolved assignment/exercise events stay excluded with explanations. Historical entry Greeks remain unavailable. No database, paid data service or trade operation was added.
+
+Read [Options Analytics methodology and limitations](docs/options-analytics.md) before relying on the figures. For a synthetic review, open `/options-analytics?preview=sample` in development; `loading`, `empty`, `error` and `hidden` states also skip brokerage reads. Live errors never use sample data.
+
+## Historical data coverage
+
+Account-value history and transaction history have different limits. [The recovery audit](docs/history-recovery-audit.md) verifies multiple years of activity on the connected feed, explains missing options directions, and documents the safe corrections. Transaction reads now continue beyond 10,000 records and share a bounded 60-second in-memory snapshot; coverage disclosures show source-read time, sync flags, field gaps and partial failures. No database or importer was added.
+
+### Optional local activity CSV preview
+
+Place Wealthsimple custom activity CSVs in the git-ignored `private-data/wealthsimple/` folder. **Options Analytics → Wealthsimple CSV preview → Review imported options activity** displays source rows with generic account aliases. Uniquely corroborated account matches support CSV-based option trade estimates for covered dates and evidence-based stock reconciliation in Holding Returns. Reported net cash includes commission; overlapping API observations are not counted twice. Unallocated account/FX fees and incomplete lifecycles remain outside trade figures, and CSV-only stock additions need ending-share reconciliation. See [private import instructions](docs/private-imports.md) and [reconciliation results and source policy](docs/csv-reconciliation.md). Source files are excluded from deployment tracing; no database, normalized archive or personal account mapping is created.

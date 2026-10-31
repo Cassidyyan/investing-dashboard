@@ -8,11 +8,15 @@ export function StatusChip({
   loading?: boolean;
   dataThrough?: string | null;
 }) {
-  const updated = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Toronto",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(updatedAt));
+  const timestamp = Date.parse(updatedAt);
+  const updated =
+    !loading && Number.isFinite(timestamp)
+      ? new Intl.DateTimeFormat("en-CA", {
+          timeZone: "America/Toronto",
+          hour: "numeric",
+          minute: "2-digit",
+        }).format(new Date(timestamp))
+      : null;
   return (
     <div className={styles.status}>
       <span className={styles.readOnly}>
@@ -29,7 +33,13 @@ export function StatusChip({
         </svg>
         Read-only
       </span>
-      <span>{loading ? "Loading portfolio…" : `Updated ${updated} ET`}</span>
+      <span>
+        {loading
+          ? "Loading portfolio…"
+          : updated
+            ? `Updated ${updated} ET`
+            : "Update time unavailable"}
+      </span>
       {!loading && dataThrough && <span>Data through {dataThrough}</span>}
     </div>
   );

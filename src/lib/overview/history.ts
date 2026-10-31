@@ -108,6 +108,11 @@ export function connectOverviewHistory(
     ...model,
     historyByCurrency,
     historyIssues: [...new Set(errors)],
+    historyReads: included.flatMap((a) => {
+      const data =
+        a.funding?.status === "ok" ? a.funding.data : a.funding?.partialData;
+      return data?.coverage ? [{ label: a.name, coverage: data.coverage }] : [];
+    }),
     historyMessage: errors.length
       ? `${errors.length} account histories could not load. ${[...new Set(errors)].join(" ")}`
       : included.length

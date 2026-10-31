@@ -56,7 +56,7 @@ it("preserves other accounts after failure without exposing upstream messages", 
   expect(result[1].transactions).toHaveLength(1);
   expect(JSON.stringify(result)).not.toContain("SECRET");
 });
-it("deduplicates repeated IDs and excludes the affected history from ranking", async () => {
+it("deduplicates identical IDs without excluding otherwise complete history", async () => {
   const request = vi.fn(async () => ({
     data: { data: [raw("same"), raw("same")], pagination: { total: 2 } },
   }));
@@ -65,12 +65,16 @@ it("deduplicates repeated IDs and excludes the affected history from ranking", a
     client(request),
   );
   expect(h.transactions).toHaveLength(1);
-  expect(h.issues.join(" ")).toContain("repeated");
+  expect(h.issues).toEqual([]);
+  expect(h.coverage?.duplicates).toBe(1);
 });
 it("flags incomplete pagination and unassigned security transactions", async () => {
-  const request = vi.fn(async () => ({
-    data: { data: [{ id: "x", type: "DIVIDEND" }], pagination: { total: 5 } },
-  }));
+  const request = vi
+    .fn()
+    .mockResolvedValueOnce({
+      data: { data: [{ id: "x", type: "DIVIDEND" }], pagination: { total: 5 } },
+    })
+    .mockResolvedValueOnce({ data: { data: [], pagination: { total: 5 } } });
   const [h] = await loadHoldingTransactions(
     accounts.slice(0, 1),
     client(request),
@@ -137,9 +141,39 @@ it("does not attribute option lifecycle events or interest to stock returns", ()
     "INTEREST",
   ]) {
     expect(
-      normalizeSecurityTransaction({ ...raw("option-event"), type }),
+      normalizeSecurityTransaction({
+        ...raw("option-event"),
+        type,
+        ...(type === "OPTIONS_ASSIGN"
+          ? {
+              option_symbol: {
+                id: "synthetic-contract",
+                ticker: "SYNTH261218C00100000",
+                option_type: "CALL",
+                strike_price: 100,
+                expiration_date: "2026-12-18",
+                underlying_symbol: { symbol: "SYNTH" },
+              },
+            }
+          : {}),
+      }),
     ).toBeNull();
   }
+});
+it("retains underlying assignment share purchases and sales separately from the option leg", () => {
+  const buy = normalizeSecurityTransaction({
+    ...raw("assigned-put"),
+    type: "OPTIONS_ASSIGN",
+  });
+  expect(buy).toMatchObject({ type: "BUY", units: 1, amount: -10 });
+  expect(buy?.sourceRecord?.optionRelated).toBe(false);
+  const sell = normalizeSecurityTransaction({
+    ...raw("assigned-call"),
+    type: "OPTIONS_ASSIGN",
+    units: -1,
+    amount: 10,
+  });
+  expect(sell).toMatchObject({ type: "SELL", units: 1, amount: 10 });
 });
 it("warns about unmatched tickers without invalidating unrelated matched records", async () => {
   const request = vi.fn(async () => ({

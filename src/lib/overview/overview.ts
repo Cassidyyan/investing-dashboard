@@ -39,6 +39,7 @@ export type OverviewModel = {
   historyByCurrency?: Partial<Record<"CAD" | "USD", OverviewHistory>>;
   historyMessage?: string;
   historyIssues?: string[];
+  historyReads?: import("@/lib/financial/history-coverage").CoverageRow[];
   activityMessage?: string;
   activity:
     | {

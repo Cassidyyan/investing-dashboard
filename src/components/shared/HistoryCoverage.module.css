@@ -1,0 +1,50 @@
+.coverage {
+  grid-column: 1 / -1;
+  margin: 16px 0;
+  padding: 16px;
+  background: var(--ov-surface, white);
+  border: 1px solid var(--ov-border, #dfe5ea);
+  border-radius: 16px;
+  color: var(--ov-text, #202b38);
+  font-size: 13px;
+}
+.coverage summary {
+  cursor: pointer;
+  min-height: 44px;
+  align-content: center;
+  color: var(--ov-brand, #146d7c);
+}
+.coverage summary:focus-visible {
+  outline: 2px solid var(--ov-brand, #146d7c);
+  outline-offset: 3px;
+}
+.coverage p,
+.coverage dt {
+  color: var(--ov-secondary, #56616e);
+  font-size: 12px;
+}
+.accounts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: 20px;
+}
+.accounts section {
+  min-width: 0;
+  border-top: 1px solid var(--ov-border, #dfe5ea);
+}
+.accounts h3 {
+  font-size: 15px;
+}
+.accounts dl {
+  display: grid;
+  gap: 10px;
+}
+.accounts dd {
+  margin: 2px 0 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.accounts ul {
+  padding-left: 20px;
+  font-size: 12px;
+}

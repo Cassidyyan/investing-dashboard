@@ -35,15 +35,21 @@ it("rejects changing totals and records from another account", async () => {
     ]),
   ).rejects.toMatchObject({ code: "account_scope_mismatch" });
 });
-it("rejects too-small totals, duplicate IDs and missing arrays", async () => {
+it("rejects too-small totals, conflicting IDs and missing arrays", async () => {
   await expect(
     collect([{ data: [{ id: "one" }], pagination: { total: 0 } }]),
   ).rejects.toMatchObject({ code: "total_smaller_than_records" });
   await expect(
     collect([
-      { data: [{ id: "one" }, { id: "one" }], pagination: { total: 2 } },
+      {
+        data: [
+          { id: "one", amount: 1 },
+          { id: "one", amount: 2 },
+        ],
+        pagination: { total: 2 },
+      },
     ]),
-  ).rejects.toMatchObject({ code: "repeated_id" });
+  ).rejects.toMatchObject({ code: "conflicting_id" });
   await expect(collect([{}])).rejects.toMatchObject({
     code: "missing_page_records",
   });
@@ -65,9 +71,8 @@ it("uses requested account scope when optional account metadata is absent", asyn
   expect(rows).toHaveLength(2);
 });
 it("does not count whitespace variants of the same transaction identity twice", async () => {
-  await expect(
-    collect([
-      { data: [{ id: "one" }, { id: " one " }], pagination: { total: 2 } },
-    ]),
-  ).rejects.toMatchObject({ code: "repeated_id" });
+  const result = await collect([
+    { data: [{ id: "one" }, { id: " one " }], pagination: { total: 2 } },
+  ]);
+  expect(result.rows).toHaveLength(1);
 });

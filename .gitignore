@@ -18,3 +18,8 @@ coverage/
 /screenshots/
 /screenshots-tool/.auth/
 /screenshots-tool/.artifacts/
+
+# Local brokerage exports and import working files; never serve from public/.
+/private-data/
+# Protect CSV exports even when accidentally placed elsewhere in this project.
+*.[cC][sS][vV]

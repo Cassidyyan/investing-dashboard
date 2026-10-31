@@ -127,7 +127,7 @@ All files in `src/server/` start with `import "server-only"`. `load-overview.ts`
 
 `components/performance/PerformanceChart.tsx` selects the closest daily point on hover, touch, or left/right arrow keys. `HistoryInspection.tsx` renders the selected date's two metrics and unavailable reasons. Styling lives beside them in `Performance.module.css`.
 
-`server/load-account-funding.ts` reads all available paginated transactions only for accounts with a value chart. It normalizes contributions/withdrawals, flags unknown or unsupported transfers, rejects incomplete pages, and stops after 10,000 transactions. `load-performance.ts` runs these funding reads sequentially and stops requesting them after a rate limit. No raw transactions are persisted.
+`server/load-account-funding.ts` reads all available paginated transactions only for accounts with a value chart. It normalizes contributions/withdrawals, flags unknown or unsupported transfers, validates pagination and continues through available history without a year or record-count cutoff. `load-performance.ts` runs these funding reads sequentially and stops requesting them after a rate limit. No raw transactions are persisted. Whole-history reads can be reused in server memory for 60 seconds, with retrieval/coverage metadata; a two-minute read budget marks partial results explicitly.
 
 `lib/performance/cash-flow-returns.ts` calculates gain versus net deposits up to the inspected date and an estimated Modified Dietz return from the first visible snapshot to that date. Date-range changes reset the period baseline, while cumulative net deposits retain their full recorded history. Currency groups use exactly the same accounts as the value chart. Tests use the labelled fixture in `dev/previews/performance-preview.ts`; `/performance?preview=sample` enables it only in development and makes no brokerage calls.
 
@@ -216,4 +216,18 @@ The feature lives in `components/returns/`:
 
 Activity now renders `ActivityDashboard` with the unchanged `loadPortfolio(undefined, ["orders", "activities"])` result. Its feed, account/type/search filters, date groups, and fifteen-item display limit operate on already-loaded items. Orders expose quantity/status rather than inventing monetary execution data. The old page shell and per-account lists were removed. Unit tests cover loading/empty/error/privacy; browser checks also cover the current live read-only Activity view.
 
-Layout regressions cover all seven pages at 1440, 820 and 390 pixels, hidden-value dimensions, fixed allocation tracks, the ETA zero-value row, and the twelve-pixel profit-components bar.
+Layout regressions cover all eight pages at 1440, 820 and 390 pixels, hidden-value dimensions, fixed allocation tracks, the ETA zero-value row, and the twelve-pixel profit-components bar.
+
+## Options Analytics
+
+The new route is `app/options-analytics/page.tsx`. `server/load-options-analytics.ts` reuses existing account scopes, transaction pagination, normalization and request guards; it does not read orders or introduce another provider. `lib/options/ledger.ts` creates quantity-matched lifecycles, `execution-cash.ts` verifies cash/fee semantics, and `analytics.ts` applies local filters and exact native-currency aggregation. `components/options-analytics/` holds the shared-style dashboard, filters, summary, charts, underlying table, journal and coverage disclosures. Synthetic states live in `dev/previews/options-analytics-preview.ts`.
+
+See [Options Analytics](options-analytics.md) for eligibility, allocation, date scopes and missing data. Calculation changes belong in the pure helpers and their tests, not chart or table components.
+
+## Historical-data recovery
+
+Read [the historical-data audit](history-recovery-audit.md) for the actual source findings and import proposal. `server/transaction-pages.ts` handles complete/partial snapshots, pagination and bounded memory reuse. `history-quality.ts` counts applicable source field gaps and keeps transaction sync separate from holdings. `history-diagnostics.ts` emits aliases/dates/counts only; it exposes no public HTTP endpoint. `components/shared/HistoryCoverage.tsx` discloses API completion independently of brokerage lifetime coverage. No database or importer was introduced.
+
+Read [the Holding Returns recovery notes](holding-returns-recovery.md) for closed-position freshness checks, repeated internal transfer reconciliation and remaining purchase-cost gaps. `lib/returns/closed-snapshot.ts` verifies older empty snapshots; `reconcile-transfer-chains.ts` requires a unique cost-carrying path and matching ending shares. Missing-data reason popovers identify affected accounts and the supporting records needed.
+
+The local [CSV reconciliation layer](csv-reconciliation.md) is shared by Holding Returns and Options Analytics. `server/wealthsimple-import.ts` reads ignored exports; `lib/imports/reconcile-activities.ts` corroborates accounts and overlapping executions; `csv-option-history.ts` builds an explicitly scoped CSV option cohort; `server/reconcile-holding-import.ts` validates additional stock rows against ending shares. Reconciliation runs in memory without personal mappings in source code or normalized archives on disk.

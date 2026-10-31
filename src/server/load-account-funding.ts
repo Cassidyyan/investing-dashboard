@@ -3,10 +3,8 @@ import type { UniversalActivity } from "snaptrade-typescript-sdk";
 import type { AccountFunding, FundingEvent, Result } from "@/lib/types";
 import { historyDate } from "@/lib/performance/performance";
 import { numeric } from "./normalize";
-import {
-  transactionRecords,
-  TransactionCoverageError,
-} from "./transaction-pages";
+import { transactionRecords } from "./transaction-pages";
+import type { TransactionSync } from "@/lib/financial/history-coverage";
 import { normalizeTransaction } from "./normalize-transactions";
 import { decimalNumber } from "@/lib/financial/decimal";
 import type { ReadClient } from "./snaptrade";
@@ -73,26 +71,40 @@ export function normalizeFundingEvent(
 export async function loadAccountFunding(
   accountId: string,
   client: Pick<ReadClient, "transactionPage">,
+  sync?: TransactionSync,
 ): Promise<Result<AccountFunding>> {
   const events: FundingEvent[] = [];
+  let coverage: AccountFunding["coverage"];
   try {
-    for await (const transaction of transactionRecords(accountId, client)) {
+    for await (const transaction of transactionRecords(
+      accountId,
+      client,
+      (value) => {
+        coverage = value;
+      },
+      sync,
+    )) {
       const event = normalizeFundingEvent(transaction, accountId);
       if (event) events.push(event);
     }
-    return { status: "ok", data: { events } };
+    if (sync?.initialSyncCompleted === false || sync?.invalidMetadata)
+      return {
+        status: "error",
+        message:
+          "Transaction synchronization is incomplete or invalid; funding-based returns are unavailable.",
+        partialData: { events, coverage },
+      };
+    return { status: "ok", data: { events, coverage } };
   } catch (error) {
     const status = (error as { response?: { status?: number } } | null)
       ?.response?.status;
     return {
       status: "error",
+      partialData: { events, coverage },
       message:
-        error instanceof TransactionCoverageError &&
-        error.code === "history_limit_exceeded"
-          ? "Funding history exceeds the 10,000-transaction limit; return estimates are unavailable."
-          : status === 429
-            ? "Funding history rate limit reached. Wait before refreshing."
-            : "Complete available funding history could not be loaded. Try Refresh.",
+        status === 429
+          ? "Funding history rate limit reached. Wait before refreshing."
+          : "Complete available funding history could not be loaded. Try Refresh.",
     };
   }
 }

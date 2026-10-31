@@ -2,6 +2,7 @@ import "server-only";
 
 // Convert SnapTrade responses into display objects; missing amounts remain null, not zero.
 
+import { OPTIONS_CURRENCY, assumeOptionsUsd } from "@/lib/options/currency";
 import type {
   Account,
   Balance,
@@ -26,6 +27,7 @@ import {
 import { positionValues } from "@/lib/financial/position-values";
 import { decimalNumber } from "@/lib/financial/decimal";
 import { normalizeOptionContract } from "@/lib/options/contracts";
+import { transactionSync } from "./history-quality";
 export { numeric } from "@/lib/financial/validation";
 export function normalizeAccount(a: Account): AccountView {
   if (!a || typeof a !== "object") throw new Error("Account data unavailable.");
@@ -35,6 +37,7 @@ export function normalizeAccount(a: Account): AccountView {
   const syncedAt = rawSync && calendarDay(rawSync) ? rawSync : null;
   return {
     id: a.id,
+    transactionSync: transactionSync(a.sync_status?.transactions),
     category: a.account_category ?? null,
     name: a.name || "Unnamed account",
     institution: a.institution_name || "Unknown institution",
@@ -76,8 +79,12 @@ export function normalizePositions(data: AllAccountPositionsResponse): {
         rawPrice = numeric(p.price);
       const price = rawPrice !== null && rawPrice >= 0 ? rawPrice : null;
       const currency =
-        p.currency ||
-        ("currency" in i && typeof i.currency === "string" ? i.currency : null);
+        i.kind === "option" || i.kind === "future_option"
+          ? OPTIONS_CURRENCY
+          : p.currency ||
+            ("currency" in i && typeof i.currency === "string"
+              ? i.currency
+              : null);
       // SnapTrade labels this CAD-listed trust as "other". Its issuer confirms
       // per-unit pricing: https://sprott.com/media/xcilumow/phys.pdf
       // Keep this exception narrow; arbitrary "other" instruments may need
@@ -209,7 +216,7 @@ export function normalizeActivities(
     total: numeric(data.pagination?.total),
     rows: data.data
       .map((t) => {
-        const row = normalizeTransaction(t, accountId);
+        const row = assumeOptionsUsd(normalizeTransaction(t, accountId));
         return {
           description: row.description,
           type: row.type,

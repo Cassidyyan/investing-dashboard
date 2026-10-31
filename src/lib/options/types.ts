@@ -23,6 +23,7 @@ export type OptionContract = {
   issues: DataIssue[];
 };
 export type OptionExecution = {
+  sourceOrder?: { clock: string; key: string };
   id: string;
   accountId: string;
   transactionId: string;

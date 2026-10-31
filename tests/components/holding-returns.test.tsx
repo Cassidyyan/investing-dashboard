@@ -79,6 +79,8 @@ it("provides needs-data filters and all-unranked, empty, loading and reconnect s
   expect(unranked).toContain("No purchase basis");
   expect(unranked).toContain("Short sale");
   expect(unranked).toContain("Trades don’t reconcile");
+  expect(unranked).toContain("Next step:");
+  expect(unranked).toContain("earlier purchase or transfer-in cost");
   expect(unranked).not.toContain('aria-label="Best holding"');
   expect(render("empty")).toContain("No supported holding transactions");
   expect(render("error")).toContain("Reconnect in SnapTrade");

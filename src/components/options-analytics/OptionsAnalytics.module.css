@@ -1,0 +1,522 @@
+.main {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.main > :global(nav) {
+  justify-self: start;
+  max-width: 100%;
+}
+.main > div > section,
+.main > div > div {
+  margin-bottom: 20px;
+}
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+.kpis > section {
+  grid-column: auto;
+  padding: 20px;
+  min-width: 0;
+}
+.kpis h2 {
+  font-size: 14px;
+}
+.hero {
+  background: linear-gradient(135deg, var(--ov-brand-soft), var(--ov-surface));
+}
+.big {
+  font-size: clamp(21px, 2.1vw, 29px);
+  font-weight: 650;
+  letter-spacing: -0.6px;
+  font-variant-numeric: tabular-nums;
+}
+.main p {
+  color: var(--ov-secondary);
+  font-size: 13px;
+}
+.main p a {
+  text-decoration: underline;
+}
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid var(--ov-border);
+  border-radius: 16px;
+  background: var(--ov-surface);
+}
+.filters label,
+.search {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ov-secondary);
+  min-width: 0;
+}
+.filters label {
+  flex: 1 1 140px;
+}
+.filters p {
+  flex-basis: 100%;
+  margin: 0;
+}
+.filterFooter {
+  display: flex;
+  flex: 1 0 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ov-border);
+}
+.filterFooter p {
+  flex: 1 1 280px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.currencyControl {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+.currencyLabel {
+  color: var(--ov-secondary);
+  font-size: 12px;
+  line-height: 1.3;
+}
+.currencyControl > details > summary {
+  padding: 0;
+  border-radius: 999px;
+}
+.currencyPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 0 13px;
+  border: 1px solid var(--ov-border);
+  border-radius: 999px;
+  background: var(--ov-brand-soft);
+  color: var(--ov-brand);
+  white-space: nowrap;
+}
+.currencyPill strong {
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+.currencyAssumption {
+  padding-left: 9px;
+  border-left: 1px solid var(--ov-border);
+  font-size: 12px;
+  font-weight: 500;
+}
+.currencyControl summary:hover .currencyPill,
+.currencyControl details[open] .currencyPill {
+  border-color: var(--ov-brand);
+}
+.currencyControl summary:focus-visible {
+  outline: 2px solid var(--ov-brand);
+  outline-offset: 3px;
+}
+.main :is(input, select, summary) {
+  font-family: inherit;
+  font-size: 13px;
+}
+.main :is(input, select) {
+  min-height: 44px;
+  max-width: 100%;
+  border: 1px solid var(--ov-border);
+  border-radius: 10px;
+  color: var(--ov-text);
+  background: var(--ov-surface);
+  padding: 8px 10px;
+}
+.main input:focus-visible,
+.main select:focus-visible {
+  outline: 2px solid var(--ov-brand);
+  outline-offset: 3px;
+}
+.main button,
+.main summary {
+  min-height: 44px;
+}
+.filters button,
+.controls button,
+.table button {
+  border: 1px solid var(--ov-border);
+  border-radius: 10px;
+  background: var(--ov-surface);
+  padding: 8px 12px;
+  color: var(--ov-brand);
+}
+.controls {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.controls > span {
+  max-width: 230px;
+}
+.search {
+  flex: 1;
+  min-width: 180px;
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 20px;
+  margin: 0;
+}
+.metrics div {
+  min-width: 0;
+}
+.metrics dt {
+  color: var(--ov-secondary);
+  font-size: 12px;
+}
+.metrics dd {
+  margin: 5px 0 0;
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.main small {
+  display: block;
+  color: var(--ov-secondary);
+  font-size: 12px;
+  font-weight: 400;
+}
+.charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+.charts > section {
+  grid-column: auto;
+  min-width: 0;
+}
+.lineChart {
+  display: block;
+  width: 100%;
+  min-height: 180px;
+  touch-action: pan-y;
+}
+.lineChart circle:focus-visible {
+  stroke: var(--ov-text);
+  stroke-width: 4px;
+  outline: none;
+}
+.inlineLabel {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+}
+.inspection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--ov-brand-soft);
+  font-size: 13px;
+}
+.hiddenChart {
+  min-height: 200px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--ov-brand-soft);
+  color: var(--ov-brand);
+}
+.barList,
+.evidence,
+.positionList,
+.dataTable ul {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+}
+.barList {
+  max-height: 380px;
+  overflow-y: auto;
+}
+.barList li {
+  padding: 12px 0;
+  border-top: 1px solid var(--ov-border);
+}
+.barList li > div:not(.track) {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.track {
+  height: 8px;
+  border-radius: 99px;
+  background: var(--ov-skeleton);
+  margin: 6px 0 8px;
+  overflow: hidden;
+}
+.track span {
+  display: block;
+  height: 100%;
+  min-width: 1px;
+  border-radius: 99px;
+  background: var(--ov-brand);
+}
+.outcomes {
+  list-style: none;
+  padding: 12px 0 24px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.outcomes li {
+  display: grid;
+  gap: 6px;
+}
+.outcomes strong {
+  font-size: 28px;
+}
+.outcomes span {
+  font-size: 12px;
+  color: var(--ov-secondary);
+}
+.dataTable {
+  margin-top: 12px;
+}
+.dataTable ul {
+  max-height: 260px;
+  overflow-y: auto;
+}
+.dataTable li {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid var(--ov-border);
+  font-size: 12px;
+}
+.main summary {
+  cursor: pointer;
+  align-content: center;
+  color: var(--ov-brand);
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 13px;
+  white-space: normal;
+}
+.table th,
+.table td {
+  padding: 14px 8px;
+  vertical-align: top;
+  text-align: right;
+  border-bottom: 1px solid var(--ov-border);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.table thead {
+  background: var(--ov-canvas);
+  color: var(--ov-secondary);
+}
+.table thead th {
+  font-weight: 500;
+  font-size: 12px;
+}
+.table th:first-child {
+  text-align: left;
+  width: 24%;
+}
+.table td:last-child {
+  width: 70px;
+}
+.table th strong {
+  display: block;
+}
+.table small {
+  margin-top: 4px;
+}
+.contract {
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  border-radius: 999px;
+  padding: 3px 9px;
+  background: var(--ov-brand-soft);
+  color: var(--ov-brand);
+  font-size: 12px;
+  text-align: center;
+}
+.detailRow > td {
+  padding: 0;
+  text-align: left;
+}
+.details {
+  padding: 24px;
+  background: var(--ov-canvas);
+  border-radius: 12px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.details h3 {
+  margin-top: 0;
+  font-size: 17px;
+}
+.details h4 {
+  font-size: 14px;
+}
+.details .metrics {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+.details .metrics dd {
+  font-size: 14px;
+}
+.evidence li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  border-top: 1px solid var(--ov-border);
+  padding: 12px 0;
+  font-size: 12px;
+}
+.evidence strong {
+  flex-basis: 100%;
+}
+.positionList li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--ov-border);
+}
+.positionList li > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.positionList li > span:last-child {
+  text-align: right;
+}
+.gain {
+  color: var(--ov-positive);
+}
+.loss {
+  color: var(--ov-negative);
+}
+.empty {
+  padding: 24px 0;
+}
+.refreshing {
+  opacity: 0.65;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (max-width: 1100px) {
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 767px) {
+  .main > :global(nav) {
+    justify-self: stretch;
+  }
+  .charts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .table,
+  .table tbody,
+  .table tr,
+  .table td,
+  .table th {
+    display: block;
+    width: 100%;
+  }
+  .table thead {
+    display: none;
+  }
+  .table tbody > tr {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--ov-border);
+  }
+  .table th:first-child {
+    width: 100%;
+  }
+  .table th,
+  .table td {
+    padding: 6px 0;
+    border: 0;
+    text-align: left;
+  }
+  .table td[data-label] {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: start;
+    gap: 6px 12px;
+  }
+  .table td[data-label]::before {
+    content: attr(data-label);
+    color: var(--ov-secondary);
+    font-size: 12px;
+    margin-right: auto;
+  }
+  .table td small {
+    flex-basis: 100%;
+    text-align: right;
+  }
+  .table td:last-child {
+    width: 100%;
+  }
+  .table .detailRow {
+    padding-top: 0;
+  }
+  .details {
+    padding: 16px;
+  }
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .big {
+    font-size: 22px;
+  }
+  .kpis > section {
+    padding: 16px;
+  }
+  .outcomes {
+    gap: 8px;
+  }
+}
+@media (max-width: 430px) {
+  .kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -390,3 +390,222 @@ it("does not invent basis for incoming external transfers or move cost between d
     )[0].totalProfit,
   ).toBeNull();
 });
+
+it("reconciles a repeated round-trip share transfer chain without counting purchases twice", () => {
+  const move = (day: number) => trade("TRANSFER", 10, 0, day);
+  const source = history(
+    [trade("BUY", 10, -100, 1), move(2), move(4), move(6)],
+    "source",
+  );
+  const dest = history(
+    [move(2), move(4), move(6), trade("SELL", 4, 60, 7)],
+    "dest",
+  );
+  const [row] = calculateHoldingReturns(
+    [account("source"), account("dest", [position(6, 90)])],
+    [source, dest],
+  );
+  expect(row).toMatchObject({
+    purchases: 100,
+    realized: 20,
+    unrealized: 30,
+    totalProfit: 50,
+    returnPercent: 50,
+    issues: [],
+  });
+  expect(row.sales).toHaveLength(1);
+  expect(row.notes?.join(" ")).toContain("transfer chain reconciled");
+  expect(source.transactions[1].type).toBe("TRANSFER");
+});
+
+it("carries only the transferred share basis through three different accounts", () => {
+  const [row] = calculateHoldingReturns(
+    [
+      account("a", [position(6, 90)]),
+      account("b", [position(2, 40)]),
+      account("c", [position(2, 50)]),
+    ],
+    [
+      history([trade("BUY", 10, -100, 1), trade("TRANSFER", 4, 0, 2)], "a"),
+      history([trade("TRANSFER", 4, 0, 2), trade("TRANSFER", 2, 0, 3)], "b"),
+      history([trade("TRANSFER", 2, 0, 3)], "c"),
+    ],
+  );
+  expect(row).toMatchObject({
+    purchases: 100,
+    realized: 0,
+    unrealized: 80,
+    totalProfit: 80,
+    issues: [],
+  });
+});
+
+it("keeps a transfer chain unresolved when direction has multiple valid ending-share paths", () => {
+  const rows = calculateHoldingReturns(
+    [account("a", [position(10, 100)]), account("b", [position(10, 100)])],
+    [
+      history(
+        [
+          trade("BUY", 10, -100, 1),
+          trade("TRANSFER", 5, 0, 2),
+          trade("TRANSFER", 5, 0, 3),
+        ],
+        "a",
+      ),
+      history(
+        [
+          trade("BUY", 10, -200, 1),
+          trade("TRANSFER", 5, 0, 2),
+          trade("TRANSFER", 5, 0, 3),
+        ],
+        "b",
+      ),
+    ],
+  );
+  expect(rows[0].totalProfit).toBeNull();
+  expect(rows[0].notes || []).toEqual([]);
+});
+
+it.each(["unpaired", "ending mismatch", "fees", "missing basis", "same day"])(
+  "does not invent cost for a transfer chain with %s",
+  (problem) => {
+    const a = history(
+      [
+        trade("BUY", 10, -100, 1),
+        trade("TRANSFER", 10, 0, 2),
+        trade("TRANSFER", 10, 0, 4),
+      ],
+      "a",
+    );
+    const b = history(
+      [trade("TRANSFER", 10, 0, 2), trade("TRANSFER", 10, 0, 4)],
+      "b",
+    );
+    const accounts = [account("a", [position(10, 150)]), account("b")];
+    if (problem === "unpaired") b.transactions.pop();
+    if (problem === "ending mismatch")
+      accounts[0] = account("a", [position(9, 150)]);
+    if (problem === "fees") a.transactions[0].fee = 1;
+    if (problem === "missing basis") a.transactions.shift();
+    if (problem === "same day") {
+      a.transactions[0].date = a.transactions[1].date;
+      a.transactions[0].order = a.transactions[1].order;
+    }
+    const [row] = calculateHoldingReturns(accounts, [a, b]);
+    expect(row.totalProfit).toBeNull();
+    expect(row.notes || []).toEqual([]);
+  },
+);
+
+function completedHistory(h: TransactionHistory) {
+  h.coverage = {
+    status: "complete",
+    records: h.transactions.length,
+    rawRecords: h.transactions.length,
+    expectedTotal: h.transactions.length,
+    pages: 1,
+    earliest: "2026-01-01",
+    latest: "2026-01-07",
+    retrievedAt: "2026-02-01T12:00:00Z",
+    cache: "fresh",
+    duplicates: 0,
+    errorCode: null,
+    optionRecords: 0,
+    events: { assignment: 0, exercise: 0, expiration: 0 },
+    fields: [],
+  };
+  return h;
+}
+function retiredAccount(id: string) {
+  const a = account(id);
+  a.account.stale = true;
+  a.account.syncedAt = "2026-01-10T12:00:00Z";
+  a.account.transactionSync = {
+    initialSyncCompleted: true,
+    firstTransactionDate: "2026-01-01",
+    lastSuccessfulSync: "2026-01-10",
+    invalidMetadata: false,
+  };
+  return a;
+}
+it("ranks a fully closed holding with complete history and a later empty brokerage snapshot", () => {
+  const [row] = calculateHoldingReturns(
+    [retiredAccount("a")],
+    [
+      completedHistory(
+        history([trade("BUY", 1, -10, 1), trade("SELL", 1, 20, 2)]),
+      ),
+    ],
+  );
+  expect(row.totalProfit).toBe(10);
+  expect(row.notes?.join(" ")).toContain("No stale market quote");
+});
+it.each([
+  "partial",
+  "unknown sync",
+  "invalid sync",
+  "activity after snapshot",
+  "open position",
+])("retains stale-snapshot protection for %s", (problem) => {
+  const a = retiredAccount("a"),
+    h = completedHistory(
+      history([trade("BUY", 1, -10, 1), trade("SELL", 1, 20, 2)]),
+    );
+  if (problem === "partial") h.coverage!.status = "partial";
+  if (problem === "unknown sync")
+    a.account.transactionSync!.initialSyncCompleted = null;
+  if (problem === "invalid sync")
+    a.account.transactionSync!.invalidMetadata = true;
+  if (problem === "activity after snapshot")
+    a.account.syncedAt = "2026-01-01T12:00:00Z";
+  if (problem === "open position")
+    a.positions = {
+      status: "ok",
+      data: { rows: [position(1, 50)], asOf: null },
+    };
+  expect(calculateHoldingReturns([a], [h])[0].totalProfit).toBeNull();
+});
+it("uses verified closed source accounts when reconciling a transfer chain", () => {
+  const source = completedHistory(
+    history(
+      [
+        trade("BUY", 10, -100, 1),
+        trade("TRANSFER", 10, 0, 2),
+        trade("TRANSFER", 10, 0, 4),
+        trade("TRANSFER", 10, 0, 6),
+      ],
+      "a",
+    ),
+  );
+  const dest = history(
+    [
+      trade("TRANSFER", 10, 0, 2),
+      trade("TRANSFER", 10, 0, 4),
+      trade("TRANSFER", 10, 0, 6),
+    ],
+    "b",
+  );
+  const [row] = calculateHoldingReturns(
+    [retiredAccount("a"), account("b", [position(10, 150)])],
+    [source, dest],
+  );
+  expect(row).toMatchObject({ purchases: 100, totalProfit: 50, issues: [] });
+});
+
+it("identifies the account and source date range responsible for an aggregated gap", () => {
+  const [row] = calculateHoldingReturns(
+    [account("complete"), account("missing")],
+    [
+      history([trade("BUY", 1, -10, 1), trade("SELL", 1, 20, 2)], "complete"),
+      history([trade("SELL", 1, 20, 3)], "missing"),
+    ],
+  );
+  expect(row.totalProfit).toBeNull();
+  expect(row.sourceGaps).toHaveLength(1);
+  expect(row.sourceGaps![0]).toMatchObject({
+    account: "missing",
+    earliest: "2026-01-03",
+    latest: "2026-01-03",
+    firstEvent: "SELL",
+  });
+});

@@ -8,6 +8,14 @@ import { Snaptrade, SnaptradeAuth } from "snaptrade-typescript-sdk";
 
 let protectionScope = "";
 let protect = createRequestProtection();
+const adapterScopes = new WeakMap<object, object>();
+export function historyCacheScope(client: object): object {
+  const page = Reflect.get(client, "transactionPage");
+  return (
+    adapterScopes.get(client) ||
+    (typeof page === "function" ? adapterScopes.get(page) || page : client)
+  );
+}
 
 export function getSnaptrade() {
   const clientId = process.env.SNAPTRADE_CLIENT_ID;
@@ -72,7 +80,7 @@ export function getSnaptrade() {
       ),
   };
   // Endpoint + arguments identify identical reads across simultaneous page loads.
-  return Object.fromEntries(
+  const adapter = Object.fromEntries(
     Object.entries(reads).map(([method, request]) => [
       method,
       (...args: unknown[]) =>
@@ -81,5 +89,8 @@ export function getSnaptrade() {
         ),
     ]),
   ) as typeof reads;
+  adapterScopes.set(adapter, guard);
+  adapterScopes.set(adapter.transactionPage, guard);
+  return adapter;
 }
 export type ReadClient = NonNullable<ReturnType<typeof getSnaptrade>>;

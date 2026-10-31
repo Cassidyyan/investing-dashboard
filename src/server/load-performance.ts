@@ -117,9 +117,14 @@ export async function loadPerformance(
               ? "Funding history not requested after a rate limit. Wait before refreshing."
               : "Funding history is unavailable.",
           }
-        : await loadAccountFunding(account.id, {
-            transactionPage: client.transactionPage,
-          });
+        : await loadAccountFunding(
+            account.id,
+            {
+              transactionPage: client.transactionPage,
+            },
+            accounts.find((a) => a.account.id === account.id)?.account
+              .transactionSync,
+          );
     if (
       account.funding.status === "error" &&
       account.funding.message.includes("rate limit")

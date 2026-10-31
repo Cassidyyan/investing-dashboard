@@ -11,6 +11,7 @@ import { ChangeBadge } from "@/components/shared/ChangeBadge";
 import { RangeToggle } from "@/components/shared/RangeToggle";
 import { CurrencyToggle } from "@/components/shared/CurrencyToggle";
 import { NavigationLink } from "@/components/layout/NavigationProgress";
+import { HistoryCoverage } from "@/components/shared/HistoryCoverage";
 import styles from "@/styles/dashboard.module.css";
 export function PortfolioHero({
   model,
@@ -125,6 +126,9 @@ export function PortfolioHero({
       </div>
       {connected && (
         <p className={styles.footnote}>
+          {model.mock
+            ? "Synthetic preview history. "
+            : "SnapTrade beta estimates. "}
           History and statistics in {historyCurrency} · through{" "}
           {connected.asOf || "available snapshots"}. Current reported total
           above is shown in {currency}.
@@ -234,6 +238,7 @@ export function PortfolioHero({
           {model.historyIssues?.map((message) => (
             <p key={message}>{message}</p>
           ))}
+          <HistoryCoverage rows={model.historyReads || []} />
           <p>
             Account value history is a beta source, can have gaps, and its
             schema may change.

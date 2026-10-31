@@ -50,3 +50,22 @@ it("removes only currency display and retains sign and precision", () => {
   expect(signedAmount({ amount: -12.3, currency: "USD" })).toBe("-12.30");
   expect(signedAmount({ amount: null, currency: "CAD" })).toBe("Unavailable");
 });
+
+it("does not label a missing opening purchase as a confirmed short sale", async () => {
+  const { reasonCategory, recoveryAction } =
+    await import("@/lib/returns/presentation");
+  expect(
+    reasonCategory(
+      "A sale has no matching purchase history or is a short sale.",
+    ),
+  ).toBe("No purchase basis");
+  expect(
+    reasonCategory("Current holdings are incomplete, stale, or unavailable."),
+  ).toBe("Snapshot freshness");
+  expect(recoveryAction("No purchase basis")).toContain(
+    "not proof of a short sale",
+  );
+  expect(recoveryAction("Transfer reconciliation")).toContain(
+    "original purchases",
+  );
+});

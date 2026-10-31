@@ -19,6 +19,9 @@ import { RangeToggle } from "@/components/shared/RangeToggle";
 import { BalancePrivacyProvider } from "@/components/shared/BalancePrivacy";
 import { InfoPopover } from "@/components/shared/InfoPopover";
 import { EstimatesStrip } from "./EstimatesStrip";
+import { HistoryCoverage } from "@/components/shared/HistoryCoverage";
+import { ImportReconciliationNotice } from "@/components/shared/ImportReconciliationNotice";
+import type { CoverageRow } from "@/lib/financial/history-coverage";
 import { EstimatesDrawer } from "./EstimatesDrawer";
 import { ProfitSummary } from "./ProfitSummary";
 import { BestWorstCards } from "./BestWorstCards";
@@ -37,6 +40,8 @@ export type ReturnsPreview =
   | "unranked"
   | "complete";
 type Props = {
+  importReconciliation?: import("@/lib/imports/wealthsimple-activity").ImportReconciliation;
+  historyCoverage?: CoverageRow[];
   rows: HoldingReturn[];
   issues: string[];
   portfolio?: Portfolio;
@@ -49,6 +54,8 @@ function ReturnsContent({
   issues,
   portfolio,
   names = {},
+  historyCoverage = [],
+  importReconciliation,
   isLoading = false,
   preview,
 }: Props) {
@@ -200,6 +207,8 @@ function ReturnsContent({
                   (c) => !["CAD", "USD"].includes(c),
                 )}
               />
+              <HistoryCoverage rows={historyCoverage} />
+              <ImportReconciliationNotice report={importReconciliation} />
               <BestWorstCards rows={ranked} currency={currency} names={names} />
               <StatCard
                 title={
@@ -386,7 +395,9 @@ function ReturnsContent({
               : "Holding returns ready."}
         </p>
         <footer className={shared.footer}>
-          Read-only lifetime estimates · No trading or stored brokerage data.
+          {importReconciliation
+            ? "Read-only holding estimates · No trading · Local CSV files stay git-ignored."
+            : "Read-only lifetime estimates · No trading or stored brokerage data."}
           Logos by{" "}
           <a href="https://www.logo.dev" target="_blank" rel="noreferrer">
             Logo.dev

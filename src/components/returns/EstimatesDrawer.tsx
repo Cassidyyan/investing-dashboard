@@ -99,6 +99,14 @@ export function EstimatesDrawer({
           assumption.
         </p>
         <p>
+          Repeated internal moves are matched only when a single chronological
+          path carries recorded cost and reconciles all ending share counts.
+          Ambiguous paths remain excluded. Fully closed holdings can use an
+          older empty snapshot when transaction pagination and initial sync are
+          complete and every evaluated activity predates the holdings sync. Open
+          holdings still require a sufficiently fresh valuation.
+        </p>
+        <p>
           Transactions without a ticker are shown as coverage warnings and
           cannot be attributed to a holding. They do not automatically block
           every other stock in the account. Rankings cover matched records;

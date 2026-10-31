@@ -50,7 +50,7 @@ describe("financial normalization", () => {
     const p = normalizePositions(
       position("option", { multiplier: "100" }, "-2"),
     ).rows[0];
-    expect(p.value).toEqual({ amount: -600, currency: "CAD" });
+    expect(p.value).toEqual({ amount: -600, currency: "USD" });
   });
   it("values the SDK mutualfund instrument kind", () => {
     expect(

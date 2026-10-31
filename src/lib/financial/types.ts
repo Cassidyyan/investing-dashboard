@@ -1,7 +1,12 @@
 import type { Decimal } from "./decimal";
 export type Provenance = {
   provider:
-    "snaptrade" | "occ-symbol" | "application" | "manual" | "market-data";
+    | "snaptrade"
+    | "occ-symbol"
+    | "application"
+    | "manual"
+    | "market-data"
+    | "wealthsimple-csv";
   field: string;
   recordId?: string;
   asOf?: string;
@@ -31,6 +36,7 @@ export type DataIssue = {
   severity: "warning" | "blocking";
 };
 export type FinancialDate = {
+  sourceOrder?: { clock: string; key: string };
   raw: string | null;
   day: string | null;
   instant: string | null;

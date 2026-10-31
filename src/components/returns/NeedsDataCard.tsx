@@ -1,6 +1,10 @@
 import { useState } from "react";
 import type { HoldingReturn } from "@/lib/returns/holding-returns";
-import { groupedReasons, isFxEstimate } from "@/lib/returns/presentation";
+import {
+  groupedReasons,
+  isFxEstimate,
+  recoveryAction,
+} from "@/lib/returns/presentation";
 import { StatCard } from "@/components/shared/StatCard";
 import { SecurityIcon } from "@/components/shared/SecurityIcon";
 import { InfoPopover } from "@/components/shared/InfoPopover";
@@ -87,6 +91,12 @@ export function NeedsDataCard({
                     logoUrl={row.logoUrl ?? null}
                   />
                   <strong>{row.symbol}</strong>
+                  {!!row.importedActivities && (
+                    <small>
+                      {row.importedActivities} activities reconciled with CSV ·
+                      history gaps remain
+                    </small>
+                  )}
                   {isFxEstimate(row) && (
                     <InfoPopover
                       label={`Dividend FX estimate for ${row.symbol}`}
@@ -130,6 +140,33 @@ export function NeedsDataCard({
                       {group.issues.map((issue) => (
                         <p key={issue}>{issue}</p>
                       ))}
+                      {!!row.sourceGaps?.length && (
+                        <ul>
+                          {row.sourceGaps
+                            .filter((gap) =>
+                              gap.issues.some((issue) =>
+                                group.issues.includes(issue),
+                              ),
+                            )
+                            .map((gap, index) => (
+                              <li key={index}>
+                                <strong>{gap.account}</strong>:{" "}
+                                {gap.earliest ? (
+                                  <>
+                                    available activity {gap.earliest} →{" "}
+                                    {gap.latest}; first event {gap.firstEvent}.
+                                  </>
+                                ) : (
+                                  "No dated activity is available for this holding."
+                                )}
+                              </li>
+                            ))}
+                        </ul>
+                      )}
+                      <p>
+                        <strong>Next step:</strong>{" "}
+                        {recoveryAction(group.label)}
+                      </p>
                     </InfoPopover>
                   ))}
                 </div>

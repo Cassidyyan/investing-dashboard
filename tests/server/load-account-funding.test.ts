@@ -69,9 +69,9 @@ it("reads all available pages and retains only funding-relevant events", async (
   expect(result.status === "ok" && result.data.events.length).toBe(1000);
   expect(transactionPage).toHaveBeenNthCalledWith(2, "account", 1000, 1000);
 });
-it("rejects duplicates, missing IDs and truncated pages rather than using incomplete funding", async () => {
+it("rejects conflicting IDs, missing IDs and truncated pages rather than using incomplete funding", async () => {
   for (const data of [
-    { data: [deposit, deposit], pagination: { total: 2 } },
+    { data: [deposit, { ...deposit, amount: 200 }], pagination: { total: 2 } },
     { data: [{ ...deposit, id: undefined }], pagination: { total: 1 } },
     { data: [deposit], pagination: { total: 100 } },
   ]) {

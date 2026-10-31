@@ -84,8 +84,8 @@ export function PerformanceHero({
         </p>
       )}
       <p className={styles.availableHistory}>
-        Showing available history · {historyDay(points[0].date)} –{" "}
-        {historyDay(points.at(-1)!.date)}
+        Showing available history · SnapTrade beta estimates ·{" "}
+        {historyDay(points[0].date)} – {historyDay(points.at(-1)!.date)}
       </p>
       {omittedPoints > 0 && (
         <p className={styles.partial}>

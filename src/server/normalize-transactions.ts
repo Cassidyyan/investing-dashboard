@@ -23,6 +23,7 @@ import type {
   SourceScalar,
 } from "@/lib/financial/transactions";
 import type { NormalizedOrder } from "@/lib/financial/orders";
+import { activityType } from "@/lib/financial/activity-types";
 export type { NormalizedTransaction } from "@/lib/financial/transactions";
 const sourceScalar = (value: unknown): SourceScalar =>
   typeof value === "string" ||
@@ -62,7 +63,7 @@ export function normalizeTransaction(
   });
   const tradeDate = financialDate(t.trade_date),
     settlementDate = financialDate(t.settlement_date);
-  const type = nonEmptyText(t.type) || "UNKNOWN",
+  const type = activityType(nonEmptyText(t.type) || "UNKNOWN"),
     optionAction = optionActions.has(t.option_type || "")
       ? (t.option_type as OptionAction)
       : "unknown";
@@ -114,6 +115,18 @@ export function normalizeTransaction(
     id,
     accountId,
     securityId: nonEmptyText(t.symbol?.id),
+    securityType: nonEmptyText(t.symbol?.type?.code),
+    sourceMetadata: {
+      rawSecuritySymbol: nonEmptyText(t.symbol?.raw_symbol),
+      optionContractId: nonEmptyText(t.option_symbol?.id),
+      rawUnderlyingSymbol: nonEmptyText(
+        t.option_symbol?.underlying_symbol?.raw_symbol,
+      ),
+      isMiniOption:
+        typeof t.option_symbol?.is_mini_option === "boolean"
+          ? t.option_symbol.is_mini_option
+          : null,
+    },
     ticker: nonEmptyText(t.symbol?.symbol),
     securityCurrency: nonEmptyText(t.symbol?.currency?.code),
     type,
@@ -121,7 +134,13 @@ export function normalizeTransaction(
     optionAction,
     option,
     optionRelated:
-      !!t.option_symbol || !!t.option_type || type.startsWith("OPTION"),
+      !!t.option_symbol ||
+      !!t.option_type ||
+      (type.startsWith("OPTION") &&
+        !(
+          ["OPTIONASSIGNMENT", "OPTIONEXERCISE"].includes(type) &&
+          !!t.symbol?.symbol
+        )),
     tradeDate,
     settlementDate,
     quantity: decimalField(t.units, source("units")),
