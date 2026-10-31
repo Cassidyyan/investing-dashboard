@@ -4,6 +4,9 @@ import path from "node:path";
 import { mkdir } from "node:fs/promises";
 import {
   appURL,
+  captureMode,
+  captureLimit,
+  capturePlan,
   baseURL,
   dataMode,
   discoverRoutes,
@@ -36,6 +39,12 @@ test("Capture all discovered dashboard routes", async ({ browser }) => {
     framework: "Next.js App Router",
     baseURL,
     masked,
+    captureMode,
+    captureLimit: Number.isFinite(captureLimit) ? captureLimit : null,
+    plannedCaptures:
+      captureMode === "quick"
+        ? capturePlan(routes)
+        : "All route/viewports/states",
     requestedDataMode: dataMode,
     routes,
     viewports,
@@ -44,6 +53,11 @@ test("Capture all discovered dashboard routes", async ({ browser }) => {
     unavailable: [],
     reachability: [],
     notes: [
+      ...(captureMode === "quick"
+        ? [
+            "Quick review: at most 10 default-state captures. Extra viewports and states are intentionally omitted; use --full for the complete suite.",
+          ]
+        : []),
       "No traces, videos, HTML snapshots, response bodies or raw console text are recorded.",
       "Default masking protects account suffixes and amounts while keeping the app's actual visibility toggle state.",
       "Empty/error previews use existing fixtures, not fabricated RSC response payloads.",
@@ -56,6 +70,7 @@ test("Capture all discovered dashboard routes", async ({ browser }) => {
     list.push({ route: route.route, viewport: viewport.name, state, reason });
 
   async function capture(page, route, viewport, state, info = {}) {
+    if (manifest.captures.length >= captureLimit) return false;
     try {
       const warnings = await ready(page, { pending: !!info.pending });
       if (masked) await mask(page);
@@ -122,7 +137,7 @@ test("Capture all discovered dashboard routes", async ({ browser }) => {
     await page.locator("main:visible").first().waitFor({ state: "visible" });
     await ready(page);
     return await page
-      .getByText(/Development preview:/)
+      .getByText("Sample data", { exact: true })
       .first()
       .isVisible();
   }
@@ -405,7 +420,13 @@ test("Capture all discovered dashboard routes", async ({ browser }) => {
       );
   }
   try {
+    const plan = capturePlan(routes);
     for (const viewport of viewports) {
+      if (
+        captureMode === "quick" &&
+        !plan.some((p) => p.viewport === viewport.name)
+      )
+        continue;
       const { name, ...device } = viewport;
       const context = await browser.newContext({
         ...device,
@@ -421,6 +442,11 @@ test("Capture all discovered dashboard routes", async ({ browser }) => {
       ]);
       try {
         for (const route of routes) {
+          if (
+            captureMode === "quick" &&
+            !plan.some((p) => p.route === route.route && p.viewport === name)
+          )
+            continue;
           if (route.unsupported) {
             issue(
               manifest.unavailable,
@@ -459,6 +485,7 @@ test("Capture all discovered dashboard routes", async ({ browser }) => {
             await showBalances(page, true);
             if (name === "desktop") await axe(page, route);
             await capture(page, route, viewport, "default", info);
+            if (captureMode === "quick") continue;
             if (await showBalances(page, false))
               await capture(page, route, viewport, "balances-hidden", info);
             else

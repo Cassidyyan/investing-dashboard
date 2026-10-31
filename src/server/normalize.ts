@@ -18,20 +18,21 @@ import type {
   ActivityView,
   ConnectionView,
 } from "@/lib/types";
-export function numeric(value: unknown): number | null {
-  if (
-    value === null ||
-    value === undefined ||
-    (typeof value === "string" && !value.trim())
-  )
-    return null;
-  if (typeof value !== "number" && typeof value !== "string") return null;
-  const n = Number(value);
-  return Number.isFinite(n) ? n : null;
-}
+import { numeric, nonEmptyText, calendarDay } from "@/lib/financial/validation";
+import {
+  normalizeTransaction,
+  normalizeOrderRecord,
+} from "./normalize-transactions";
+import { positionValues } from "@/lib/financial/position-values";
+import { decimalNumber } from "@/lib/financial/decimal";
+import { normalizeOptionContract } from "@/lib/options/contracts";
+export { numeric } from "@/lib/financial/validation";
 export function normalizeAccount(a: Account): AccountView {
+  if (!a || typeof a !== "object") throw new Error("Account data unavailable.");
   const sync = a.sync_status?.holdings;
-  const syncedAt = sync?.last_successful_sync ?? null;
+  if (!nonEmptyText(a.id)) throw new Error("Account identity unavailable.");
+  const rawSync = sync?.last_successful_sync;
+  const syncedAt = rawSync && calendarDay(rawSync) ? rawSync : null;
   return {
     id: a.id,
     category: a.account_category ?? null,
@@ -46,11 +47,13 @@ export function normalizeAccount(a: Account): AccountView {
     syncedAt,
     incomplete:
       sync?.initial_sync_completed === false ||
-      sync?.holdings_unavailable === true,
+      sync?.holdings_unavailable === true ||
+      (!!rawSync && !syncedAt),
     stale: !!syncedAt && Date.now() - Date.parse(syncedAt) > 36 * 3600000,
   };
 }
 export function normalizeBalances(rows: Balance[]): BalanceView[] {
+  if (!Array.isArray(rows)) throw new Error("Balance records unavailable.");
   return rows.map((b) => ({
     cash: { amount: numeric(b.cash), currency: b.currency?.code || null },
     buyingPower: {
@@ -63,12 +66,15 @@ export function normalizePositions(data: AllAccountPositionsResponse): {
   rows: PositionView[];
   asOf: string | null;
 } {
+  if (!data || !Array.isArray(data.results))
+    throw new Error("Position records unavailable.");
   return {
     asOf: data.data_freshness?.as_of || null,
     rows: data.results.map((p) => {
       const i = p.instrument;
       const units = numeric(p.units),
-        price = numeric(p.price);
+        rawPrice = numeric(p.price);
+      const price = rawPrice !== null && rawPrice >= 0 ? rawPrice : null;
       const currency =
         p.currency ||
         ("currency" in i && typeof i.currency === "string" ? i.currency : null);
@@ -80,32 +86,30 @@ export function normalizePositions(data: AllAccountPositionsResponse): {
         i.kind === "other" && i.symbol === "PHYS.TO" && currency === "CAD";
       const multiplier =
         i.kind === "option"
-          ? numeric(i.multiplier)
+          ? numeric(i.multiplier) !== null && numeric(i.multiplier)! > 0
+            ? numeric(i.multiplier)
+            : null
           : ["stock", "adr", "cef", "etf", "mutualfund", "crypto"].includes(
                 i.kind,
               ) || knownUnitPricedTrust
             ? 1
             : null;
-      const computed =
-        units !== null && price !== null && multiplier !== null
-          ? units * price * multiplier
-          : null;
+      const exact = positionValues({
+        units: p.units,
+        price: p.price,
+        cost: p.cost_basis,
+        multiplier:
+          i.kind === "option" && multiplier !== null
+            ? i.multiplier
+            : multiplier,
+      });
+      const computed = decimalNumber(exact.marketValue);
       const rawCost = numeric(p.cost_basis);
       const averageCost = rawCost !== null && rawCost >= 0 ? rawCost : null;
-      const rawReturn =
-        currency &&
-        price !== null &&
-        averageCost !== null &&
-        units !== null &&
-        multiplier !== null
-          ? (price - averageCost) * units * multiplier
-          : null;
-      const unrealizedReturn =
-        rawReturn !== null && Number.isFinite(rawReturn) ? rawReturn : null;
-      const invested =
-        averageCost !== null && units !== null && multiplier !== null
-          ? Math.abs(averageCost * units * multiplier)
-          : null;
+      const unrealizedReturn = currency
+        ? decimalNumber(exact.unrealizedReturn)
+        : null;
+      const invested = decimalNumber(exact.invested);
       const rawPercent =
         unrealizedReturn !== null &&
         invested !== null &&
@@ -113,18 +117,36 @@ export function normalizePositions(data: AllAccountPositionsResponse): {
         invested > 0
           ? (unrealizedReturn / invested) * 100
           : null;
+      const contract =
+        i.kind === "option" || i.kind === "future_option"
+          ? normalizeOptionContract(
+              {
+                id: i.id,
+                symbol: i.symbol,
+                type: i.option_type,
+                strike: i.strike_price,
+                expiration: i.expiration_date,
+                multiplier: i.multiplier,
+                currency,
+                underlyingId: i.underlying?.id,
+                underlyingTicker: i.underlying?.symbol,
+                referenceDay: calendarDay(data.data_freshness?.as_of),
+              },
+              "position",
+            )
+          : null;
       return {
         instrumentId: i.id,
         optionDetails:
           i.kind === "option" || i.kind === "future_option"
             ? {
-                type:
-                  i.option_type === "CALL" || i.option_type === "PUT"
-                    ? i.option_type
-                    : null,
-                strike: { amount: numeric(i.strike_price), currency },
-                expiration: i.expiration_date || null,
-                multiplier: numeric(i.multiplier),
+                type: contract?.type.value ?? null,
+                strike: {
+                  amount: decimalNumber(contract?.strike.amount.value ?? null),
+                  currency,
+                },
+                expiration: contract?.expiration.value ?? null,
+                multiplier: decimalNumber(contract?.multiplier.value ?? null),
                 underlyingId: i.underlying?.id || null,
                 underlyingSymbol: i.underlying?.symbol || null,
                 underlyingKind: i.underlying?.kind || null,
@@ -151,47 +173,64 @@ export function normalizePositions(data: AllAccountPositionsResponse): {
     }),
   };
 }
-export function normalizeOrders(data: RecentOrdersResponse): OrderView[] {
-  return (data.orders || [])
-    .map((o) => ({
-      symbol:
-        o.symbol ||
-        o.universal_symbol?.symbol ||
-        o.option_symbol?.ticker ||
-        "Unknown",
-      action: o.action || "Unknown",
-      status: typeof o.status === "string" ? o.status : "Unknown",
-      quantity: numeric(o.total_quantity),
-      placedAt: o.time_placed || null,
-    }))
+export function normalizeOrders(
+  data: RecentOrdersResponse,
+  accountId = "",
+): OrderView[] {
+  if (!data || !Array.isArray(data.orders))
+    throw new Error("Order records unavailable.");
+  return data.orders
+    .map((o) => {
+      const order = normalizeOrderRecord(o, accountId);
+      return {
+        symbol: order.symbol || "Unknown",
+        action: order.action || "Unknown",
+        status: order.status || "Unknown",
+        quantity: decimalNumber(order.quantity.value),
+        placedAt: order.placedAt.day ? order.placedAt.raw : null,
+      };
+    })
     .sort(
       (a, b) =>
         (Date.parse(b.placedAt || "") || 0) -
         (Date.parse(a.placedAt || "") || 0),
     );
 }
-export function normalizeActivities(data: PaginatedUniversalActivity): {
+export function normalizeActivities(
+  data: PaginatedUniversalActivity,
+  accountId = "",
+): {
   rows: ActivityView[];
   total: number | null;
 } {
+  if (!data || !Array.isArray(data.data))
+    throw new Error("Activity records unavailable.");
   return {
     total: numeric(data.pagination?.total),
-    rows: (data.data || [])
-      .map((a) => ({
-        description: a.description || a.symbol?.symbol || "Account activity",
-        type: a.type || "Unknown",
-        date: a.trade_date || a.settlement_date || null,
-        amount: {
-          amount: numeric(a.amount),
-          currency: a.currency?.code || null,
-        },
-      }))
+    rows: data.data
+      .map((t) => {
+        const row = normalizeTransaction(t, accountId);
+        return {
+          description: row.description,
+          type: row.type,
+          date: row.tradeDate.day
+            ? row.tradeDate.raw
+            : !t.trade_date && row.settlementDate.day
+              ? row.settlementDate.raw
+              : null,
+          amount: {
+            amount: decimalNumber(row.cashFlow.amount.value),
+            currency: row.cashFlow.currency.value,
+          },
+        };
+      })
       .sort(
         (a, b) =>
           (Date.parse(b.date || "") || 0) - (Date.parse(a.date || "") || 0),
       ),
   };
 }
+
 export function normalizeConnections(
   rows: BrokerageAuthorization[],
 ): ConnectionView[] {

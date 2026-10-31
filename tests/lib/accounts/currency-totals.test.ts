@@ -172,3 +172,23 @@ it("reports failed or malformed feeds rather than inventing a rate", async () =>
   );
   expect((await loadExchangeRate()).status).toBe("error");
 });
+
+it("marks overflowing currency sums unavailable while preserving the other currency", () => {
+  const row = account();
+  if (row.positions.status !== "ok") throw Error("fixture");
+  row.positions.data.rows = [position(1e308, "CAD"), position(1e308, "CAD")];
+  expect(accountCurrencyTotals(row)).toMatchObject({
+    cad: null,
+    usd: 20,
+    incomplete: true,
+  });
+  const one = account();
+  one.positions = {
+    status: "ok",
+    data: { rows: [position(1e308, "CAD")], asOf: null },
+  };
+  expect(portfolioCurrencyTotals([one, one])).toMatchObject({
+    cad: null,
+    incomplete: true,
+  });
+});

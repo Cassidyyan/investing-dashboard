@@ -1,9 +1,9 @@
 // Runtime-only screenshot presentation. No app files, responses or calculations are changed.
-export const freezeCSS = `*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important;caret-color:transparent!important}`;
+export const freezeCSS = `nextjs-portal{display:none!important}*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important;caret-color:transparent!important}`;
 const maskCSS = `
 .private-value,.private-value *,[data-screenshot-sensitive],[data-screenshot-sensitive] *{color:transparent!important;text-shadow:none!important}
 .private-value,[data-screenshot-sensitive]{position:relative!important}
-.private-value::after,[data-screenshot-sensitive]::after{content:'••••';position:absolute;left:0;top:0;color:#202b38!important;text-shadow:none!important;font-size:inherit;line-height:inherit;pointer-events:none}
+.private-value::after,[data-screenshot-sensitive]::after{content:'••••••';position:absolute;left:0;right:0;top:0;text-align:inherit;color:#56616e!important;text-shadow:none!important;font-size:12px;font-weight:400;line-height:inherit;pointer-events:none}
 svg[role=img],[class*=profitBar],[class*=weightTrack],[class*=sparkline],[class*=donutWrap],[class*=donut]>svg{filter:blur(10px)!important}
 svg[role=img] text{visibility:hidden!important}
 input[type=password],input[type=email],input[autocomplete=username]{-webkit-text-security:disc!important}

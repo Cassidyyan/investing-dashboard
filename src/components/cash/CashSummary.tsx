@@ -2,31 +2,17 @@ import type { AccountData } from "@/lib/types";
 import { cashSummary } from "@/lib/cash/cash";
 import { StatCard } from "@/components/shared/StatCard";
 import { MoneyValue } from "@/components/shared/MoneyValue";
-import { CurrencyToggle } from "@/components/shared/CurrencyToggle";
 import { InfoPopover } from "@/components/shared/InfoPopover";
 import styles from "./Cash.module.css";
-export function CashSummary({
-  accounts,
-  currency,
-  onCurrency,
-}: {
-  accounts: AccountData[];
-  currency: "CAD" | "USD";
-  onCurrency: (value: "CAD" | "USD") => void;
-}) {
-  const summary = cashSummary(accounts),
-    other = currency === "CAD" ? "USD" : "CAD";
+export function CashSummary({ accounts }: { accounts: AccountData[] }) {
+  const summary = cashSummary(accounts);
   return (
     <StatCard
       title="Total cash"
       className={styles.summary}
       action={
         <div className={styles.summaryControls}>
-          <CurrencyToggle
-            value={currency}
-            onChange={onCurrency}
-            label="Cash summary currency"
-          />
+          <span className={styles.label}>{summary.count} accounts</span>
           <InfoPopover label="About cash accounts and summary totals">
             <p>
               Banking accounts identified by the brokerage and accounts
@@ -41,8 +27,8 @@ export function CashSummary({
             </p>
             <p>
               Cash subtotals use reported cash balances, not account-level
-              reported totals or buying power. CAD and USD stay separate; this
-              toggle does not convert currencies. Other currencies remain
+              reported totals or buying power. CAD and USD stay separate; the
+              summary does not convert currencies. Other currencies remain
               visible in the account list.
             </p>
           </InfoPopover>
@@ -50,36 +36,22 @@ export function CashSummary({
       }
     >
       <div className={styles.summaryGrid}>
-        <div>
-          <span className={styles.label}>Cash held in {currency}</span>
-          <p className={styles.heroValue}>
-            <MoneyValue
-              amount={summary.totals[currency]}
-              currency={currency}
-              cash
-            />
-          </p>
-          <p className={styles.footnote}>
-            Native balance · no currency conversion
-          </p>
-        </div>
-        <dl className={styles.summaryStats}>
-          <div>
-            <dt>Cash held in {other}</dt>
-            <dd>
+        {(["CAD", "USD"] as const).map((currency) => (
+          <div key={currency}>
+            <span className={styles.label}>Cash held in {currency}</span>
+            <p className={styles.heroValue}>
               <MoneyValue
-                amount={summary.totals[other]}
-                currency={other}
+                amount={summary.totals[currency]}
+                currency={currency}
                 cash
               />
-            </dd>
+            </p>
           </div>
-          <div>
-            <dt>Cash accounts shown</dt>
-            <dd>{summary.count}</dd>
-          </div>
-        </dl>
+        ))}
       </div>
+      <p className={styles.footnote}>
+        Native balances · no currency conversion
+      </p>
       {summary.partial && (
         <p className={styles.notice}>
           Partial or stale cash subtotals. Some balances are unavailable

@@ -6,12 +6,19 @@ import type {
   TransactionHistory,
 } from "@/lib/returns/holding-returns";
 import { historyDate } from "@/lib/performance/performance";
+import { normalizeTransaction } from "./normalize-transactions";
+import { decimalNumber } from "@/lib/financial/decimal";
+import {
+  transactionRecords,
+  TransactionCoverageError,
+} from "./transaction-pages";
 import { numeric } from "./normalize";
 import { getSnaptrade, type ReadClient } from "./snaptrade";
 
 const types = new Set(["cs", "ad", "ps", "et", "cef", "oef", "ut", "pm"]);
 export function normalizeSecurityTransaction(
   t: UniversalActivity,
+  accountId = t.account?.id || "",
 ): SecurityTransaction | null {
   if (
     t.option_symbol ||
@@ -22,6 +29,7 @@ export function normalizeSecurityTransaction(
   )
     return null;
   if (t.symbol.type?.code && !types.has(t.symbol.type.code)) return null;
+  const reported = normalizeTransaction(t, accountId);
   const rawDate = t.trade_date || t.settlement_date || "";
   const shareOnlyTransfer =
     t.type === "TRANSFER" &&
@@ -36,6 +44,7 @@ export function normalizeSecurityTransaction(
     "Unknown";
   const units = numeric(t.units);
   return {
+    sourceRecord: reported,
     id: t.id || "",
     symbol: t.symbol.symbol,
     currency,
@@ -45,9 +54,9 @@ export function normalizeSecurityTransaction(
     // Brokerages may report sales as negative units. BUY/SELL supplies direction;
     // ownership and missing-basis checks still distinguish sales from shorts.
     units: t.type === "SELL" && units !== null ? Math.abs(units) : units,
-    price: numeric(t.price),
-    amount: numeric(t.amount),
-    fee: numeric(t.fee),
+    price: decimalNumber(reported.price.amount.value),
+    amount: decimalNumber(reported.cashFlow.amount.value),
+    fee: decimalNumber(reported.fee.amount.value),
     securityCurrency: t.symbol.currency?.code,
     fxConvertible:
       !t.currency_universal_symbol &&
@@ -89,62 +98,31 @@ export async function loadHoldingTransactions(
       history.issues.push("Configure SnapTrade locally to load transactions.");
       continue;
     }
-    const seen = new Set<string>();
     try {
-      let finished = false;
-      for (let page = 0; page < 10; page++) {
-        const offset = page * 1000;
-        const { data } = await client.transactionPage(account.id, offset, 1000);
-        if (!Array.isArray(data.data)) throw Error("Malformed history");
-        for (const t of data.data) {
-          if (!t.id)
-            history.issues.push(
-              "A transaction lacks an ID; duplicate detection is incomplete.",
-            );
-          if (t.id && seen.has(t.id)) {
-            history.issues.push(
-              "History changed or repeated during pagination; refresh later.",
-            );
-            continue;
-          }
-          if (t.id) seen.add(t.id);
-          const normalized = normalizeSecurityTransaction(t);
-          if (normalized) history.transactions.push(normalized);
-          else if (
-            !t.option_symbol &&
-            !t.option_type &&
-            !t.type?.startsWith("OPTION") &&
-            !t.symbol?.symbol &&
-            [
-              "BUY",
-              "SELL",
-              "DIVIDEND",
-              "SUBSTITUTE_DIVIDEND",
-              "REI",
-              "SPLIT",
-              "TRANSFER",
-              "EXTERNAL_ASSET_TRANSFER_IN",
-              "EXTERNAL_ASSET_TRANSFER_OUT",
-            ].includes(t.type || "")
-          )
-            history.warnings!.push(
-              "Some transactions have no ticker and cannot be attributed. Estimates cover matched records only; older trades, transfers, or dividends may be missing.",
-            );
-        }
-        const total = numeric(data.pagination?.total);
-        if (
-          (total !== null && offset + data.data.length >= total) ||
-          (total === null && data.data.length < 1000)
-        ) {
-          finished = true;
-          break;
-        }
-        if (data.data.length !== 1000) throw Error("Incomplete pagination");
+      for await (const t of transactionRecords(account.id, client)) {
+        const normalized = normalizeSecurityTransaction(t, account.id);
+        if (normalized) history.transactions.push(normalized);
+        else if (
+          !t.option_symbol &&
+          !t.option_type &&
+          !t.type?.startsWith("OPTION") &&
+          !t.symbol?.symbol &&
+          [
+            "BUY",
+            "SELL",
+            "DIVIDEND",
+            "SUBSTITUTE_DIVIDEND",
+            "REI",
+            "SPLIT",
+            "TRANSFER",
+            "EXTERNAL_ASSET_TRANSFER_IN",
+            "EXTERNAL_ASSET_TRANSFER_OUT",
+          ].includes(t.type || "")
+        )
+          history.warnings!.push(
+            "Some transactions have no ticker and cannot be attributed. Estimates cover matched records only; older trades, transfers, or dividends may be missing.",
+          );
       }
-      if (!finished)
-        history.issues.push(
-          "History exceeds the 10,000-transaction limit; lifetime ranking is unavailable for this account.",
-        );
     } catch (error) {
       const status = (error as { response?: { status?: number } } | null)
         ?.response?.status;
@@ -152,7 +130,13 @@ export async function loadHoldingTransactions(
       history.issues.push(
         status === 429
           ? "Transaction history rate limit reached. Wait before refreshing."
-          : "Transaction history is incomplete or unavailable.",
+          : error instanceof TransactionCoverageError &&
+              error.code === "repeated_id"
+            ? "History changed or repeated during pagination; refresh later."
+            : error instanceof TransactionCoverageError &&
+                error.code === "history_limit_exceeded"
+              ? "History exceeds the 10,000-transaction limit; lifetime ranking is unavailable for this account."
+              : "Transaction history is incomplete or unavailable.",
       );
     }
     history.issues = [...new Set(history.issues)];

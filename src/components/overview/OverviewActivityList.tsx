@@ -3,6 +3,7 @@ import type { OverviewModel } from "@/lib/overview/overview";
 import { MoneyValue } from "@/components/shared/MoneyValue";
 import { StatCard } from "@/components/shared/StatCard";
 import styles from "@/styles/dashboard.module.css";
+import { ActivityIcon } from "@/components/shared/ActivityIcon";
 import { date } from "@/lib/format";
 export function OverviewActivityList({
   activity,
@@ -37,8 +38,9 @@ export function OverviewActivityList({
         <ul className={styles.activityList}>
           {activity.slice(0, 5).map((a) => (
             <li key={a.id}>
+              <ActivityIcon type={a.label} />
               <div>
-                <strong>{a.label}</strong>
+                <strong title={a.label}>{a.label}</strong>
                 <small>{a.account}</small>
               </div>
               <time dateTime={a.date}>{date(a.date)}</time>

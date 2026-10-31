@@ -801,3 +801,180 @@
   white-space: nowrap;
   flex-shrink: 0;
 }
+
+/* Shared polish: only the primary value card carries a brand accent. */
+.page {
+  --ov-chart-0: #146d7c;
+  --ov-chart-1: #39858b;
+  --ov-chart-2: #65a1a4;
+  --ov-chart-3: #8cb9ba;
+  --ov-chart-4: #b4d0cf;
+  --ov-chart-5: #78878b;
+}
+.grid {
+  align-items: start;
+  gap: 20px;
+}
+.card {
+  box-shadow: 0 2px 8px rgb(32 43 56 / 3%);
+}
+.hero {
+  background: linear-gradient(
+    135deg,
+    var(--ov-brand-soft),
+    var(--ov-surface) 70%
+  );
+}
+.heroValue {
+  font-size: clamp(36px, 4vw, 46px);
+}
+.third > .card,
+.full > .card {
+  height: auto;
+}
+.previewBanner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 32px;
+  max-height: 36px;
+  padding: 4px 12px;
+  margin: 12px 0 20px;
+  font-size: 12px;
+  line-height: 1.3;
+  border: 1px solid var(--ov-border);
+  border-radius: 8px;
+  background: var(--ov-brand-soft);
+}
+.previewBanner > span:first-child {
+  font-weight: 500;
+  color: var(--ov-brand);
+}
+.previewBanner a {
+  font-size: 12px;
+  min-height: 28px;
+  white-space: nowrap;
+}
+.cashRows > div,
+.rowSpread {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: baseline;
+  gap: 8px;
+}
+.cashRows dd,
+.rowSpread b,
+.rowSpread > :last-child,
+.activityList b {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.accountList li {
+  padding: 10px 0;
+}
+.accountList a {
+  padding: 0;
+}
+.rowSpread strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.legend li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 62px;
+  gap: 12px;
+  align-items: center;
+}
+.legend li > span {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.legend b {
+  text-align: right;
+  white-space: nowrap;
+}
+.activityList li {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 150px 145px;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+}
+.activityList strong {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.activityList time {
+  text-align: right;
+}
+.accountCash {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+}
+.accountCash li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid var(--ov-border);
+  font-size: 12px;
+}
+.accountCash li > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.accountCash li > div {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+}
+@media (max-width: 767px) {
+  .activityList li {
+    grid-template-columns: 32px minmax(0, 1fr) max-content;
+    gap: 8px;
+  }
+  .activityList time {
+    grid-column: 2;
+    text-align: left;
+  }
+  .activityList b {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    font-size: 12px;
+  }
+}
+.dataAlternative > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--ov-border);
+  border-radius: 8px;
+  color: var(--ov-brand);
+  cursor: pointer;
+  list-style: none;
+  font-size: 12px;
+}
+.previewBanner a {
+  position: relative;
+}
+.previewBanner a::after {
+  content: "";
+  position: absolute;
+  inset: -8px 0;
+}
+.cardHeading > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}

@@ -1617,3 +1617,58 @@ th.numeric {
     display: none;
   }
 }
+
+/* Stable privacy typography: reserve the formatted amount's width in either state. */
+.private-value {
+  display: inline-grid;
+  position: relative;
+  vertical-align: baseline;
+  max-inline-size: 100%;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  line-height: inherit;
+}
+.private-value-hidden {
+  color: inherit;
+  letter-spacing: normal;
+}
+.private-mask {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 1px;
+  color: var(--ov-secondary, #56616e);
+  line-height: inherit;
+}
+.activity-type-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 10px;
+  background: var(--ov-brand-soft, #eaf4f6);
+  color: var(--ov-brand, #146d7c);
+  font-size: 18px;
+}
+/* Preserve native hidden semantics when responsive layouts change display. */
+[hidden] {
+  display: none !important;
+}
+.private-value,
+.private-value-hidden {
+  min-inline-size: 0;
+}
+.private-value {
+  display: inline-block;
+  vertical-align: top;
+}
+.private-mask {
+  display: grid;
+  align-items: center;
+  text-align: inherit;
+}

@@ -1,9 +1,11 @@
+import type { NormalizedTransaction } from "@/lib/financial/transactions";
 // Lifetime estimates from reported cash flows, with average-cost sale matching.
 // This is an analytical return on total purchases, not TWR, IRR, or tax reporting.
 import type { AccountData } from "@/lib/types";
 import { reconcileTransfers } from "@/lib/returns/reconcile-transfers";
 
 export type SecurityTransaction = {
+  sourceRecord?: NormalizedTransaction;
   id: string;
   symbol: string;
   currency: string;

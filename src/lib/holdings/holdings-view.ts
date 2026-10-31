@@ -123,7 +123,8 @@ export function allocationView(
   const failedAccounts = accounts.filter(
     (a) => a.positions.status === "error",
   ).length;
-  const valid = entries.filter((e) => !excluded.some((x) => x.key === e.key));
+  const excludedKeys = new Set(excluded.map((entry) => entry.key));
+  const valid = entries.filter((entry) => !excludedKeys.has(entry.key));
   const needsCad =
     mode === "COMBINED_USD" &&
     valid.some((e) => e.position.value.currency === "CAD");

@@ -11,7 +11,7 @@ export function SetupBanner({
 }) {
   if (!messages.length) return null;
   return (
-    <aside className={styles.setup} role="status">
+    <div className={styles.setup} role="status">
       <div>
         <strong>Some performance data is unavailable</strong>
         <p>
@@ -43,6 +43,6 @@ export function SetupBanner({
       <button type="button" onClick={onRetry} disabled={refreshing}>
         Retry
       </button>
-    </aside>
+    </div>
   );
 }

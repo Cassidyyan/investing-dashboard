@@ -75,9 +75,10 @@ it("uses one common valid sync timestamp, and exposes row times only when they d
   expect(cashSyncInfo([], "2026-10-27T19:00:00Z").common).toBe(false);
 });
 
-it("displays missing USD cash as zero without changing missing values or other money fields", () => {
+it("keeps missing USD cash unavailable while shortening only confirmed zero", () => {
   const missing = { amount: null, currency: "USD" };
-  expect(cashMoney(missing)).toBe("0");
+  expect(cashMoney(missing)).toBe("Unavailable");
+  expect(cashMoney({ amount: 0, currency: "USD" })).toBe("0");
   expect(missing.amount).toBeNull();
   expect(money(missing)).toBe("Unavailable");
   expect(cashMoney({ amount: null, currency: "CAD" })).toBe("Unavailable");

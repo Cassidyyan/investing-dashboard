@@ -56,8 +56,27 @@ export function InfoPopover({
         }
       }}
     >
-      <summary aria-label={label} className={badge ? styles.badge : ""}>
-        {trigger}
+      <summary
+        aria-label={
+          typeof trigger === "string" && trigger !== "i" && trigger !== "•"
+            ? `${trigger}: ${label}`
+            : label
+        }
+        className={
+          trigger === "•"
+            ? `${styles.icon} ${styles.warning}`
+            : trigger === "i"
+              ? styles.icon
+              : badge
+                ? styles.badge
+                : ""
+        }
+      >
+        {trigger === "i" || trigger === "•" ? (
+          <span aria-hidden="true">{trigger}</span>
+        ) : (
+          trigger
+        )}
       </summary>
       <div className={styles.panel} role="note" tabIndex={0}>
         {children}

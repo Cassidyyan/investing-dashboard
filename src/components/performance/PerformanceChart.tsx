@@ -182,6 +182,10 @@ export function PerformanceChart({
                 );
               }}
             >
+              <title>
+                Hover, touch, or focus and use the arrow keys to inspect an
+                observed date.
+              </title>
               <defs>
                 <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
                   <stop
@@ -298,7 +302,7 @@ export function PerformanceChart({
               )}
             </svg>
           </div>
-          <p className={styles.inspected} aria-live="polite">
+          <p className={styles.srOnly} aria-live="polite">
             {active === null ? (
               "Hover, touch, or focus the chart and use ← → to inspect."
             ) : (

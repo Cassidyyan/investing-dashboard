@@ -33,6 +33,7 @@ export function LeaderboardTable({
           <col className={styles.percentCol} />
           <col className={styles.detailCol} />
           <col className={styles.dividendCol} />
+          <col className={styles.chevronColumn} />
         </colgroup>
         <thead>
           <tr>
@@ -51,6 +52,9 @@ export function LeaderboardTable({
                 {heading}
               </th>
             ))}
+            <th scope="col">
+              <span className={styles.srOnly}>Details</span>
+            </th>
           </tr>
         </thead>
         {shown.map((row, i) => (

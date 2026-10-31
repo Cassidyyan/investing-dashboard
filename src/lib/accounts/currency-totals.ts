@@ -50,9 +50,10 @@ export function accountCurrencyTotals(account: AccountData): CurrencyTotals {
     }
   // An empty API response is not proof that a nonempty account has zero assets.
   if (!hasCad && !hasUsd && !otherCurrencies.size) incomplete = true;
+  if (!Number.isFinite(cad) || !Number.isFinite(usd)) incomplete = true;
   return {
-    cad: hasCad || !incomplete ? cad : null,
-    usd: hasUsd || !incomplete ? usd : null,
+    cad: !Number.isFinite(cad) ? null : hasCad || !incomplete ? cad : null,
+    usd: !Number.isFinite(usd) ? null : hasUsd || !incomplete ? usd : null,
     incomplete,
     otherCurrencies: [...otherCurrencies],
   };
@@ -62,14 +63,21 @@ export function portfolioCurrencyTotals(
   accounts: AccountData[],
 ): CurrencyTotals {
   const rows = accounts.map(accountCurrencyTotals);
-  const sum = (key: "cad" | "usd") =>
-    rows.some((r) => r[key] !== null)
-      ? rows.reduce((total, row) => total + (row[key] ?? 0), 0)
-      : null;
+  const sum = (key: "cad" | "usd") => {
+    if (!rows.some((r) => r[key] !== null)) return null;
+    const total = rows.reduce((total, row) => total + (row[key] ?? 0), 0);
+    return Number.isFinite(total) ? total : null;
+  };
+  const cad = sum("cad"),
+    usd = sum("usd");
   return {
-    cad: sum("cad"),
-    usd: sum("usd"),
-    incomplete: !rows.length || rows.some((r) => r.incomplete),
+    cad,
+    usd,
+    incomplete:
+      !rows.length ||
+      rows.some((r) => r.incomplete) ||
+      (cad === null && rows.some((r) => r.cad !== null)) ||
+      (usd === null && rows.some((r) => r.usd !== null)),
     otherCurrencies: [...new Set(rows.flatMap((r) => r.otherCurrencies))],
   };
 }

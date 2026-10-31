@@ -1,6 +1,8 @@
 "use client";
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { SampleNotice } from "@/components/shared/SampleNotice";
+import { Select } from "@/components/shared/Select";
+import { useState } from "react";
+import { useProtectedRefresh } from "@/components/shared/useProtectedRefresh";
 import type { Portfolio } from "@/lib/types";
 import type { HoldingReturn } from "@/lib/returns/holding-returns";
 import {
@@ -50,8 +52,7 @@ function ReturnsContent({
   isLoading = false,
   preview,
 }: Props) {
-  const router = useRouter(),
-    [pending, startTransition] = useTransition();
+  const { pending, refresh, cooldown } = useProtectedRefresh();
   const currencies = [...new Set(rows.map((r) => r.currency))].sort(),
     rankedCurrencies = currencies.filter((c) =>
       rows.some((r) => r.currency === c && isRanked(r)),
@@ -68,8 +69,7 @@ function ReturnsContent({
     [search, setSearch] = useState(""),
     [details, setDetails] = useState(false);
   const loading = isLoading || preview === "loading",
-    refreshing = pending || preview === "refreshing",
-    refresh = () => startTransition(() => router.refresh());
+    refreshing = pending || preview === "refreshing";
   const cohort = rows.filter(
       (r) =>
         r.currency === currency &&
@@ -101,6 +101,7 @@ function ReturnsContent({
         onRefresh={refresh}
         loading={loading}
         refreshing={refreshing}
+        refreshBlocked={cooldown}
       />
       <main className={shared.main} id="returns-main">
         <div className={shared.titleRow}>
@@ -111,12 +112,7 @@ function ReturnsContent({
         </div>
         <DashboardNavigation path="/returns" />
         <PortfolioLinks path="/returns" group="performance" />
-        {preview && (
-          <aside className={shared.previewBanner}>
-            Development preview: {preview}. All figures are invented sample
-            data.
-          </aside>
-        )}
+        {preview && <SampleNotice href="/returns" />}
         {!loading && (!configured || failed || expired) && (
           <div className={shared.error} role="alert">
             <div>
@@ -149,7 +145,7 @@ function ReturnsContent({
                 type="button"
                 className={shared.ghostButton}
                 onClick={refresh}
-                disabled={refreshing}
+                disabled={refreshing || cooldown}
               >
                 Retry
               </button>
@@ -164,7 +160,7 @@ function ReturnsContent({
             <div className={styles.loading}>
               <div className={styles.summaryTiles}>
                 {[0, 1, 2, 3].map((i) => (
-                  <StatCard title="Loading profit" key={i}>
+                  <StatCard title={`Loading profit ${i + 1}`} key={i}>
                     <div
                       className={`${shared.skeleton} ${shared.skeletonValue}`}
                     />
@@ -235,7 +231,7 @@ function ReturnsContent({
                     </button>
                   </div>
                   <label className={styles.search}>
-                    Search holdings
+                    <span className={styles.srOnly}>Search holdings</span>
                     <input
                       type="search"
                       placeholder="Ticker or name"
@@ -244,8 +240,8 @@ function ReturnsContent({
                     />
                   </label>
                   <label>
-                    Account association
-                    <select
+                    <span className={styles.srOnly}>Account</span>
+                    <Select
                       value={account}
                       onChange={(e) => setAccount(e.target.value)}
                     >
@@ -255,12 +251,12 @@ function ReturnsContent({
                           {name}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </label>
                   {tab === "leaderboard" && (
                     <label>
-                      Sort by
-                      <select
+                      <span className={styles.srOnly}>Sort by</span>
+                      <Select
                         value={sort}
                         onChange={(e) => setSort(e.target.value as ReturnsSort)}
                       >
@@ -278,7 +274,7 @@ function ReturnsContent({
                         <option value="dividends">
                           Dividends · high to low
                         </option>
-                      </select>
+                      </Select>
                     </label>
                   )}
                   <InfoPopover label="Account filter and summary scope">
@@ -311,7 +307,7 @@ function ReturnsContent({
                           type="button"
                           className={shared.ghostButton}
                           onClick={refresh}
-                          disabled={refreshing}
+                          disabled={refreshing || cooldown}
                         >
                           Retry history
                         </button>

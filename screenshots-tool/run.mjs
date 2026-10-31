@@ -8,7 +8,8 @@ const require = createRequire(import.meta.url);
 const args = process.argv.slice(2),
   login = args.includes("--login");
 const extra = args.filter(
-  (a) => !["--login", "--mask", "--no-mask", "--"].includes(a),
+  (a) =>
+    !["--login", "--mask", "--no-mask", "--full", "--quick", "--"].includes(a),
 );
 const child = spawn(
   process.execPath,
@@ -26,6 +27,11 @@ const child = spawn(
     stdio: "inherit",
     env: {
       ...process.env,
+      SCREENSHOTS_CAPTURE_MODE: args.includes("--full")
+        ? "full"
+        : args.includes("--quick")
+          ? "quick"
+          : process.env.SCREENSHOTS_CAPTURE_MODE || "quick",
       SCREENSHOTS_MASK: args.includes("--no-mask")
         ? "0"
         : args.includes("--mask")

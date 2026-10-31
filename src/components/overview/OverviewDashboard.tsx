@@ -1,12 +1,10 @@
 "use client";
+import { SampleNotice } from "@/components/shared/SampleNotice";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useProtectedRefresh } from "@/components/shared/useProtectedRefresh";
 import { BalancePrivacyProvider } from "@/components/shared/BalancePrivacy";
-import {
-  NavigationLink,
-  NavigationReady,
-} from "@/components/layout/NavigationProgress";
+import { NavigationReady } from "@/components/layout/NavigationProgress";
 import { DashboardNavigation } from "@/components/layout/DashboardNavigation";
 import { presentOverview, type OverviewModel } from "@/lib/overview/overview";
 import type { OverviewPreview } from "@/dev/previews/overview-preview";
@@ -28,13 +26,11 @@ function OverviewContent({
   preview?: OverviewPreview;
   isLoading?: boolean;
 }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { pending, refresh, cooldown } = useProtectedRefresh();
   const [currency, setCurrency] = useState<"CAD" | "USD">("CAD");
   const refreshing = pending || preview === "refreshing";
   const loading = isLoading || preview === "loading";
   const view = presentOverview(model, currency);
-  const refresh = () => startTransition(() => router.refresh());
   return (
     <div className={styles.page}>
       {!loading && <NavigationReady path="/" />}
@@ -45,6 +41,7 @@ function OverviewContent({
         updatedAt={model.updatedAt}
         loading={loading}
         refreshing={refreshing}
+        refreshBlocked={cooldown}
         onRefresh={refresh}
       />
       <main id="overview-main" className={styles.main}>
@@ -55,13 +52,7 @@ function OverviewContent({
           </div>
         </div>
         <DashboardNavigation path="/" />
-        {model.mock && (
-          <aside className={styles.previewBanner}>
-            Development preview: {preview}. All displayed figures and history
-            are invented sample data.{" "}
-            <NavigationLink href="/">Return to live data</NavigationLink>
-          </aside>
-        )}
+        {model.mock && <SampleNotice href="/" />}
         {(model.error || model.expired || !model.configured) && (
           <div className={styles.error} role="alert">
             <div>
@@ -93,7 +84,7 @@ function OverviewContent({
                 className={styles.ghostButton}
                 type="button"
                 onClick={refresh}
-                disabled={refreshing}
+                disabled={refreshing || cooldown}
               >
                 Retry
               </button>
@@ -150,7 +141,9 @@ function OverviewContent({
                 partial={view.partial}
               />
               <StatCard title="Cash balances" className={styles.cash}>
-                <p className={styles.footnote}>Investing + Cash & chequing</p>
+                <p className={styles.footnote}>
+                  Total cash · Investing + Cash & chequing
+                </p>
                 <dl className={styles.cashRows}>
                   {(["CAD", "USD"] as const).map((c) => (
                     <div key={c}>
@@ -164,6 +157,29 @@ function OverviewContent({
                     </div>
                   ))}
                 </dl>
+                {!!model.cashAccounts?.length && (
+                  <ul className={styles.accountCash}>
+                    {model.cashAccounts.map((account) => (
+                      <li key={account.id}>
+                        <span title={account.name}>{account.name}</span>
+                        <div>
+                          {account.balances.length ? (
+                            account.balances.map((value, i) => (
+                              <MoneyValue
+                                key={i}
+                                amount={value.amount}
+                                currency={value.currency || ""}
+                                cash
+                              />
+                            ))
+                          ) : (
+                            <span>Unavailable</span>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <p className={styles.footnote}>
                   {model.cash.partial
                     ? "Some cash balances are unavailable or stale."

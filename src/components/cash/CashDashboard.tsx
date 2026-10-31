@@ -1,6 +1,6 @@
 "use client";
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { SampleNotice } from "@/components/shared/SampleNotice";
+import { useProtectedRefresh } from "@/components/shared/useProtectedRefresh";
 import type { Portfolio } from "@/lib/types";
 import { cashFigureReview, cashSyncInfo } from "@/lib/cash/cash";
 import {
@@ -25,12 +25,9 @@ type Props = {
   preview?: CashPreview;
 };
 function CashContent({ portfolio, isLoading = false, preview }: Props) {
-  const router = useRouter(),
-    [pending, startTransition] = useTransition();
-  const [currency, setCurrency] = useState<"CAD" | "USD">("CAD");
+  const { pending, refresh, cooldown } = useProtectedRefresh();
   const loading = isLoading || preview === "loading",
     refreshing = pending || preview === "refreshing";
-  const refresh = () => startTransition(() => router.refresh());
   const accounts =
     portfolio.accounts.status === "ok" ? portfolio.accounts.data : [];
   const sync = cashSyncInfo(accounts, portfolio.retrievedAt);
@@ -53,6 +50,7 @@ function CashContent({ portfolio, isLoading = false, preview }: Props) {
         updatedAt={sync.updatedAt}
         loading={loading}
         refreshing={refreshing}
+        refreshBlocked={cooldown}
         onRefresh={refresh}
       />
       <main id="cash-main" className={shared.main}>
@@ -66,15 +64,7 @@ function CashContent({ portfolio, isLoading = false, preview }: Props) {
         </div>
         <DashboardNavigation path="/cash" />
         <PortfolioLinks path="/cash" />
-        {preview && (
-          <aside className={shared.previewBanner}>
-            Development preview: {preview}. All figures are invented sample
-            data.{" "}
-            <NavigationLink href="/cash">
-              Return to live cash accounts
-            </NavigationLink>
-          </aside>
-        )}
+        {preview && <SampleNotice href="/cash" />}
         {!loading && (!portfolio.configured || failed || expired) && (
           <div className={shared.error} role="alert">
             <div>
@@ -107,7 +97,7 @@ function CashContent({ portfolio, isLoading = false, preview }: Props) {
             ) : (
               <button
                 className={shared.ghostButton}
-                disabled={refreshing}
+                disabled={refreshing || cooldown}
                 type="button"
                 onClick={refresh}
               >
@@ -143,11 +133,7 @@ function CashContent({ portfolio, isLoading = false, preview }: Props) {
           ) : (
             !failed && (
               <>
-                <CashSummary
-                  accounts={accounts}
-                  currency={currency}
-                  onCurrency={setCurrency}
-                />
+                <CashSummary accounts={accounts} />
                 {accounts.length ? (
                   <StatCard
                     title="Cash accounts"
@@ -159,7 +145,7 @@ function CashContent({ portfolio, isLoading = false, preview }: Props) {
                     }
                   >
                     {differences > 0 && (
-                      <p className={shared.notice}>
+                      <p className={styles.figureNotice}>
                         {differences}{" "}
                         {differences === 1 ? "account has" : "accounts have"}{" "}
                         different cash and reported figures in the same

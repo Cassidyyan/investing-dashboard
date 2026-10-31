@@ -238,3 +238,36 @@ it("reconciles a transfer after historical cash flows are converted without doub
   expect(result.notes).toContain(HISTORICAL_FX_NOTE);
   expect(result.sales).toHaveLength(1);
 });
+
+it("retains the original settlement record when applying an estimated historical conversion", async () => {
+  const { normalizeSecurityTransaction } =
+    await import("@/server/load-holding-returns");
+  const row = normalizeSecurityTransaction(
+    {
+      id: "synthetic",
+      type: "BUY",
+      symbol: { symbol: "SYNTH", currency: { code: "USD" } },
+      trade_date: "2026-10-01",
+      units: 1,
+      amount: -140,
+      price: 140,
+      fee: 0,
+      currency: { code: "CAD" },
+    },
+    "account",
+  )!;
+  const histories = [{ accountId: "account", issues: [], transactions: [row] }];
+  const result = applyHistoricalReturnRates(
+    histories,
+    [{ date: "2026-10-01", cadPerUsd: 1.4 }],
+    "2026-10-31",
+  );
+  expect(result[0].transactions[0].amount).toBe(-100);
+  expect(result[0].transactions[0].sourceRecord?.cashFlow.amount.value).toBe(
+    "-140",
+  );
+  expect(result[0].transactions[0].sourceRecord?.cashFlow.currency.value).toBe(
+    "CAD",
+  );
+  expect(result[0].transactions[0].sourceRecord?.accountId).toBe("account");
+});

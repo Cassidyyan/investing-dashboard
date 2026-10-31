@@ -23,15 +23,16 @@ export function StatCard({
 }
 export function CardSkeleton({ hero = false }: { hero?: boolean }) {
   return (
-    <section
+    <div
       className={`${styles.card} ${hero ? styles.hero : ""}`}
-      aria-label="Loading card"
+      aria-hidden="true"
+      data-skeleton="card"
     >
       <div className={`${styles.skeleton} ${styles.skeletonLabel}`} />
       <div className={`${styles.skeleton} ${styles.skeletonValue}`} />
       <div
         className={`${styles.skeleton} ${hero ? styles.skeletonChart : styles.skeletonRows}`}
       />
-    </section>
+    </div>
   );
 }

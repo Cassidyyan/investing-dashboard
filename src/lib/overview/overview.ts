@@ -24,6 +24,7 @@ export type OverviewModel = {
     dayChangeCurrency?: string;
     dayChangePeriod?: string;
   }[];
+  cashAccounts?: { id: string; name: string; balances: Money[] }[];
   cash: { CAD: number | null; USD: number | null; partial: boolean };
   assets: { label: string; value: Money }[];
   holdings: {
@@ -152,6 +153,12 @@ export function adaptOverview(
       dayChange: null,
     })),
     cash,
+    cashAccounts: all.map((a) => ({
+      id: a.account.id,
+      name: a.account.name,
+      balances:
+        a.balances.status === "ok" ? a.balances.data.map((b) => b.cash) : [],
+    })),
     assets,
     holdings,
     // These fields deliberately do not infer returns from account values or costs.

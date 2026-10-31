@@ -3,6 +3,12 @@ import type { UniversalActivity } from "snaptrade-typescript-sdk";
 import type { AccountFunding, FundingEvent, Result } from "@/lib/types";
 import { historyDate } from "@/lib/performance/performance";
 import { numeric } from "./normalize";
+import {
+  transactionRecords,
+  TransactionCoverageError,
+} from "./transaction-pages";
+import { normalizeTransaction } from "./normalize-transactions";
+import { decimalNumber } from "@/lib/financial/decimal";
 import type { ReadClient } from "./snaptrade";
 
 // These change investments/income within the account, not external funding.
@@ -23,11 +29,13 @@ const internalTypes = new Set([
 ]);
 export function normalizeFundingEvent(
   t: UniversalActivity,
+  accountId = t.account?.id || "",
 ): FundingEvent | null {
   if (internalTypes.has(t.type || "")) return null;
+  const transaction = normalizeTransaction(t, accountId);
   const date = historyDate(t.trade_date || t.settlement_date || "");
-  const currency = t.currency?.code || null;
-  const amount = numeric(t.amount);
+  const currency = transaction.cashFlow.currency.value;
+  const amount = decimalNumber(transaction.cashFlow.amount.value);
   const base = { date, amount, currency };
   if (!["CONTRIBUTION", "WITHDRAWAL"].includes(t.type || ""))
     return {
@@ -66,51 +74,25 @@ export async function loadAccountFunding(
   accountId: string,
   client: Pick<ReadClient, "transactionPage">,
 ): Promise<Result<AccountFunding>> {
-  const events: FundingEvent[] = [],
-    seen = new Set<string>();
+  const events: FundingEvent[] = [];
   try {
-    // Full available history, not the recent 25-activity display. Bound requests
-    // and reject incomplete pagination rather than calculate on partial deposits.
-    for (let page = 0; page < 10; page++) {
-      const offset = page * 1000;
-      const { data } = await client.transactionPage(accountId, offset, 1000);
-      if (!Array.isArray(data.data)) throw Error("Invalid transaction page");
-      for (const transaction of data.data) {
-        if (!transaction.id || seen.has(transaction.id))
-          throw Error("Uncertain transaction coverage");
-        seen.add(transaction.id);
-        const event = normalizeFundingEvent(transaction);
-        if (event) events.push(event);
-      }
-      const total = numeric(data.pagination?.total);
-      if (
-        data.pagination?.total != null &&
-        (total === null || !Number.isInteger(total))
-      )
-        throw Error("Invalid pagination total");
-      if (total !== null && (total < offset + data.data.length || total < 0))
-        throw Error("Invalid pagination");
-      if (
-        (total !== null && offset + data.data.length === total) ||
-        (total === null && data.data.length < 1000)
-      )
-        return { status: "ok", data: { events } };
-      if (data.data.length !== 1000) throw Error("Incomplete pagination");
+    for await (const transaction of transactionRecords(accountId, client)) {
+      const event = normalizeFundingEvent(transaction, accountId);
+      if (event) events.push(event);
     }
-    return {
-      status: "error",
-      message:
-        "Funding history exceeds the 10,000-transaction limit; return estimates are unavailable.",
-    };
+    return { status: "ok", data: { events } };
   } catch (error) {
     const status = (error as { response?: { status?: number } } | null)
       ?.response?.status;
     return {
       status: "error",
       message:
-        status === 429
-          ? "Funding history rate limit reached. Wait before refreshing."
-          : "Complete available funding history could not be loaded. Try Refresh.",
+        error instanceof TransactionCoverageError &&
+        error.code === "history_limit_exceeded"
+          ? "Funding history exceeds the 10,000-transaction limit; return estimates are unavailable."
+          : status === 429
+            ? "Funding history rate limit reached. Wait before refreshing."
+            : "Complete available funding history could not be loaded. Try Refresh.",
     };
   }
 }

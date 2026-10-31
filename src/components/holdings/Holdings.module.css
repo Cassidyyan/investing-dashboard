@@ -44,15 +44,15 @@
 }
 .mainGrid {
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) 340px;
   gap: 24px;
   align-items: start;
 }
 .holdingsCard {
-  grid-column: span 8;
+  grid-column: auto;
 }
 .allocationCard {
-  grid-column: span 4;
+  grid-column: auto;
   min-width: 0;
   position: sticky;
   top: 24px;
@@ -135,7 +135,8 @@
   color: var(--ov-secondary);
   font-size: 12px;
 }
-.search input {
+.search input,
+.search select {
   width: 100%;
   min-height: 44px;
   min-width: 0;
@@ -146,7 +147,8 @@
   color: var(--ov-text);
   background: var(--ov-surface);
 }
-.search input:focus-visible {
+.search input:focus-visible,
+.search select:focus-visible {
   outline: 2px solid var(--ov-brand);
   outline-offset: 3px;
 }
@@ -196,16 +198,16 @@
   font-size: 13px;
 }
 .securityColumn {
-  width: 37%;
+  width: 38%;
 }
 .valueColumn {
-  width: 24%;
+  width: 22%;
 }
 .weightColumn {
   width: 14%;
 }
 .accountColumn {
-  width: 25%;
+  width: auto;
 }
 .page .table th {
   font-family: var(--font-ui);
@@ -559,7 +561,7 @@
     grid-column: 1/-1;
   }
 }
-@media (max-width: 1023px) {
+@media (max-width: 1279px) {
   .mainGrid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -699,4 +701,267 @@
 }
 .page .optionDetails summary {
   min-height: 44px;
+}
+
+/* Give the positions table space before introducing the allocation sidebar. */
+.page > header,
+.page > main {
+  max-width: 1440px;
+}
+.page .table {
+  font-size: 14px;
+}
+.page .table th {
+  font-size: 13px;
+}
+.positionControls :is(input, select, button) {
+  font-size: 14px;
+}
+.securityHeading strong {
+  font-size: 15px;
+}
+.securityCopy > small {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.numeric b {
+  font-size: 15px;
+}
+
+/* Stable one-line allocation rows and a denser positions workspace. */
+.allocationLine {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) 45px minmax(86px, max-content);
+  gap: 7px;
+  align-items: center;
+  font-size: 12px;
+}
+.allocationLine > i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.allocationName {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.allocationLine > span:nth-child(3),
+.allocationLine b {
+  white-space: nowrap;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  overflow-wrap: normal;
+}
+.allocationLine b {
+  grid-column: auto;
+  margin: 0;
+}
+.summaryStrip {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 16px;
+}
+.summaryStrip > section {
+  padding: 18px;
+  align-self: stretch;
+}
+.summaryStrip > section:first-child {
+  background: linear-gradient(135deg, var(--ov-brand-soft), white 80%);
+}
+.summaryStrip > section > div:first-child {
+  margin-bottom: 8px;
+}
+.summaryValue {
+  font-size: 28px;
+  margin: 8px 0;
+}
+.summaryStrip > section:first-child .summaryValue {
+  font-size: 40px;
+}
+.mainGrid {
+  align-items: start;
+}
+.allocationCard {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+  padding: 20px;
+}
+.positionControls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 16px;
+}
+.positionControls > [role="tablist"] {
+  margin: 0;
+}
+.positionControls > label {
+  display: flex;
+  align-items: center;
+  flex: 1 1 180px;
+  min-width: 0;
+}
+.positionControls .search {
+  flex: 1 1 220px;
+}
+.positionControls input {
+  min-height: 44px;
+}
+.positionControls label > span:not(.srOnly) {
+  width: 100%;
+}
+.positionControls .sortGroup {
+  flex: 0 1 240px;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.page .table td {
+  padding: 14px 10px;
+  vertical-align: middle;
+  overflow-wrap: normal;
+}
+.security {
+  align-items: center;
+}
+.securityCopy {
+  flex: 1;
+}
+.securityHeading {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+}
+.securityHeading strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.securityHeading .typeBadge {
+  margin: 0;
+  padding: 2px 4px;
+}
+.numeric {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.accountName {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  font-size: 14px;
+}
+.chevronColumn {
+  width: 44px;
+}
+.securityColumn {
+  width: 38%;
+}
+.valueColumn {
+  width: 22%;
+}
+.weightColumn {
+  width: 14%;
+}
+.accountColumn {
+  width: auto;
+}
+.expandButton {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ov-brand);
+  font-size: 18px;
+}
+.page .table .expandedCell > td {
+  padding: 0 8px 12px;
+}
+@media (max-width: 1023px) {
+  .allocationCard {
+    position: static;
+  }
+}
+@media (max-width: 767px) {
+  .summaryStrip {
+    grid-template-columns: 1fr 1fr;
+  }
+  .summaryStrip > section:first-child {
+    grid-column: 1/-1;
+  }
+  .page .table .holdingRow {
+    position: relative;
+  }
+  .page .table .holdingRow > td:last-child {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 44px;
+    border: 0;
+    padding: 0;
+  }
+  .page .table .holdingRow > td:first-child {
+    padding-right: 44px;
+  }
+  .page .table .holdingRow > td:not(:first-child):not(:last-child) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+  .weightTrack {
+    grid-column: 1/-1;
+    width: 100%;
+  }
+}
+.summaryStrip {
+  align-items: start;
+}
+.summaryStrip > section {
+  align-self: start;
+}
+.summaryStrip > section:not(:first-child) {
+  min-height: 132px;
+}
+.allocationLine {
+  grid-template-columns: 8px minmax(0, 1fr) 48px 112px;
+}
+.allocationName {
+  text-align: left;
+}
+.allocationLine b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.allocationLine > span.allocationName {
+  text-align: left;
+}
+.summaryStrip > section:not(:first-child) {
+  min-height: 148px;
+}
+@media (max-width: 1023px) {
+  .summaryStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .summaryStrip > section:first-child {
+    grid-column: 1/-1;
+  }
 }

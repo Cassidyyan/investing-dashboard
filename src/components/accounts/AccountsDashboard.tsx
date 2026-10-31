@@ -1,6 +1,7 @@
 "use client";
-import { useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { SampleNotice } from "@/components/shared/SampleNotice";
+import { useProtectedRefresh } from "@/components/shared/useProtectedRefresh";
+import { cashSyncInfo } from "@/lib/cash/cash";
 import type { Portfolio, Result, ExchangeRate } from "@/lib/types";
 import {
   NavigationLink,
@@ -29,11 +30,9 @@ function AccountsContent({
   isLoading = false,
   preview,
 }: Props) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { pending, refresh, cooldown } = useProtectedRefresh();
   const loading = isLoading || preview === "loading",
     refreshing = pending || preview === "refreshing";
-  const refresh = () => startTransition(() => router.refresh());
   const accounts =
     portfolio.accounts.status === "ok" ? portfolio.accounts.data : [];
   const expired =
@@ -54,9 +53,10 @@ function AccountsContent({
         Skip to content
       </a>
       <WorkspaceHeader
-        updatedAt={portfolio.retrievedAt}
+        updatedAt={cashSyncInfo(accounts, portfolio.retrievedAt).updatedAt}
         loading={loading}
         refreshing={refreshing}
+        refreshBlocked={cooldown}
         onRefresh={refresh}
       />
       <main id="accounts-main" className={shared.main}>
@@ -68,15 +68,7 @@ function AccountsContent({
         </div>
         <DashboardNavigation path="/accounts" />
         <PortfolioLinks path="/accounts" />
-        {preview && (
-          <aside className={shared.previewBanner}>
-            Development preview: {preview}. All figures are invented sample
-            data.{" "}
-            <NavigationLink href="/accounts">
-              Return to live accounts
-            </NavigationLink>
-          </aside>
-        )}
+        {preview && <SampleNotice href="/accounts" />}
         {!loading && (!portfolio.configured || failed || expired) && (
           <div className={shared.error} role="alert">
             <div>
@@ -110,7 +102,7 @@ function AccountsContent({
               <button
                 className={shared.ghostButton}
                 type="button"
-                disabled={refreshing}
+                disabled={refreshing || cooldown}
                 onClick={refresh}
               >
                 Retry

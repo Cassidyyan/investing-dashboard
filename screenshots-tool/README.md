@@ -10,6 +10,16 @@ npx playwright install chromium
 npm run screenshots
 ```
 
+The default run saves **at most 10 screenshots**: all seven current pages on desktop, plus Overview, Holdings and Performance on mobile. It captures only their default state, with masking enabled. Tablet and expanded/loading/empty/error/focus/range states are intentionally omitted from this quick review.
+
+```sh
+npm run screenshots                 # quick review, maximum 10 images
+npm run screenshots -- --full        # optional comprehensive capture (hundreds of images)
+npm run screenshots -- --quick       # explicitly select the quick review
+```
+
+The comprehensive capture behavior described below applies to `--full`. Existing screenshot folders are retained; the limit applies to each new default run.
+
 The config starts `npm run dev -- --hostname 127.0.0.1 --port 3000` when needed and reuses a running server. Only a server started by Playwright is stopped afterward. Chromium runs sequentially to avoid request bursts. The script discovers routes from `src/app/**/page.tsx` (Next.js App Router), rather than a fixed page list. Dynamic or intercepting routes without concrete parameters are recorded as unavailable.
 
 Outputs go to `screenshots/<timestamp>/`:
@@ -30,7 +40,7 @@ SCREENSHOTS_DATA_MODE=live npm run screenshots
 SCREENSHOTS_DATA_MODE=preview npm run screenshots
 ```
 
-Default `auto` mode uses the app's existing `?preview=sample`, `?preview=loading`, `?preview=empty` and `?preview=error` states where they are active. Six routes have these **development-only invented fixtures**; Activity does not. Production ignores preview parameters, so auto mode captures its real view instead. `preview` mode requires an active preview and records a route failure rather than silently capturing live data. `live` mode never selects fixture query parameters.
+Default `auto` mode uses the app's existing `?preview=sample`, `?preview=loading`, `?preview=empty` and `?preview=error` states where they are active. All seven routes, including Activity, have these **development-only invented fixtures**. Production ignores preview parameters, so auto mode captures its real view instead. For synthetic-only QA, use `SCREENSHOTS_DATA_MODE=preview npm run screenshots`: this requires an active preview and records a route failure rather than silently capturing live data. `live` mode never selects fixture query parameters.
 
 Masking is a screenshot-only CSS overlay for `.private-value`, detected account suffixes and other currency amounts. It also blurs financial graphics and masks login inputs. It preserves layout and the actual app balance-toggle state, so default and balances-hidden remain separate UI states. Native option/SVG text is redacted directly where CSS pseudo-elements cannot work; this changes no control values, calculations or requests. Account names, tickers and percentages can remain visible. Review screenshots before sharing; `--no-mask` permits real amounts and account numbers. Output/session directories are git-ignored; do not commit them.
 
@@ -41,7 +51,7 @@ The app fetches brokerage data in **Next.js server components**, not browser `/a
 - Holds the target's real RSC navigation request before it reaches the server and captures the existing stonks loading overlay (`loading`). During that intentionally pending request, network idle is impossible; the manifest explicitly records the exception. Fonts/images are still awaited.
 - Also captures existing skeleton previews (`loading-skeleton`) where supported.
 - Uses existing labelled empty/error fixtures where supported. These are UI previews, not claims that a server 500 was induced.
-- Lists Activity empty/error/skeleton states as unavailable because it has no preview. It does not change app/API behavior to fake them. The same limitation applies on deployed servers where previews are disabled.
+- Lists empty/error/skeleton states as unavailable on deployed servers where development previews are disabled. No framework response is fabricated to fake them.
 
 If an RSC navigation cannot be held (for example a cached transition or a deployed gateway), that loading state is reported as unavailable and other captures continue. Live Activity and live-mode page visits can make normal read-only brokerage requests; there is no polling or forced brokerage refresh.
 
@@ -69,3 +79,11 @@ SCREENSHOTS_STORAGE_STATE=/private/path/session.json npm run screenshots
 ```
 
 A non-local base URL skips local server startup. Base URLs must not include credentials, query parameters or fragments. Keep custom storage-state files outside Git too. The tool never automatically reconnects brokerage accounts, submits login credentials, follows external authentication redirects during capture, or invokes financial actions. Unreachable/redirected routes are reported. Traces, videos and automatic failure screenshots are disabled to prevent unmasked artifacts.
+
+For a focused review at all three widths (still capped at ten images per run):
+
+```sh
+SCREENSHOTS_REVIEW_ROUTES=/holdings,/returns npm run screenshots
+```
+
+This captures those two routes at desktop, tablet and mobile widths (six images). Next.js development indicators are hidden in captures. Existing sample fixtures remain explicitly labelled.

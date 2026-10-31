@@ -1,7 +1,7 @@
 import { ChangeBadge } from "@/components/shared/ChangeBadge";
 import { signedPercent } from "@/lib/format";
 import styles from "./Returns.module.css";
-import { PrivateValue } from "@/components/shared/BalancePrivacy";
+import { Money } from "@/components/shared/Money";
 export function ReturnAmount({
   value,
   currency,
@@ -15,14 +15,18 @@ export function ReturnAmount({
 }) {
   if (value === null || value === 0)
     return (
-      <PrivateValue placeholder="••••">
-        <span aria-label={value === 0 ? "Zero" : "Unavailable"}>
-          —
-          {value === 0 && percent != null && percent !== 0
-            ? ` (${signedPercent(percent)})`
-            : null}
-        </span>
-      </PrivateValue>
+      <span className={styles.inlineReturn}>
+        <Money
+          value={{ amount: value, currency }}
+          zeroAsDash
+          missingAsDash
+          signed
+          showCurrency={showCurrency}
+        />
+        {value === 0 && percent != null && percent !== 0 ? (
+          <span> ({signedPercent(percent)})</span>
+        ) : null}
+      </span>
     );
   return (
     <ChangeBadge

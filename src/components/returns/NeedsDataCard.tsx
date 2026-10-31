@@ -104,7 +104,8 @@ export function NeedsDataCard({
                   )}
                   <InfoPopover
                     label={`Accounts for ${row.symbol}`}
-                    trigger="Accounts"
+                    trigger={`${row.accounts.length} ${row.accounts.length === 1 ? "account" : "accounts"}`}
+                    badge
                     align="start"
                   >
                     <p>

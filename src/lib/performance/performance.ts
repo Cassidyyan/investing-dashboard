@@ -1,3 +1,4 @@
+import { calendarDay } from "@/lib/financial/validation";
 import type { HistoryPoint, PerformanceAccount } from "@/lib/types";
 export const historyRanges = [
   "1D",
@@ -16,14 +17,7 @@ export const returnTimeframes: Partial<Record<HistoryRange, string>> = {
   "1 Year": "1Y",
 };
 export function historyDate(raw: string): string | null {
-  if (!/^\d{4}-\d{2}-\d{2}(?:$|T)/.test(raw)) return null;
-  const day = raw.slice(0, 10);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
-  const time = Date.parse(`${day}T00:00:00Z`);
-  return Number.isFinite(time) &&
-    new Date(time).toISOString().slice(0, 10) === day
-    ? day
-    : null;
+  return calendarDay(raw);
 }
 export function calendarToday(now = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {

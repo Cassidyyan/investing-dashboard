@@ -1,14 +1,12 @@
 // Display helpers shared by the components; these functions do not fetch data.
 import type { Money } from "@/lib/types";
 export function cashMoney(value: Money): string {
-  // Display preference only: preserve missing amounts in the data/calculations.
-  return value.currency === "USD" &&
-    (value.amount === 0 || value.amount === null)
-    ? "0"
-    : money(value);
+  // A confirmed zero may be shortened; an unavailable amount is never zero.
+  return value.currency === "USD" && value.amount === 0 ? "0" : money(value);
 }
 export function money(value: Money): string {
-  if (value.amount === null) return "Unavailable";
+  if (value.amount === null || !Number.isFinite(value.amount))
+    return "Unavailable";
   if (!value.currency)
     return `${value.amount.toLocaleString("en-CA")} (currency unknown)`;
   try {
@@ -30,7 +28,7 @@ export function date(value: string | null): string {
   }).format(new Date(value));
 }
 export function quantity(value: number | null) {
-  return value === null
+  return value === null || !Number.isFinite(value)
     ? "Unavailable"
     : value.toLocaleString("en-CA", { maximumFractionDigits: 8 });
 }
@@ -40,7 +38,8 @@ export function signedMoney(value: Money): string {
 }
 // Native numeric amount with currency precision, for tables labelled by currency.
 export function signedAmount(value: Money): string {
-  if (value.amount === null) return "Unavailable";
+  if (value.amount === null || !Number.isFinite(value.amount))
+    return "Unavailable";
   let formatted: string;
   try {
     formatted = new Intl.NumberFormat("en-CA", {

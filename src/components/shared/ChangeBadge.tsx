@@ -1,10 +1,9 @@
-import { signedAmount, signedMoney, signedPercent } from "@/lib/format";
-import { PrivateValue } from "@/components/shared/BalancePrivacy";
+import { signedPercent } from "@/lib/format";
+import { Money } from "./Money";
 import styles from "@/styles/dashboard.module.css";
 export function ChangeBadge({
   change,
   currency,
-  showPercentWhenHidden = false,
   className = "",
   showCurrency = true,
 }: {
@@ -22,18 +21,12 @@ export function ChangeBadge({
       <span aria-hidden="true">
         {change.amount > 0 ? "↑" : change.amount < 0 ? "↓" : "→"}
       </span>
-      <PrivateValue placeholder="••••">
-        {(showCurrency ? signedMoney : signedAmount)({
-          amount: change.amount,
-          currency,
-        })}
-        {!showPercentWhenHidden &&
-          change.percent != null &&
-          ` (${signedPercent(change.percent)})`}
-      </PrivateValue>
-      {showPercentWhenHidden && change.percent != null && (
-        <span>({signedPercent(change.percent)})</span>
-      )}
+      <Money
+        value={{ amount: change.amount, currency }}
+        signed
+        showCurrency={showCurrency}
+      />
+      {change.percent != null && <span>({signedPercent(change.percent)})</span>}
     </span>
   );
 }

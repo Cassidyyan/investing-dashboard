@@ -83,7 +83,7 @@ There are a few configuration files at the top level because the development too
 - **Performance** (`/performance`): daily historical values with range controls and separate brokerage-reported returns. SnapTrade history is a beta add-on with a one-year limit; intraday and five-year histories are unavailable.
 - **Accounts** (`/accounts`): combined estimated USD value at the top, a four-column reported-account view, expandable CAD/USD estimates and buying power, and teal account allocation. Below 768px, accounts become stacked cards. Accounts with a reported total of 0 CAD or 0 USD remain hidden.
 - **Holdings & options** (`/holdings`): searchable, sortable positions with optional account grouping, expandable contract details, a currency-aware summary, and one Industry / Holding / Account allocation card. Mobile positions become stacked cards.
-- **Activity** (`/activity`): recent orders and transactions, collapsed by account.
+- **Activity** (`/activity`): one date-grouped Transactions / Orders feed, with local account/type/search filters and Show more.
 
 **Cash & chequing** (`/cash`) shows a native CAD/USD cash summary and account count, followed by a three-column account view that becomes stacked cards below 768px. It includes brokerage-identified banking accounts and accounts confirmed to have no open holdings. They stay out of investing pages and totals. Zero-CAD and zero-USD accounts remain hidden. Failed holdings requests and incomplete data remain visible.
 
@@ -161,7 +161,7 @@ Day change is not supplied by this page's existing load, so there is no day-chan
 
 In development only, `/holdings?preview=sample` uses explicitly labelled invented fixtures without brokerage requests. Other preview states are `loading`, `refreshing`, `empty`, `error`, and `hidden`. Live pages never fall back to fixtures. Balances-hidden masks amounts and quantities with **••••**, blurs charts, and leaves percentages visible.
 
-Unavailable USD cash is displayed as `0` by preference. This is formatting only: underlying missing values, incomplete-data indicators, and portfolio calculations remain unchanged. CAD amounts, buying power, and reported totals keep their existing behavior.
+Missing cash displays **Unavailable**, including USD. Only an actual reported USD cash zero displays `0`; missing and zero values remain distinct in calculations and coverage indicators.
 
 ## Historical performance hover
 
@@ -198,3 +198,27 @@ Account association is a membership filter: each holding's original combined res
 Profit totals differ from account values on Overview/Portfolio and current positive-position values on Holdings: lifetime profit includes eligible recorded sales, unrealized gains/losses, dividends and attributed charges. They have different coverage and units of meaning. No calculation, FX rule, account scope or live API call was changed for this redesign.
 
 Development-only Holding Returns previews: `/returns?preview=sample`, `complete`, `unranked`, `empty`, `loading`, `refreshing`, `error` and `hidden` (use `?preview=` for each). These figures are invented; production ignores them. Hidden amounts use **••••**, bars blur, and percentages stay visible. Logos retain their optional Logo.dev fallback and attribution.
+
+## Accessibility, sorting and refresh protection
+
+Holdings has **Sort positions** and **Sort direction** controls for quantity, average cost, last price, market value, net return, weight, holding and account. Monetary metrics follow the selected CAD/USD/combined reference conversion; quantities stay native. Missing/non-finite metrics sort last in either direction. Sorting remains local and does not request brokerage data.
+
+Manual refresh and retry actions share a 30-second cooldown across client navigation in the same browser tab. Refresh remains disabled while pending, and reads can still be rate-limited by the provider after the browser cooldown ends. A full browser reload resets this UI cooldown.
+
+The server deduplicates identical in-flight SnapTrade reads across adapter instances, permits at most three simultaneous brokerage requests per process/credential scope, and bounds the waiting queue. A 429 blocks new and queued reads until `Retry-After` (seconds or HTTP date), or 30 seconds when absent/invalid. It does not automatically retry requests or cache completed brokerage responses. Separate server processes/tabs are not a distributed rate limiter; server protection still applies to browser reloads. No trading methods were added.
+
+```sh
+npm run test:browser
+```
+
+This runs desktop/tablet/mobile axe audits, loading/empty/error previews, keyboard disclosure checks, holdings-sort controls and refresh cooldown checks. It reuses the local server or starts one on port 3000. All seven routes, including Activity, use invented development previews; default checks require the Sample data banner. Browser test artifacts stay in the ignored `screenshots-tool/.artifacts/` directory. Automated audits cover tested states and do not replace manual assistive-technology review.
+
+The presentation polish uses one privacy-aware Money renderer, lighter info controls and underline secondary tabs. Money cells reserve their footprint when hidden; percentages remain visible. Activity reuses the same read-only data requests and explicitly discloses its limited transaction/order coverage. Order execution amounts are not synthesized. `npm run test:browser` checks desktop, tablet and mobile layouts and accessibility.
+
+## Phase 1 financial foundations
+
+Start with the [architecture audit](docs/phase-1-audit.md), [options capabilities and matching rules](docs/options-data-foundation.md), and [proposed local history storage](docs/historical-storage-plan.md).
+
+Shared transaction normalization now retains native monetary inputs with source/status metadata. Position products use exact decimal arithmetic before their numeric display projection, and historical readers share strict pagination/duplicate checks. The new options matcher reconciles explicit opening/closing quantities only; it does not calculate options P&L or infer strategies. Historical entry delta stays unavailable. No database, extra brokerage endpoint, paid service or analytics page was added.
+
+For synthetic-only UI captures, run `SCREENSHOTS_DATA_MODE=preview npm run screenshots` against the development server. Activity also supports `/activity?preview=sample`, `loading`, `empty`, `error`, and `hidden`; live request failures never use these fixtures as a fallback.

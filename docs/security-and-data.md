@@ -50,7 +50,7 @@ Holdings account and currency filters affect summary and allocation. Search and 
 
 Cash and reported account totals are compared only when their nonzero cash amounts use the reported currency and both figures are available. Differences greater than roughly one cent are flagged; unlike currencies are not simply added and declared inconsistent. Values are not overwritten to make separate brokerage fields agree.
 
-By explicit display preference, zero or unavailable **USD cash** renders as `0`. The underlying null value, calculation behavior and incomplete-data notices remain unchanged. Unavailable CAD cash, buying power and reported totals retain their existing formatting.
+An actual reported **USD cash** zero renders as `0`. Missing cash, including USD cash, renders as Unavailable. Phase 1 intentionally removes the earlier missing-as-zero display preference so an absent source value cannot be mistaken for a reported zero.
 
 ## Hiding balances
 
@@ -105,6 +105,8 @@ Invented data lives exclusively in `src/dev/previews/` and test fixtures. Labell
 
 Tests run without brokerage credentials. They exercise partial failures, normalization, currency handling, history, allocation, transfers, privacy and page states. Moving files does not change API requests, calculations or read-only behavior.
 
+All browser-check routes now use explicit synthetic previews, including Activity. Use `SCREENSHOTS_DATA_MODE=preview npm run screenshots` for synthetic-only captures; this fails a route when its preview is unavailable rather than falling back to live financial data. Preview routes remain development-only.
+
 ## Overview history scope
 
 Overview's reported total still uses current reported investing balances and the selected daily reference conversion. Its history and statistics use observed native-currency snapshots, never current-rate conversions of past values. If the chosen current-total currency has no native history, the chart falls back to an available reported currency and explicitly labels it. Current total and history can therefore differ in date, account coverage, currency and scope.
@@ -138,3 +140,25 @@ The estimates drawer retains the full lifetime, missing-history, tickerless-tran
 Names for fully sold securities, per-account profit splits, and exact per-transaction FX observations are not exposed by the existing return rows. Missing names are omitted and available FX notes identify the estimation source. No single current FX rate is substituted for historical rates. The comparison view continues to state that a separate historical stock-price source is required.
 
 Hidden amounts and share quantities render **••••**, profit bars blur, and percentages stay visible. Zero amounts display a dash when visible; missing and zero values retain distinct accessible labels. Holding identities and public rate methodology remain visible. Logo.dev attribution and initial-based fallback remain available. Native dialog behavior supplies modal focus trapping and Escape dismissal; closing returns focus to the opener.
+
+## Request and refresh protection
+
+`server/request-protection.ts` shares identical in-flight reads and limits concurrency to three, with at most 100 queued distinct reads, within the current Node.js process and credential scope. Keys and in-flight promises are removed after success or failure; completed responses are not cached. The adapter scopes protection using a credential digest held only in server memory. Changing credentials creates a separate scope.
+
+HTTP 429 responses start a shared server cooldown using `Retry-After` seconds or HTTP date, with a minimum one second and a 30-second fallback. Queued requests check the cooldown before reaching the SDK. No automatic retry or disk persistence is introduced. This protects one running process; it does not coordinate multiple deployments.
+
+Retry-After header names are case-insensitive. Malformed, negative, hexadecimal or noninteger numeric values use the fallback rather than producing an accidental immediate retry.
+
+All manual page refresh/retry controls use a shared 30-second tab-local cooldown and remain disabled during an active refresh. This preference is not persisted and a full reload resets the client timer; server concurrency/deduplication and rate-limit cooldown remain independent. Financial calculations and read-only account scopes are unchanged.
+
+## Presentation-only polish
+
+Overview's optional per-account cash list projects the already-loaded native balance rows; existing totals, account scopes and conversions are unchanged. Activity is one local-filtered feed over the same recent order/activity requests, not newly fetched history. Show more reveals further loaded items only. The UI does not claim a complete thirty-day order history because the adapter supplies recent orders without a guaranteed coverage interval. Missing order amounts/prices, market data, Greeks/IV, historical holding comparison lines and unavailable returns remain missing.
+
+All currency displays use the shared Money renderer. Hiding balances removes the monetary text, preserves the display footprint and leaves allocation percentages visible. It remains display privacy, not authentication. No additional financial persistence, data source or provider was introduced.
+
+## Phase 1 source fidelity
+
+New financial domain records retain validated decimal strings, source status/provenance and a whitelist of original scalar monetary fields in memory. No raw-response archive or storage implementation was added. Existing numeric UI models remain projections; they are not a precision-safe accounting ledger. Shared transaction-page validation rejects missing IDs, repeated records, cross-account records and inconsistent coverage rather than silently double counting or accepting incomplete history.
+
+See [the audit](phase-1-audit.md) for exact formula changes and remaining floating-point limits, [options foundations](options-data-foundation.md) for conservative matching and unavailable fields, and [the storage proposal](historical-storage-plan.md) for decisions requiring future approval.

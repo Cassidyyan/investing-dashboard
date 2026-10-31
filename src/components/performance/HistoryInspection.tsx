@@ -1,6 +1,6 @@
+import { Money as Money } from "@/components/shared/Money";
 import type { cashFlowReturns } from "@/lib/performance/cash-flow-returns";
-import { money, signedPercent } from "@/lib/format";
-import { PrivateValue } from "@/components/shared/BalancePrivacy";
+import { signedPercent } from "@/lib/format";
 import styles from "./Performance.module.css";
 
 export function HistoryInspection({
@@ -24,9 +24,7 @@ export function HistoryInspection({
           <div>
             <dt>Net deposits to this date</dt>
             <dd>
-              <PrivateValue placeholder="••••">
-                {money({ amount: inspection.netDeposits, currency })}
-              </PrivateValue>
+              <Money value={{ amount: inspection.netDeposits, currency }} />
             </dd>
           </div>
         )}

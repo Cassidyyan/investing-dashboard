@@ -7,7 +7,15 @@ import {
 import { HoldingRow } from "./HoldingRow";
 import styles from "./Holdings.module.css";
 export type HoldingsSort = {
-  key: "holding" | "value" | "weight" | "account";
+  key:
+    | "holding"
+    | "value"
+    | "weight"
+    | "account"
+    | "quantity"
+    | "averageCost"
+    | "price"
+    | "return";
   direction: "ascending" | "descending";
 };
 export function sortHoldingEntries(
@@ -16,21 +24,27 @@ export function sortHoldingEntries(
   mode: HoldingsCurrency,
   rate: Result<ExchangeRate>,
 ) {
+  const metric = (entry: HoldingEntry): string | number | null => {
+    const p = entry.position;
+    if (sort.key === "holding") return p.symbol;
+    if (sort.key === "account") return entry.account.name;
+    if (sort.key === "quantity")
+      return Number.isFinite(p.units) ? p.units : null;
+    if (sort.key === "value" || sort.key === "weight")
+      return selectedValue(p, mode, rate);
+    const amount =
+      sort.key === "averageCost"
+        ? p.averageCost
+        : sort.key === "price"
+          ? p.price
+          : p.unrealizedReturn;
+    return amount ? selectedValue({ ...p, value: amount }, mode, rate) : null;
+  };
   return entries
     .map((entry, index) => ({ entry, index }))
     .sort((a, b) => {
-      const rawLeft =
-        sort.key === "holding"
-          ? a.entry.position.symbol
-          : sort.key === "account"
-            ? a.entry.account.name
-            : selectedValue(a.entry.position, mode, rate);
-      const rawRight =
-        sort.key === "holding"
-          ? b.entry.position.symbol
-          : sort.key === "account"
-            ? b.entry.account.name
-            : selectedValue(b.entry.position, mode, rate);
+      const rawLeft = metric(a.entry);
+      const rawRight = metric(b.entry);
       const left =
         sort.key === "weight" && typeof rawLeft === "number" && rawLeft <= 0
           ? null
@@ -87,7 +101,7 @@ export function HoldingsTable({
         <section
           className={styles.accountSection}
           key={g.key}
-          aria-label={g.name || "Positions"}
+          aria-label={g.name ? `Positions in ${g.name}` : "Position list"}
         >
           {group && (
             <h3>
@@ -105,6 +119,7 @@ export function HoldingsTable({
               <col className={styles.valueColumn} />
               <col className={styles.weightColumn} />
               <col className={styles.accountColumn} />
+              <col className={styles.chevronColumn} />
             </colgroup>
             <thead>
               <tr>
@@ -142,6 +157,9 @@ export function HoldingsTable({
                     </button>
                   </th>
                 ))}
+                <th scope="col">
+                  <span className={styles.srOnly}>Details</span>
+                </th>
               </tr>
             </thead>
             {g.rows.map((entry) => (

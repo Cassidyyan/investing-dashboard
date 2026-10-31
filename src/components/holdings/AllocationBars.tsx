@@ -23,8 +23,8 @@ export function AllocationBars({
         {rows.map((item) => (
           <li key={item.key}>
             <div className={styles.allocationLine}>
-              <span className={styles.allocationName}>
-                <i style={{ background: item.color }} aria-hidden="true" />
+              <i style={{ background: item.color }} aria-hidden="true" />
+              <span className={styles.allocationName} title={item.label}>
                 {item.label}
               </span>
               <span>{item.percent.toFixed(1)}%</span>

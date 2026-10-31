@@ -14,7 +14,7 @@ it("replaces hidden amounts rather than retaining them in accessible text or tit
       <PrivateValue>CAD 12,345.67</PrivateValue>
     </BalancePrivacyProvider>,
   );
-  expect(html).toContain(".....");
+  expect(html).toContain("••••••");
   expect(html).toContain('aria-label="Amount hidden"');
   expect(html).not.toContain("12,345.67");
 });
@@ -25,7 +25,7 @@ it("shows formatted values when balances are visible", () => {
     </BalancePrivacyProvider>,
   );
   expect(html).toContain("CAD 12,345.67");
-  expect(html).not.toContain(".....");
+  expect(html).not.toContain("••••••");
 });
 it("labels the toggle with its action and pressed state", () => {
   const html = renderToStaticMarkup(

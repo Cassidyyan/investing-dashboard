@@ -542,3 +542,35 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+.hero {
+  background: linear-gradient(135deg, var(--ov-brand-soft), white 70%);
+}
+.heroChange {
+  justify-content: flex-start;
+  gap: 6px;
+}
+.heroChange > .changeBadge {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+.availableHistory,
+.gapLegend {
+  color: var(--ov-secondary);
+  font-size: 12px;
+  margin: 8px 0;
+}
+.gapLegend {
+  margin: 8px 0 16px;
+}
+.chart {
+  height: 280px;
+  width: 100%;
+}
+@media (max-width: 767px) {
+  .chart {
+    height: 220px;
+  }
+}

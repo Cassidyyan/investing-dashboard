@@ -1,6 +1,5 @@
-import { PrivateValue } from "@/components/shared/BalancePrivacy";
+import { Money } from "@/components/shared/Money";
 import type { AccountData } from "@/lib/types";
-import { money } from "@/lib/format";
 import styles from "./Accounts.module.css";
 export function AllocationBar({ accounts }: { accounts: AccountData[] }) {
   const groups = new Map<string, AccountData[]>();
@@ -32,14 +31,10 @@ export function AllocationBar({ accounts }: { accounts: AccountData[] }) {
                     <div className={styles.allocationLabel}>
                       <span>{a.account.name}</span>
                       <span className={styles.allocationPercent}>
-                        <PrivateValue placeholder="••••">
-                          {percent.toFixed(1)}%
-                        </PrivateValue>
+                        {percent.toFixed(1)}%
                       </span>
                       <strong>
-                        <PrivateValue placeholder="••••">
-                          {money(a.account.value)}
-                        </PrivateValue>
+                        <Money value={a.account.value} />
                       </strong>
                     </div>
                     <div className={styles.track} aria-hidden="true">

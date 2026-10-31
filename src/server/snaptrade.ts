@@ -2,17 +2,33 @@ import "server-only";
 
 // Private API connection. Credentials stay here; callers receive only read methods.
 
+import { createHash } from "node:crypto";
+import { createRequestProtection } from "./request-protection";
 import { Snaptrade, SnaptradeAuth } from "snaptrade-typescript-sdk";
+
+let protectionScope = "";
+let protect = createRequestProtection();
+
 export function getSnaptrade() {
   const clientId = process.env.SNAPTRADE_CLIENT_ID;
   const consumerKey = process.env.SNAPTRADE_CONSUMER_KEY;
   if (!clientId || !consumerKey) return null;
+  const scope = createHash("sha256")
+    .update(clientId)
+    .update("\0")
+    .update(consumerKey)
+    .digest("hex");
+  if (scope !== protectionScope) {
+    protectionScope = scope;
+    protect = createRequestProtection();
+  }
+  const guard = protect;
   const client = new Snaptrade({
     auth: SnaptradeAuth.personalApiKey({ clientId, consumerKey }),
   });
   // Expose only the read operations used by this application.
   const options = { timeout: 20_000 };
-  return {
+  const reads = {
     accounts: () => client.accountInformation.listUserAccounts({}, options),
     connections: () =>
       client.connections.listBrokerageAuthorizations({}, options),
@@ -55,5 +71,15 @@ export function getSnaptrade() {
         options,
       ),
   };
+  // Endpoint + arguments identify identical reads across simultaneous page loads.
+  return Object.fromEntries(
+    Object.entries(reads).map(([method, request]) => [
+      method,
+      (...args: unknown[]) =>
+        guard(JSON.stringify([method, ...args]), () =>
+          (request as (...args: unknown[]) => Promise<unknown>)(...args),
+        ),
+    ]),
+  ) as typeof reads;
 }
 export type ReadClient = NonNullable<ReturnType<typeof getSnaptrade>>;

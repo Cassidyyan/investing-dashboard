@@ -380,3 +380,21 @@ it("includes zero-balance and cash-only investing accounts for lifetime analysis
   expect(c.positions).toHaveBeenCalledTimes(2);
   expect(c.activities).not.toHaveBeenCalled();
 });
+
+it("keeps malformed account responses unavailable rather than crashing or claiming no accounts", async () => {
+  const c = client();
+  c.accounts.mockImplementation(() => response(null));
+  const result = await loadPortfolio(c as unknown as ReadClient);
+  expect(result.accounts.status).toBe("error");
+  expect(result.connections.status).toBe("ok");
+  expect(c.positions).not.toHaveBeenCalled();
+});
+it("does not request account data for a malformed null account row", async () => {
+  const c = client();
+  c.accounts.mockImplementation(() => response([null]));
+  const result = await loadPortfolio(c as unknown as ReadClient);
+  expect(result.accounts.status).toBe("ok");
+  if (result.accounts.status !== "ok") throw Error("fixture");
+  expect(result.accounts.data[0].account.incomplete).toBe(true);
+  expect(c.positions).not.toHaveBeenCalled();
+});

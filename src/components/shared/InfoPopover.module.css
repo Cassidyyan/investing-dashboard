@@ -66,3 +66,50 @@
   outline: 2px solid var(--ov-brand);
   outline-offset: 2px;
 }
+/* The icon is 26px; its transparent pointer/keyboard target stays 44px. */
+.popover > summary {
+  position: relative;
+  border: 0;
+  border-radius: 8px;
+  min-height: 44px;
+  padding: 4px 6px;
+  font-weight: 500;
+}
+.popover > summary.icon {
+  width: 44px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+.icon > span {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--ov-border);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 500;
+  background: transparent;
+}
+.popover > summary.badge {
+  background: transparent;
+  padding: 2px 4px;
+  border: 0;
+  min-width: 0;
+  font-size: 12px;
+}
+.popover > summary.badge:hover {
+  text-decoration: underline;
+}
+.icon.warning > span {
+  border: 0;
+  color: #805317;
+  background: transparent;
+  font-size: 20px;
+}
+.panel a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}

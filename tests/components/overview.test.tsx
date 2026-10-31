@@ -30,7 +30,7 @@ it("renders the new cards with real navigation destinations and a single status 
   expect(html).toContain("/accounts#account-sample-tfsa");
   expect(html).toContain('aria-label="Display currency"');
 });
-it("hides all monetary values and accessible chart values in hidden mode", () => {
+it("hides monetary values and retains allocation percentages in hidden mode", () => {
   const html = renderToStaticMarkup(
     <OverviewDashboard
       model={createOverviewPreview("hidden")}
@@ -51,7 +51,7 @@ it("hides all monetary values and accessible chart values in hidden mode", () =>
     "250.00",
   ])
     expect(html).not.toContain(value);
-  expect(html).not.toContain("60.0%");
+  expect(html).toContain("60.0%");
 });
 it("renders a skeleton for every card and a disabled spinning refresh state", () => {
   const loading = renderToStaticMarkup(
@@ -60,7 +60,7 @@ it("renders a skeleton for every card and a disabled spinning refresh state", ()
       preview="loading"
     />,
   );
-  expect(loading.match(/aria-label="Loading card"/g)).toHaveLength(6);
+  expect(loading.match(/data-skeleton="card"/g)).toHaveLength(6);
   const refreshing = renderToStaticMarkup(
     <OverviewDashboard
       model={createOverviewPreview("refreshing")}
@@ -108,7 +108,7 @@ it("shows real loading skeletons without sample financial data or a mock banner"
   const { OverviewLoading } =
     await import("@/components/overview/OverviewLoading");
   const html = renderToStaticMarkup(<OverviewLoading />);
-  expect(html.match(/aria-label="Loading card"/g)).toHaveLength(6);
+  expect(html.match(/data-skeleton="card"/g)).toHaveLength(6);
   expect(html).toContain("Loading portfolio…");
   expect(html).not.toContain("Development preview");
   expect(html).not.toContain("Sample TFSA");

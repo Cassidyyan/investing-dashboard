@@ -34,7 +34,7 @@ export function AccountList({
                   </b>
                 </div>
                 <div className={styles.rowSpread}>
-                  <small>
+                  <small className={styles.srOnly}>
                     {model.mock ? "Day change" : "Latest value change"}
                   </small>
                   <ChangeBadge
@@ -48,7 +48,9 @@ export function AccountList({
                   />
                 </div>
                 {a.dayChangePeriod && (
-                  <small>{a.dayChangePeriod} · includes cash flows</small>
+                  <small className={styles.srOnly}>
+                    {a.dayChangePeriod} · includes cash flows
+                  </small>
                 )}
               </NavigationLink>
             </li>

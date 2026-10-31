@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  isValidElement,
+  type ReactNode,
+} from "react";
 const BalancePrivacy = createContext({ hidden: false, toggle: () => {} });
 export function useBalancePrivacy() {
   return useContext(BalancePrivacy);
@@ -25,11 +31,15 @@ export function BalancePrivacyProvider({
     </BalancePrivacy.Provider>
   );
 }
-export function BalanceVisibilityToggle() {
+export function BalanceVisibilityToggle({
+  className = "balance-visibility-toggle",
+}: {
+  className?: string;
+}) {
   const { hidden, toggle } = useContext(BalancePrivacy);
   return (
     <button
-      className="balance-visibility-toggle"
+      className={className}
       type="button"
       aria-pressed={hidden}
       onClick={toggle}
@@ -56,18 +66,28 @@ export function BalanceVisibilityToggle() {
 }
 export function PrivateValue({
   children,
-  placeholder = ".....",
+  placeholder = "••••••",
 }: {
   children: ReactNode;
   placeholder?: string;
 }) {
   const { hidden } = useContext(BalancePrivacy);
+  function text(node: ReactNode): string {
+    if (typeof node === "string" || typeof node === "number")
+      return String(node);
+    if (Array.isArray(node)) return node.map(text).join("");
+    if (isValidElement<{ children?: ReactNode }>(node))
+      return text(node.props.children);
+    return "";
+  }
+  const width = Math.max(6, text(children).length);
   return (
     <span
+      style={{ inlineSize: `${width}ch`, blockSize: "1lh" }}
       className={`private-value${hidden ? " private-value-hidden" : ""}`}
       aria-label={hidden ? "Amount hidden" : undefined}
     >
-      {hidden ? placeholder : children}
+      {hidden ? <span className="private-mask">{placeholder}</span> : children}
     </span>
   );
 }

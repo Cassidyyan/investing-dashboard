@@ -12,6 +12,7 @@ export function EstimatesStrip({
 }) {
   return (
     <aside
+      aria-label="Return estimate coverage"
       className={`${styles.estimatesStrip} ${caveats ? styles.caveat : ""}`}
     >
       <span>

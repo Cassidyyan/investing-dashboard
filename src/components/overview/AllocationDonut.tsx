@@ -1,8 +1,5 @@
 import { useId } from "react";
-import {
-  PrivateValue,
-  useBalancePrivacy,
-} from "@/components/shared/BalancePrivacy";
+import { useBalancePrivacy } from "@/components/shared/BalancePrivacy";
 import { StatCard } from "@/components/shared/StatCard";
 import styles from "@/styles/dashboard.module.css";
 export function AllocationDonut({
@@ -78,11 +75,7 @@ export function AllocationDonut({
                   />
                   {r.label}
                 </span>
-                <b>
-                  <PrivateValue placeholder="••••">
-                    {r.percent.toFixed(1)}%
-                  </PrivateValue>
-                </b>
+                <b>{r.percent.toFixed(1)}%</b>
               </li>
             ))}
           </ul>

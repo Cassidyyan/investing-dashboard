@@ -1,6 +1,12 @@
 "use client";
-import { useId, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { SampleNotice } from "@/components/shared/SampleNotice";
+import {
+  Select,
+  Switch,
+  SortDirectionButton,
+} from "@/components/shared/Select";
+import { useId, useRef, useState } from "react";
+import { useProtectedRefresh } from "@/components/shared/useProtectedRefresh";
 import type { Portfolio, ExchangeRate, Result } from "@/lib/types";
 import {
   flattenHoldings,
@@ -10,13 +16,11 @@ import {
 } from "@/lib/holdings/holdings-view";
 import { isOption } from "@/lib/holdings/holdings";
 import { WorkspaceHeader } from "@/components/layout/WorkspaceHeader";
-import {
-  NavigationLink,
-  NavigationReady,
-} from "@/components/layout/NavigationProgress";
+import { NavigationReady } from "@/components/layout/NavigationProgress";
 import { DashboardNavigation } from "@/components/layout/DashboardNavigation";
 import { PortfolioLinks } from "@/components/shared/PortfolioLinks";
 import { BalancePrivacyProvider } from "@/components/shared/BalancePrivacy";
+import { InfoPopover } from "@/components/shared/InfoPopover";
 import { StatCard } from "@/components/shared/StatCard";
 import { SummaryStrip } from "./SummaryStrip";
 import { AllocationCard } from "./AllocationCard";
@@ -39,8 +43,7 @@ function HoldingsContent({
   isLoading = false,
   preview,
 }: Props) {
-  const router = useRouter(),
-    [pending, startTransition] = useTransition();
+  const { pending, refresh, cooldown } = useProtectedRefresh();
   const [mode, setMode] = useState<HoldingsCurrency>("COMBINED_USD"),
     [tab, setTab] = useState<"holdings" | "options">("holdings"),
     [accountId, setAccountId] = useState("all"),
@@ -54,7 +57,6 @@ function HoldingsContent({
     buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const loading = isLoading || preview === "loading",
     refreshing = pending || preview === "refreshing";
-  const refresh = () => startTransition(() => router.refresh());
   const accounts =
     portfolio.accounts.status === "ok" ? portfolio.accounts.data : [];
   const selected =
@@ -96,6 +98,7 @@ function HoldingsContent({
         updatedAt={portfolio.retrievedAt}
         loading={loading}
         refreshing={refreshing}
+        refreshBlocked={cooldown}
         onRefresh={refresh}
       />
       <main id="holdings-main" className={shared.main}>
@@ -107,15 +110,7 @@ function HoldingsContent({
         </div>
         <DashboardNavigation path="/holdings" />
         <PortfolioLinks path="/holdings" />
-        {preview && (
-          <aside className={shared.previewBanner}>
-            Development preview: {preview}. All figures are invented sample
-            data.{" "}
-            <NavigationLink href="/holdings">
-              Return to live positions
-            </NavigationLink>
-          </aside>
-        )}
+        {preview && <SampleNotice href="/holdings" />}
         {!loading && (!portfolio.configured || failed || expired) && (
           <div className={shared.error} role="alert">
             <div>
@@ -149,7 +144,7 @@ function HoldingsContent({
               <button
                 className={shared.ghostButton}
                 type="button"
-                disabled={refreshing}
+                disabled={refreshing || cooldown}
                 onClick={refresh}
               >
                 Retry
@@ -166,7 +161,7 @@ function HoldingsContent({
             <button
               type="button"
               className={styles.textButton}
-              disabled={refreshing}
+              disabled={refreshing || cooldown}
               onClick={refresh}
             >
               Retry
@@ -190,7 +185,7 @@ function HoldingsContent({
             <>
               <div className={styles.summaryStrip}>
                 {[0, 1, 2].map((i) => (
-                  <StatCard title="Loading summary" key={i}>
+                  <StatCard title={`Loading summary ${i + 1}`} key={i}>
                     <div
                       className={`${shared.skeleton} ${shared.skeletonValue}`}
                     />
@@ -230,79 +225,70 @@ function HoldingsContent({
                     title="Your positions"
                     className={styles.holdingsCard}
                     action={
-                      <label className={styles.groupToggle}>
-                        <input
-                          type="checkbox"
-                          checked={group}
-                          onChange={(e) => setGroup(e.target.checked)}
-                        />
-                        Group by account
-                      </label>
+                      <Switch
+                        checked={group}
+                        onCheckedChange={setGroup}
+                        label="Group by account"
+                      />
                     }
                   >
-                    <div
-                      className={styles.segmented}
-                      role="tablist"
-                      aria-label="Position type"
-                    >
-                      {(["holdings", "options"] as const).map((type, index) => (
-                        <button
-                          ref={(node) => {
-                            buttons.current[index] = node;
-                          }}
-                          key={type}
-                          id={`${id}-${type}-tab`}
-                          role="tab"
-                          type="button"
-                          aria-selected={tab === type}
-                          aria-controls={`${id}-${type}-panel`}
-                          tabIndex={tab === type ? 0 : -1}
-                          onClick={() => setTab(type)}
-                          onKeyDown={(event) => {
-                            let target = index;
-                            if (
-                              event.key === "ArrowRight" ||
-                              event.key === "ArrowLeft"
-                            )
-                              target = 1 - index;
-                            else if (event.key === "Home") target = 0;
-                            else if (event.key === "End") target = 1;
-                            else return;
-                            event.preventDefault();
-                            setTab(target === 0 ? "holdings" : "options");
-                            buttons.current[target]?.focus();
-                          }}
-                        >
-                          {type === "holdings" ? "Holdings" : "Options"}
-                        </button>
-                      ))}
-                    </div>
-                    <div className={styles.filters}>
+                    <div className={styles.positionControls}>
                       <div
-                        className={styles.accountChips}
-                        role="group"
-                        aria-label="Filter by account"
+                        className={styles.segmented}
+                        role="tablist"
+                        aria-label="Position type"
                       >
-                        <button
-                          type="button"
-                          aria-pressed={accountId === "all"}
-                          onClick={() => setAccountId("all")}
-                        >
-                          All accounts
-                        </button>
-                        {accounts.map((a) => (
-                          <button
-                            type="button"
-                            key={a.account.id}
-                            aria-pressed={accountId === a.account.id}
-                            onClick={() => setAccountId(a.account.id)}
-                          >
-                            {a.account.name}
-                          </button>
-                        ))}
+                        {(["holdings", "options"] as const).map(
+                          (type, index) => (
+                            <button
+                              ref={(node) => {
+                                buttons.current[index] = node;
+                              }}
+                              key={type}
+                              id={`${id}-${type}-tab`}
+                              role="tab"
+                              type="button"
+                              aria-selected={tab === type}
+                              aria-controls={`${id}-${type}-panel`}
+                              tabIndex={tab === type ? 0 : -1}
+                              onClick={() => setTab(type)}
+                              onKeyDown={(event) => {
+                                let target = index;
+                                if (
+                                  event.key === "ArrowRight" ||
+                                  event.key === "ArrowLeft"
+                                )
+                                  target = 1 - index;
+                                else if (event.key === "Home") target = 0;
+                                else if (event.key === "End") target = 1;
+                                else return;
+                                event.preventDefault();
+                                setTab(target === 0 ? "holdings" : "options");
+                                buttons.current[target]?.focus();
+                              }}
+                            >
+                              {type === "holdings" ? "Holdings" : "Options"}
+                            </button>
+                          ),
+                        )}
                       </div>
+                      <label>
+                        <span className={styles.srOnly}>Filter by account</span>
+                        <Select
+                          aria-label="Filter by account"
+                          value={accountId}
+                          onChange={(e) => setAccountId(e.target.value)}
+                        >
+                          <option value="all">All accounts</option>
+                          {accounts.map((a) => (
+                            <option key={a.account.id} value={a.account.id}>
+                              {a.account.name}
+                            </option>
+                          ))}
+                        </Select>
+                      </label>
                       <label className={styles.search}>
-                        Search positions
+                        <span className={styles.srOnly}>Search positions</span>
                         <input
                           type="search"
                           placeholder="Ticker or name"
@@ -310,12 +296,56 @@ function HoldingsContent({
                           onChange={(event) => setSearch(event.target.value)}
                         />
                       </label>
+
+                      <div className={styles.sortGroup}>
+                        {" "}
+                        <label className={styles.search}>
+                          <span className={styles.srOnly}>Sort positions</span>
+                          <Select
+                            aria-label="Sort positions"
+                            value={sort.key}
+                            onChange={(event) =>
+                              setSort({
+                                key: event.target.value as HoldingsSort["key"],
+                                direction: "descending",
+                              })
+                            }
+                          >
+                            {(
+                              [
+                                ["value", "Market value"],
+                                ["quantity", "Quantity"],
+                                ["averageCost", "Average cost"],
+                                ["price", "Last price"],
+                                ["return", "Net return"],
+                                ["weight", "Weight"],
+                                ["holding", "Holding"],
+                                ["account", "Account"],
+                              ] as const
+                            ).map(([key, label]) => (
+                              <option key={key} value={key}>
+                                {label}
+                              </option>
+                            ))}
+                          </Select>
+                        </label>
+                        <SortDirectionButton
+                          direction={sort.direction}
+                          onChange={(direction) =>
+                            setSort((s) => ({ ...s, direction }))
+                          }
+                        />
+                      </div>
+                      <InfoPopover label="Position filters, weights and sorting">
+                        <p>
+                          Monetary sort values use the selected display
+                          currency. Missing values sort last. Weights and
+                          allocation use all positive positions in selected
+                          accounts. Search and Holdings / Options change the
+                          list only.
+                        </p>
+                      </InfoPopover>
                     </div>
-                    <p className={styles.footnote}>
-                      Weights and allocation use all positive positions in
-                      selected accounts. Search and the Holdings / Options tabs
-                      change the list only.
-                    </p>
                     <div
                       id={`${id}-${tab}-panel`}
                       role="tabpanel"

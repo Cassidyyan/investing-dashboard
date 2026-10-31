@@ -1,3 +1,4 @@
+import { Money as Money } from "@/components/shared/Money";
 import { PrivateValue } from "@/components/shared/BalancePrivacy";
 import type { AccountData, PositionView } from "@/lib/types";
 import { isOption } from "@/lib/holdings/holdings";
@@ -7,13 +8,7 @@ import {
   formatExpiration,
   moneyness,
 } from "@/lib/options/option-details";
-import {
-  date,
-  money,
-  quantity,
-  signedMoney,
-  signedPercent,
-} from "@/lib/format";
+import { date, quantity, signedPercent } from "@/lib/format";
 import { SectionState } from "@/components/shared/SectionState";
 
 export function OptionCard({
@@ -68,9 +63,11 @@ export function OptionCard({
             {option?.type || "Option"}
           </span>
           <small>
-            <PrivateValue placeholder="••••">
-              {option ? money(option.strike) : "Strike unavailable"}
-            </PrivateValue>{" "}
+            {option ? (
+              <Money value={option.strike} />
+            ) : (
+              <PrivateValue>Strike unavailable</PrivateValue>
+            )}{" "}
             · {formatExpiration(option?.expiration)}
           </small>
         </span>
@@ -88,9 +85,7 @@ export function OptionCard({
           <div>
             <dt>Strike</dt>
             <dd>
-              <PrivateValue placeholder="••••">
-                {money(option?.strike ?? unavailable)}
-              </PrivateValue>
+              <Money value={option?.strike ?? unavailable} />
             </dd>
           </div>
           <div>
@@ -133,42 +128,32 @@ export function OptionCard({
           <div>
             <dt>Last premium / unit</dt>
             <dd>
-              <PrivateValue placeholder="••••">
-                {money(position.price)}
-              </PrivateValue>
+              <Money value={position.price} />
             </dd>
           </div>
           <div>
             <dt>Average premium / unit</dt>
             <dd>
-              <PrivateValue placeholder="••••">
-                {money(position.averageCost ?? unavailable)}
-              </PrivateValue>
+              <Money value={position.averageCost ?? unavailable} />
             </dd>
           </div>
           <div>
             <dt>Estimated market value</dt>
             <dd>
-              <PrivateValue placeholder="••••">
-                {money(position.value)}
-              </PrivateValue>
+              <Money value={position.value} />
             </dd>
           </div>
           <div>
             <dt>Unrealized return</dt>
             <dd>
-              <PrivateValue placeholder="••••">
-                {signedMoney(position.unrealizedReturn ?? unavailable)}
-              </PrivateValue>
+              <Money value={position.unrealizedReturn ?? unavailable} signed />
               <small>{signedPercent(position.unrealizedReturnPercent)}</small>
             </dd>
           </div>
           <div>
             <dt>Underlying snapshot price</dt>
             <dd>
-              <PrivateValue placeholder="••••">
-                {money(underlying?.price ?? unavailable)}
-              </PrivateValue>
+              <Money value={underlying?.price ?? unavailable} />
             </dd>
           </div>
           <div>

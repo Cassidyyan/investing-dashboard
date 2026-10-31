@@ -36,9 +36,10 @@ src/
 │   ├── format.ts           Currency, date, quantity and return formatting
 │   ├── navigation.ts       Page destinations and navigation groups
 │   ├── accounts/           Native currency totals and combined estimates
+│   ├── financial/          Decimal values, validation, provenance and source models
 │   ├── cash/               Cash totals, comparisons and sync metadata
-│   ├── holdings/           Allocation, industries and position sorting
-│   ├── options/            Expiry and moneyness helpers
+│   ├── holdings/           Allocation, industries and holding view models
+│   ├── options/            Contracts, quantity reconciliation, expiry and moneyness
 │   ├── overview/           Overview view model and display conversion
 │   ├── performance/        History dates, ranges and aggregation
 │   └── returns/            Lifetime returns and transfer reconciliation
@@ -101,16 +102,20 @@ The server is the local Node.js process started with `npm run dev`. Components m
 
 All files in `src/server/` start with `import "server-only"`. `load-overview.ts` composes shared loaders for Overview; `load-account-funding.ts` supplies dated external funding for history-backed estimates.
 
-| File                       | Responsibility                                                         |
-| -------------------------- | ---------------------------------------------------------------------- |
-| `snaptrade.ts`             | The sole SDK initialization and read-only adapter                      |
-| `load-portfolio.ts`        | Concurrent account sections, partial failures and account scopes       |
-| `normalize.ts`             | Safe display objects, masked account numbers and normalized valuations |
-| `exchange-rate.ts`         | Latest public Bank of Canada daily reference rate                      |
-| `load-performance.ts`      | Account history, reported returns, and conditional funding loads       |
-| `load-holding-returns.ts`  | Available transaction history for the leaderboard                      |
-| `return-exchange-rates.ts` | Dated reference rates for labelled historical FX estimates             |
-| `security-logo.ts`         | Logo.dev URLs using only the publishable key                           |
+| File                        | Responsibility                                                         |
+| --------------------------- | ---------------------------------------------------------------------- |
+| `snaptrade.ts`              | The sole SDK initialization and read-only adapter                      |
+| `load-portfolio.ts`         | Concurrent account sections, partial failures and account scopes       |
+| `normalize.ts`              | Safe display objects, masked account numbers and normalized valuations |
+| `normalize-transactions.ts` | Source-faithful transactions and cumulative order snapshots            |
+| `transaction-pages.ts`      | Bounded, scope/identity/coverage-checked historical transaction reader |
+| `request-protection.ts`     | In-flight deduplication, concurrency, queue and provider cooldown      |
+| `retry-after.ts`            | Validated provider cooldown header parsing                             |
+| `exchange-rate.ts`          | Latest public Bank of Canada daily reference rate                      |
+| `load-performance.ts`       | Account history, reported returns, and conditional funding loads       |
+| `load-holding-returns.ts`   | Available transaction history for the leaderboard                      |
+| `return-exchange-rates.ts`  | Dated reference rates for labelled historical FX estimates             |
+| `security-logo.ts`          | Logo.dev URLs using only the publishable key                           |
 
 ## Overview history and activity
 
@@ -126,6 +131,12 @@ All files in `src/server/` start with `import "server-only"`. `load-overview.ts`
 
 `lib/performance/cash-flow-returns.ts` calculates gain versus net deposits up to the inspected date and an estimated Modified Dietz return from the first visible snapshot to that date. Date-range changes reset the period baseline, while cumulative net deposits retain their full recorded history. Currency groups use exactly the same accounts as the value chart. Tests use the labelled fixture in `dev/previews/performance-preview.ts`; `/performance?preview=sample` enables it only in development and makes no brokerage calls.
 
+## Financial and options foundations
+
+Read [the Phase 1 audit](phase-1-audit.md) for the prioritized findings. `lib/financial/` contains exact decimal operations, common validators, provenance/status fields and normalized transaction/order types. `server/normalize-transactions.ts` is the source adapter; legacy UI records remain compatible numeric projections.
+
+`lib/options/contracts.ts` normalizes source contracts and conservatively parses OCC symbols. `reconcile-executions.ts` links explicit opening/closing quantities; it does not fetch or calculate P&L. `types.ts` separates execution, lifecycle and strategy models, with an unimplemented repository interface. See [options capabilities](options-data-foundation.md) before adding analytics and [the storage proposal](historical-storage-plan.md) before retaining brokerage data.
+
 ## Organization rules
 
 - Put route entry points in `app/`; keep screen composition in `components/<feature>/`.
@@ -137,7 +148,7 @@ All files in `src/server/` start with `import "server-only"`. `load-overview.ts`
 - Put invented fixtures in `dev/previews/`; use them only in labelled development previews and tests. Never substitute them after a live request fails.
 - Mirror calculation folders in `tests/lib/`. Add tests beside the corresponding test group, not inside route folders.
 
-Obsolete account accordions, position tables, connection-health UI and old pie-chart wrappers were removed after their privacy and SVG checks were moved to the active holdings components. The financial allocation helpers remain.
+Obsolete account accordions, position tables, connection-health UI and old pie-chart wrappers were removed after their privacy and SVG checks were moved to the active holdings components. The financial allocation helpers remain. Holdings sorting lives in `components/holdings/HoldingsTable.tsx` and is covered by `tests/components/holdings-dashboard.test.tsx`; the obsolete standalone sorter and its tests have been removed.
 
 ## Local checks
 
@@ -192,3 +203,17 @@ The feature lives in `components/returns/`:
 `lib/returns/presentation.ts` sorts copies of rows, sums existing ranked fields and groups issue text for display. It never changes basis, eligibility, transfers or FX. `signedAmount()` in `lib/format.ts` retains native currency precision while omitting the currency code for labelled tables; shared `ChangeBadge` accepts an optional `showCurrency` setting. The financial engine remains `lib/returns/holding-returns.ts`.
 
 `Returns.module.css` contains all feature styling. Obsolete Performance/Returns global styles were removed after both pages moved to scoped modules. `dev/previews/returns-preview.ts` contains only labelled invented examples. Tests cover total/component consistency, full-set sorting, issue grouping, privacy, and page states. Browser previews exercise drawer focus/Escape, row expansion, filters and responsive layouts without live brokerage requests.
+
+## Shared request controls and browser checks
+
+`components/shared/useProtectedRefresh.ts` is the shared browser refresh/retry hook; `ActivityDashboard.tsx` uses it with the same shared header as other pages. `server/request-protection.ts` wraps the adapter's existing reads with in-flight deduplication, concurrency limits and rate-limit cooldowns without caching completed brokerage data.
+
+`tests/browser/` contains Playwright accessibility and interaction checks, run with `npm run test:browser`. Their `.pw.mjs` filenames keep them separate from Vitest unit tests. Loading skeletons are decorative and hidden from assistive technology; the surrounding page supplies the loading announcement. InfoPopover accessible names retain visible badge/trigger text, and page landmarks have distinct names.
+
+## Presentation polish and Activity
+
+`components/shared/Money.tsx` owns currency formatting and privacy masking; `MoneyValue` is its compatibility wrapper. `PrivateValue` reserves a formatted-text width and one line of height, and removes sensitive text when hidden. Percentages stay visible. `Select.tsx` supplies consistently styled native selects, the keyboard-accessible Switch, and the sort-direction icon button. `SampleNotice` supplies the slim development-only notice.
+
+Activity now renders `ActivityDashboard` with the unchanged `loadPortfolio(undefined, ["orders", "activities"])` result. Its feed, account/type/search filters, date groups, and fifteen-item display limit operate on already-loaded items. Orders expose quantity/status rather than inventing monetary execution data. The old page shell and per-account lists were removed. Unit tests cover loading/empty/error/privacy; browser checks also cover the current live read-only Activity view.
+
+Layout regressions cover all seven pages at 1440, 820 and 390 pixels, hidden-value dimensions, fixed allocation tracks, the ETA zero-value row, and the twelve-pixel profit-components bar.

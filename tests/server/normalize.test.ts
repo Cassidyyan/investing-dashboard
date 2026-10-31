@@ -181,3 +181,57 @@ describe("average cost and unrealized return", () => {
     expect(signedMoney({ amount: null, currency: "CAD" })).toBe("Unavailable");
   });
 });
+
+it("rejects negative option multipliers and negative security prices instead of reversing valuation signs", () => {
+  expect(
+    normalizePositions(position("option", { multiplier: "-100" }, "-2")).rows[0]
+      .value.amount,
+  ).toBeNull();
+  expect(
+    normalizePositions(position("stock", {}, "-2", "-3")).rows[0].value.amount,
+  ).toBeNull();
+});
+it("projects exact fractional position calculations into the existing view model", () => {
+  const data = position("stock", {}, "3", "0.1");
+  data.results[0].cost_basis = "0.03";
+  const row = normalizePositions(data).rows[0];
+  expect(row.value.amount).toBe(0.3);
+  expect(row.unrealizedReturn?.amount).toBe(0.21);
+});
+it("flags malformed synchronization timestamps instead of presenting them as fresh", () => {
+  const a = normalizeAccount({
+    id: "synthetic",
+    sync_status: { holdings: { last_successful_sync: "invalid" } },
+  } as Account);
+  expect(a.syncedAt).toBeNull();
+  expect(a.incomplete).toBe(true);
+});
+it("keeps missing record arrays distinct from confirmed empty arrays", async () => {
+  const { normalizeOrders } = await import("@/server/normalize");
+  expect(() => normalizeOrders({})).toThrow("unavailable");
+  expect(() => normalizeActivities({})).toThrow("unavailable");
+  expect(normalizeOrders({ orders: [] })).toEqual([]);
+  expect(normalizeActivities({ data: [] }).rows).toEqual([]);
+});
+it("preserves recent-first activity ordering and the ticker description fallback", () => {
+  const result = normalizeActivities({
+    data: [
+      {
+        id: "older",
+        type: "BUY",
+        symbol: { symbol: "SYNTH" },
+        trade_date: "2026-10-01",
+      },
+      {
+        id: "newer",
+        description: "Synthetic dividend",
+        type: "DIVIDEND",
+        trade_date: "2026-10-02",
+      },
+    ],
+  });
+  expect(result.rows.map((row) => row.description)).toEqual([
+    "Synthetic dividend",
+    "SYNTH",
+  ]);
+});

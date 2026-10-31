@@ -109,3 +109,61 @@ it("sorts missing weights after positive weights in both directions", () => {
     ).toBe(true);
   }
 });
+
+it.each(["quantity", "averageCost", "price", "return"] as const)(
+  "sorts %s numerically in both directions without mutating positions",
+  (key) => {
+    const { portfolio, rate } = createHoldingsPreview("sample");
+    if (portfolio.accounts.status !== "ok") throw Error("fixture");
+    const base = flattenHoldings(portfolio.accounts.data)[0];
+    const entries = [2, 100, null, -10, 0, NaN].map((amount, i) => ({
+      ...base,
+      key: String(i),
+      position: {
+        ...base.position,
+        units: amount,
+        averageCost: { amount, currency: "USD" },
+        price: { amount, currency: "USD" },
+        unrealizedReturn: { amount, currency: "USD" },
+      },
+    }));
+    for (const direction of ["ascending", "descending"] as const) {
+      expect(
+        sortHoldingEntries(entries, { key, direction }, "USD", rate).map(
+          (e) => e.key,
+        ),
+      ).toEqual(
+        direction === "descending"
+          ? ["1", "0", "4", "3", "2", "5"]
+          : ["3", "4", "0", "1", "2", "5"],
+      );
+    }
+    expect(entries.map((e) => e.key)).toEqual(["0", "1", "2", "3", "4", "5"]);
+  },
+);
+it("uses reference FX for monetary sort metrics and leaves unavailable FX last", () => {
+  const { portfolio, rate } = createHoldingsPreview("sample");
+  if (portfolio.accounts.status !== "ok") throw Error("fixture");
+  const base = flattenHoldings(portfolio.accounts.data)[0];
+  const entries = ["CAD", "USD"].map((currency) => ({
+    ...base,
+    key: currency,
+    position: { ...base.position, price: { amount: 100, currency } },
+  }));
+  expect(
+    sortHoldingEntries(
+      entries,
+      { key: "price", direction: "descending" },
+      "COMBINED_USD",
+      rate,
+    ).map((e) => e.key),
+  ).toEqual(["USD", "CAD"]);
+  expect(
+    sortHoldingEntries(
+      entries,
+      { key: "price", direction: "ascending" },
+      "COMBINED_USD",
+      { status: "error", message: "Unavailable" },
+    ).map((e) => e.key),
+  ).toEqual(["USD", "CAD"]);
+});

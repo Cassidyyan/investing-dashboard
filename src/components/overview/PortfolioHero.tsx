@@ -245,7 +245,7 @@ export function PortfolioHero({
       )}
       {points.length > 0 && (
         <details className={styles.dataAlternative}>
-          <summary>Chart data</summary>
+          <summary>View as table</summary>
           {hidden ? (
             <p>Chart values hidden.</p>
           ) : (

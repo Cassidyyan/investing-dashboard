@@ -62,8 +62,7 @@ export function PerformanceHero({
       <p className={styles.heroValue}>
         <MoneyValue amount={points.at(-1)?.value ?? null} currency={currency} />
       </p>
-      <div className={styles.heroChange}>
-        <span>Change in value</span>
+      <div className={styles.heroChange} aria-label="Change in value">
         <ChangeBadge
           className={styles.changeBadge}
           change={valueChange(points)}
@@ -84,24 +83,23 @@ export function PerformanceHero({
           accounts do not all have snapshots.
         </p>
       )}
-      {points.some(
-        (p, i) =>
-          i > 0 &&
-          Date.parse(p.date) - Date.parse(points[i - 1].date) > 86400000,
-      ) && (
-        <p className={styles.partial}>
-          Gaps between observations · dashed lines
-        </p>
-      )}
+      <p className={styles.availableHistory}>
+        Showing available history · {historyDay(points[0].date)} –{" "}
+        {historyDay(points.at(-1)!.date)}
+      </p>
       {omittedPoints > 0 && (
         <p className={styles.partial}>
           {omittedPoints} invalid snapshots omitted.
         </p>
       )}
       <PerformanceChart points={points} currency={currency} funding={funding} />
+      <p className={styles.gapLegend}>
+        <span aria-hidden="true">┄</span> Dashed lines indicate gaps between
+        observations
+      </p>
       <PerformanceStats points={points} currency={currency} />
       <details className={styles.fundingDetails}>
-        <summary>Funding-based return estimates</summary>
+        <summary>View funding-based return estimates</summary>
         <HistoryInspection
           inspection={cashFlowReturns(
             points[0],

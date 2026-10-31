@@ -1,6 +1,8 @@
 "use client";
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { SampleNotice } from "@/components/shared/SampleNotice";
+import { Select } from "@/components/shared/Select";
+import { useState } from "react";
+import { useProtectedRefresh } from "@/components/shared/useProtectedRefresh";
 import type { PerformanceAccount, Portfolio } from "@/lib/types";
 import {
   aggregateHistory,
@@ -17,7 +19,6 @@ import { PortfolioLinks } from "@/components/shared/PortfolioLinks";
 import { CurrencyToggle } from "@/components/shared/CurrencyToggle";
 import { RangeToggle } from "@/components/shared/RangeToggle";
 import { StatCard } from "@/components/shared/StatCard";
-import { InfoPopover } from "@/components/shared/InfoPopover";
 import { BalancePrivacyProvider } from "@/components/shared/BalancePrivacy";
 import { PerformanceHero } from "./PerformanceHero";
 import { AccountPerformanceList } from "./AccountPerformanceList";
@@ -49,8 +50,7 @@ function PerformanceContent({
   isLoading = false,
   preview,
 }: Props) {
-  const router = useRouter(),
-    [pending, startTransition] = useTransition();
+  const { pending, refresh, cooldown } = useProtectedRefresh();
   const [range, setRange] = useState<HistoryRange>("1M"),
     [accountId, setAccountId] = useState("all"),
     [chosenCurrency, setCurrency] = useState<"CAD" | "USD">("CAD");
@@ -76,7 +76,6 @@ function PerformanceContent({
       )
       .sort()
       .at(-1);
-  const refresh = () => startTransition(() => router.refresh());
   const expired =
     portfolio?.connections.status === "ok" &&
     portfolio.connections.data.some((c) => c.status === "Disabled");
@@ -120,6 +119,7 @@ function PerformanceContent({
         dataThrough={through ? historyDay(through) : "Unavailable"}
         onRefresh={refresh}
         refreshing={refreshing}
+        refreshBlocked={cooldown}
         loading={loading}
       />
       <main id="performance-main" className={shared.main}>
@@ -128,28 +128,10 @@ function PerformanceContent({
             <h1>Your portfolio over time</h1>
             <p>Observed account values, with the detail behind each change.</p>
           </div>
-          <InfoPopover label="Performance source and setup">
-            <p>
-              Current investing accounts only; cash/chequing and currently
-              hidden or empty accounts are excluded. Daily history is estimated
-              and may have gaps. The source is beta and its schema may change.
-              Up to one year is supplied, not five years or intraday quotes.
-            </p>
-            <p>
-              No historical FX conversion, combined-currency line, missing-day
-              interpolation or brokerage-return averaging is applied. Change in
-              value includes cash flows.
-            </p>
-          </InfoPopover>
         </div>
         <DashboardNavigation path="/performance" />
         <PortfolioLinks path="/performance" group="performance" />
-        {preview && (
-          <aside className={shared.previewBanner}>
-            Development preview: {preview}. All figures are invented sample
-            data.
-          </aside>
-        )}
+        {preview && <SampleNotice href="/performance" />}
         {!loading && (!configured || failed || expired) && (
           <div className={shared.error} role="alert">
             <div>
@@ -182,7 +164,7 @@ function PerformanceContent({
                 type="button"
                 className={shared.ghostButton}
                 onClick={refresh}
-                disabled={refreshing}
+                disabled={refreshing || cooldown}
               >
                 Retry
               </button>
@@ -221,7 +203,7 @@ function PerformanceContent({
                 <label className={styles.accountLabel}>
                   Account
                   <span className={styles.accountSelect}>
-                    <select
+                    <Select
                       value={accountId}
                       onChange={(e) => setAccountId(e.target.value)}
                     >
@@ -231,7 +213,7 @@ function PerformanceContent({
                           {a.name} {a.suffix}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                     <svg
                       width="18"
                       height="18"
@@ -265,7 +247,7 @@ function PerformanceContent({
               <SetupBanner
                 messages={messages}
                 onRetry={refresh}
-                refreshing={refreshing}
+                refreshing={refreshing || cooldown}
               />
               <div className={styles.cards}>
                 {points.length ? (
@@ -290,7 +272,7 @@ function PerformanceContent({
                         className={shared.ghostButton}
                         type="button"
                         onClick={refresh}
-                        disabled={refreshing}
+                        disabled={refreshing || cooldown}
                       >
                         Retry history
                       </button>

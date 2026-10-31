@@ -16,7 +16,7 @@ it("keeps three columns and distinguishes the personal HYSA assumption from brok
   expect(html).toContain("HYSA");
   expect(html).not.toContain("HYSA (assumed)");
   expect(html).toContain("assumed to earn a higher yield than chequing");
-  expect(html).toContain("Figures differ");
+  expect(html).toContain("reported total differs");
   expect(html).toContain("invented sample data");
   expect(html).toContain("does not convert currencies");
   expect(html).toContain("4,250.00");

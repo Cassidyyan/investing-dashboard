@@ -1,5 +1,4 @@
-import { PrivateValue } from "@/components/shared/BalancePrivacy";
-import { money, cashMoney } from "@/lib/format";
+import { Money } from "./Money";
 export function MoneyValue({
   amount,
   currency,
@@ -9,9 +8,5 @@ export function MoneyValue({
   currency: string;
   cash?: boolean;
 }) {
-  return (
-    <PrivateValue placeholder="••••">
-      {(cash ? cashMoney : money)({ amount, currency })}
-    </PrivateValue>
-  );
+  return <Money value={{ amount, currency }} cash={cash} />;
 }

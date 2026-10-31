@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "screenshots": "node screenshots-tool/run.mjs",
-    "screenshots:login": "node screenshots-tool/run.mjs --login"
+    "screenshots:login": "node screenshots-tool/run.mjs --login",
+    "test:browser": "playwright test --config tests/browser/playwright.config.mjs"
   },
   "dependencies": {
     "@fontsource-variable/cormorant-garamond": "^5.3.0",

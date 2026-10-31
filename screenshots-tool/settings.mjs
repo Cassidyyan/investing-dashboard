@@ -31,6 +31,28 @@ export const statePath = path.resolve(
 export const storageState = () =>
   existsSync(statePath) ? statePath : undefined;
 export const masked = process.env.SCREENSHOTS_MASK !== "0";
+export const captureMode = process.env.SCREENSHOTS_CAPTURE_MODE || "quick";
+if (!["quick", "full"].includes(captureMode))
+  throw new Error("SCREENSHOTS_CAPTURE_MODE must be quick or full.");
+export const captureLimit = captureMode === "quick" ? 10 : Infinity;
+export function capturePlan(routes) {
+  const requested = process.env.SCREENSHOTS_REVIEW_ROUTES?.split(",")
+    .map((r) => r.trim())
+    .filter(Boolean);
+  if (requested?.length) {
+    const selected = routes.filter((r) => requested.includes(r.route));
+    return ["desktop", "tablet", "mobile"]
+      .flatMap((viewport) =>
+        selected.map((r) => ({ route: r.route, viewport })),
+      )
+      .slice(0, 10);
+  }
+  const desktop = routes.map((r) => ({ route: r.route, viewport: "desktop" }));
+  const mobile = ["/", "/holdings", "/performance"]
+    .filter((route) => routes.some((r) => r.route === route))
+    .map((route) => ({ route, viewport: "mobile" }));
+  return [...desktop, ...mobile].slice(0, 10);
+}
 export const dataMode = process.env.SCREENSHOTS_DATA_MODE || "auto";
 if (!["auto", "preview", "live"].includes(dataMode))
   throw new Error("SCREENSHOTS_DATA_MODE must be auto, preview or live.");

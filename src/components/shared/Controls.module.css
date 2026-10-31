@@ -1,0 +1,79 @@
+.selectWrap {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+}
+.select {
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 32px 10px 12px !important;
+  border: 1px solid var(--ov-border);
+  border-radius: 10px;
+  background: var(--ov-surface);
+  color: var(--ov-text);
+  font: inherit;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.caret {
+  position: absolute;
+  right: 12px;
+  pointer-events: none;
+  color: var(--ov-secondary);
+}
+.select:focus-visible,
+.switch:focus-visible,
+.direction:focus-visible {
+  outline: 2px solid var(--ov-brand);
+  outline-offset: 3px;
+}
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  padding: 4px 0;
+  color: var(--ov-secondary);
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.switchTrack {
+  display: inline-flex;
+  align-items: center;
+  width: 32px;
+  height: 20px;
+  padding: 3px;
+  border-radius: 99px;
+  background: var(--ov-secondary);
+}
+.switchTrack > span {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+}
+.switch[aria-checked="true"] .switchTrack {
+  background: var(--ov-brand);
+}
+.switch[aria-checked="true"] .switchTrack > span {
+  transform: translateX(12px);
+}
+.direction {
+  display: inline-grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--ov-border);
+  border-radius: 10px;
+  background: var(--ov-surface);
+  color: var(--ov-brand);
+  font-size: 20px;
+}

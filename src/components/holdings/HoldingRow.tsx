@@ -1,4 +1,6 @@
-import { useId } from "react";
+"use client";
+import { Money as MoneyDisplay } from "@/components/shared/Money";
+import { useId, useState } from "react";
 import type { AccountData, ExchangeRate, Money, Result } from "@/lib/types";
 import {
   displayCurrency,
@@ -9,13 +11,12 @@ import {
   type HoldingsCurrency,
 } from "@/lib/holdings/holdings-view";
 import { isOption } from "@/lib/holdings/holdings";
-import { date, money, quantity } from "@/lib/format";
+import { quantity } from "@/lib/format";
 import { SecurityIcon } from "@/components/shared/SecurityIcon";
 import {
   PrivateValue,
   useBalancePrivacy,
 } from "@/components/shared/BalancePrivacy";
-import { InfoPopover } from "@/components/shared/InfoPopover";
 import { MoneyValue } from "@/components/shared/MoneyValue";
 import { ChangeBadge } from "@/components/shared/ChangeBadge";
 import { OptionCard } from "@/components/options/OptionsDetails";
@@ -47,6 +48,7 @@ export function HoldingRow({
   accounts: AccountData[];
 }) {
   const { hidden } = useBalancePrivacy();
+  const [expanded, setExpanded] = useState(false);
   const id = useId(),
     p = entry.position;
   const value = selectedValue(p, mode, rate),
@@ -55,9 +57,7 @@ export function HoldingRow({
         ? (value / total) * 100
         : null;
   const renderMoney = (m: Money | undefined) => (
-    <PrivateValue placeholder="••••">
-      {m ? money(m) : "Unavailable"}
-    </PrivateValue>
+    <MoneyDisplay value={m ?? { amount: null, currency: null }} />
   );
   return (
     <tbody className={styles.rowGroup}>
@@ -66,11 +66,13 @@ export function HoldingRow({
           <div className={styles.security}>
             <SecurityIcon symbol={p.symbol} logoUrl={entry.logoUrl ?? null} />
             <div className={styles.securityCopy}>
-              <strong title={p.symbol}>{p.symbol}</strong>
+              <div className={styles.securityHeading}>
+                <strong title={p.symbol}>{p.symbol}</strong>
+                <span className={styles.typeBadge}>{positionType(p.kind)}</span>
+              </div>
               {p.description && (
                 <small title={p.description}>{p.description}</small>
               )}
-              <span className={styles.typeBadge}>{positionType(p.kind)}</span>
             </div>
           </div>
         </td>
@@ -79,11 +81,6 @@ export function HoldingRow({
           <b>
             <MoneyValue amount={value} currency={displayCurrency(mode)} />
           </b>
-          <small>
-            {mode === "COMBINED_USD" && p.value.currency === "CAD"
-              ? "Estimated in USD"
-              : "Position value"}
-          </small>
         </td>
         <td className={styles.numeric}>
           <span className={styles.mobileLabel}>Weight</span>
@@ -106,30 +103,33 @@ export function HoldingRow({
         </td>
         <td>
           <span className={styles.mobileLabel}>Account</span>
-          <InfoPopover
-            label={`Account information for ${entry.account.name}`}
-            trigger={entry.account.name}
-            align="start"
+          <span
+            className={styles.accountName}
+            title={`${entry.account.type} · ${entry.account.institution} · ${entry.account.suffix}`}
           >
-            <p>
-              {entry.account.institution} · {entry.account.suffix}
-            </p>
-            <p>
-              Reported total: {renderMoney(entry.account.value)}. This brokerage
-              total may include cash and short positions; it is not the
-              estimated holdings value shown here.
-            </p>
-            <p>Account sync: {date(entry.account.syncedAt)} ET.</p>
-          </InfoPopover>
-          <span className={styles.typeBadge}>{entry.account.type}</span>
+            {entry.account.name}
+          </span>
+        </td>
+        <td>
+          <button
+            type="button"
+            className={styles.expandButton}
+            aria-label={`Position details for ${p.symbol}`}
+            aria-expanded={expanded}
+            aria-controls={id}
+            onClick={() => setExpanded(!expanded)}
+          >
+            ⌄
+          </button>
         </td>
       </tr>
-      <tr className={styles.detailRow}>
-        <td colSpan={4}>
-          <details className={styles.positionDetails}>
-            <summary aria-controls={id}>
-              Position details <span aria-hidden="true">⌄</span>
-            </summary>
+      <tr
+        className={`${styles.detailRow} ${styles.expandedCell}`}
+        hidden={!expanded}
+      >
+        <td colSpan={5}>
+          <div className={styles.positionDetails}>
+            <h3 className={styles.srOnly}>Position details</h3>
             <div id={id} className={styles.detailsBody}>
               <dl className={styles.facts}>
                 <div>
@@ -190,7 +190,7 @@ export function HoldingRow({
                 </div>
               )}
             </div>
-          </details>
+          </div>
         </td>
       </tr>
     </tbody>

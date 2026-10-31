@@ -18,11 +18,15 @@ async function settle<T>(
 ): Promise<Result<T>> {
   try {
     return { status: "ok", data: (await request()).data };
-  } catch {
+  } catch (error) {
+    const status = (error as { response?: { status?: number } } | null)
+      ?.response?.status;
     return {
       status: "error",
       message:
-        "Could not retrieve this section. Check your connection and try refreshing.",
+        status === 429
+          ? "Brokerage rate limit reached. Wait before refreshing; available sections remain visible."
+          : "Could not retrieve this section. Check your connection and try refreshing.",
     };
   }
 }
@@ -64,10 +68,14 @@ export async function loadPortfolio(
       accounts: unavailable,
       connections: unavailable,
     };
-  const [accounts, connections] = await Promise.all([
+  const [accountResponse, connections] = await Promise.all([
     settle(client.accounts),
     settle(client.connections),
   ]);
+  const accounts = mapResult(accountResponse, (data) => {
+    if (!Array.isArray(data)) throw new Error("Account list unavailable.");
+    return data;
+  });
   if (accounts.status === "error")
     return {
       configured: true,
@@ -79,14 +87,14 @@ export async function loadPortfolio(
   const visibleAccounts = accounts.data.filter(
     (a) =>
       (scope === "history"
-        ? a.account_category !== "DEPOSIT" && a.account_category !== "LOC"
+        ? a?.account_category !== "DEPOSIT" && a?.account_category !== "LOC"
         : scope === "investing"
-          ? a.account_category !== "DEPOSIT"
-          : a.account_category !== "LOC") &&
+          ? a?.account_category !== "DEPOSIT"
+          : a?.account_category !== "LOC") &&
       (scope === "history" ||
         !(
-          ["CAD", "USD"].includes(a.balance?.total?.currency ?? "") &&
-          numeric(a.balance?.total?.amount) === 0
+          ["CAD", "USD"].includes(a?.balance?.total?.currency ?? "") &&
+          numeric(a?.balance?.total?.amount) === 0
         )),
   );
   const settled = await Promise.allSettled(
@@ -94,7 +102,7 @@ export async function loadPortfolio(
       // Every page checks positions once so empty accounts stay out consistently.
       // Keep failures and incomplete/stale responses visible rather than guessing.
       const account = normalizeAccount(a);
-      const depositAccount = a.account_category === "DEPOSIT";
+      const depositAccount = a?.account_category === "DEPOSIT";
       const positions = depositAccount
         ? { status: "ok" as const, data: { rows: [], asOf: null } }
         : mapResult(
@@ -128,8 +136,10 @@ export async function loadPortfolio(
         account,
         balances: mapResult(balances, normalizeBalances),
         positions,
-        orders: mapResult(orders, normalizeOrders),
-        activities: mapResult(activities, normalizeActivities),
+        orders: mapResult(orders, (data) => normalizeOrders(data, a.id)),
+        activities: mapResult(activities, (data) =>
+          normalizeActivities(data, a.id),
+        ),
       };
     }),
   );
@@ -139,7 +149,7 @@ export async function loadPortfolio(
       ? s.value
       : {
           account: {
-            id: visibleAccounts[i].id || `invalid-${i}`,
+            id: visibleAccounts[i]?.id || `invalid-${i}`,
             name: "Account data unavailable",
             institution: "Unknown institution",
             suffix: "Unavailable",
