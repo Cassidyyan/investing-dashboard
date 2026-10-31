@@ -2,29 +2,101 @@
 
 A locally hosted, read-only personal investing dashboard built with Next.js App Router, React, TypeScript and SnapTrade Personal. Each installation uses its operator's own credentials and brokerage connections. This is a single-owner local app, not a shared hosted service.
 
-**Distribution status:** preparation is in progress. No project license has been selected. Review the [publication assessment](docs/open-source-readiness.md) before making a repository public or redistributing it.
+**Runs locally · Read-only brokerage access · Fictional demo included**
 
-## What it does
+[Demo pictures](#demo-pictures) · [Quick start](#quick-start) · [Demo mode](#try-fictional-data-first) · [Configuration](#configuration) · [Security](#privacy-and-security) · [Developer guide](#development-and-verification)
 
-- **Overview:** brokerage-reported values, cash, top holdings, allocation and available history-backed changes.
-- **Investing accounts:** masked account suffixes, reported totals, cash/buying power and clearly labelled holdings estimates.
-- **Cash & chequing:** brokerage deposit accounts and confirmed cash-only investing accounts, with native currency balances.
-- **Holdings & options:** searchable, sortable positions, account filters, allocation by holding/industry/account, option contract details and available moneyness.
-- **Account performance:** available account-value history, date ranges and deposit-aware return estimates where funding evidence supports them.
-- **Holding returns:** lifetime realized/unrealized/dividend accounting from available evidence, with explicit explanations for unranked holdings. Compare-line controls exist, but historical per-stock return lines need a price provider and are not implemented.
-- **Activity:** recent orders and transactions. Orders are displayed, never submitted.
-- **Options Analytics:** quantity-matched lifecycles, cash-based P&L, premium flows, charts, filters and a trade journal. Optional Wealthsimple activity CSVs take precedence over API history. Incomplete trades remain review items.
-- Shared balance hiding, loading/empty/error states, keyboard controls and synthetic UI previews. Desktop is the current design priority.
+**Release status:** private review. The project license remains pending by the owner's choice. Provider confirmation and other publication gates are recorded in the [readiness assessment](docs/open-source-readiness.md) and [release checklist](docs/release-checklist.md).
 
-There are no trading, fund-transfer, credential-entry or Commercial user-registration endpoints.
+## What you can explore
 
-## Screenshots
+| Page                | Features                                                                                                                           | Local route          |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| Overview            | Reported portfolio values, cash, top holdings, allocation and available history-backed changes.                                    | `/`                  |
+| Investing accounts  | Account types, masked suffixes, reported totals, cash/buying power and expandable holdings estimates.                              | `/accounts`          |
+| Cash & chequing     | Banking and confirmed cash-only investing accounts, with separate native-currency balances.                                        | `/cash`              |
+| Holdings & options  | Search, sorting, account filters, industry/holding/account allocation and available option contract details.                       | `/holdings`          |
+| Account performance | Available account-value history, date ranges and deposit-aware return estimates where funding evidence supports them.              | `/performance`       |
+| Holding returns     | Realized/unrealized/dividend accounting from available evidence and explanations for unranked holdings.                            | `/returns`           |
+| Activity            | Recent orders and transactions. Orders are displayed, never submitted.                                                             | `/activity`          |
+| Options Analytics   | Cash-based P&L, quantity-matched lifecycles, premium charts, filters, a trade journal and optional CSV-first Wealthsimple history. | `/options-analytics` |
 
-The images below are generated from the explicit demo mode, using entirely fictional data. They are not the maintainer's portfolio.
+Shared controls include balance hiding, keyboard navigation, refresh protection, and loading, empty, partial-data and error states. Desktop is the current design priority. The app has no trading, fund-transfer, credential-entry or Commercial user-registration endpoints.
 
-![Fictional portfolio overview](docs/images/overview-demo.png)
+**Available data matters:** historical Greeks/IV, per-stock historical return lines and unsupported settlements are not invented. The Compare return lines controls remain a placeholder until a historical price provider is connected. See [limitations](#limitations).
 
-![Fictional options analytics](docs/images/options-demo.png)
+## Demo pictures
+
+Every picture below was captured from the explicit, credential-free demo using **entirely fictional accounts, holdings and transactions**. No private exports or live portfolio data were loaded. Click an image to view its full resolution; expand a page below to see the rest of the app.
+
+**Portfolio overview** — reported values, available changes, allocation and top holdings.
+
+![Fictional portfolio overview with portfolio value, cash, allocation and top holdings](docs/images/overview-demo.png)
+
+<details>
+<summary>Investing accounts — account balances and reported totals</summary>
+
+The Portfolio page separates brokerage-reported totals from holdings-based estimates and keeps account details expandable.
+
+![Fictional investing accounts with masked suffixes, reported totals and cash balances](docs/images/accounts-demo.png)
+
+</details>
+
+<details>
+<summary>Cash & chequing — balances by currency</summary>
+
+Banking and confirmed cash-only investing accounts sit outside the investing account list. A personal HYSA label is optional and does not establish a yield.
+
+![Fictional cash and chequing accounts with separate CAD and USD balances](docs/images/cash-demo.png)
+
+</details>
+
+<details>
+<summary>Holdings & options — positions and allocation</summary>
+
+Search and sort positions, filter by account, and inspect the allocation card. Options expose only the contract details the available evidence supports.
+
+![Fictional holdings table and allocation chart with position filters](docs/images/holdings-demo.png)
+
+</details>
+
+<details>
+<summary>Account performance — your portfolio over time</summary>
+
+Review available account-value history and date ranges, with deposit-aware estimates where funding history is sufficient.
+
+![Fictional account performance chart with account selection and date-range controls](docs/images/performance-demo.png)
+
+</details>
+
+<details>
+<summary>Holding returns — gains, sales and dividends</summary>
+
+The leaderboard ranks supported results and explains which holdings still lack enough evidence. Per-stock historical compare lines are not implemented.
+
+![Fictional holding returns leaderboard with profit figures and data-coverage explanations](docs/images/returns-demo.png)
+
+</details>
+
+<details>
+<summary>Options Analytics — P&L, premiums and trade lifecycles</summary>
+
+Explore fictional option cash flows, completed trades, charts and the journal. Real CSV uploads are disabled in demo mode.
+
+![Fictional options analytics showing realized profit, premiums, charts and trade journal](docs/images/options-demo.png)
+
+</details>
+
+<details>
+<summary>Activity — recent orders and transactions</summary>
+
+Inspect recent activity without any trading controls. This display feed is separate from the full analytical transaction ledger.
+
+![Fictional recent orders and transactions in the Activity page](docs/images/activity-demo.png)
+
+</details>
+
+Capture provenance and regeneration notes are in [docs/images/README.md](docs/images/README.md).
 
 ## Requirements
 
@@ -35,9 +107,9 @@ The images below are generated from the explicit demo mode, using entirely ficti
 
 macOS and Linux use the shell commands below. On Windows, use PowerShell for the equivalent copy commands. Native npm dependencies may require platform-specific tooling if a prebuilt binary is unavailable. A clean same-host macOS installation is validated; Windows/Linux clean-machine behavior is not claimed as tested locally.
 
-## Install and run
+## Quick start
 
-Replace `YOUR-USER/YOUR-REPOSITORY` with the repository or fork you intend to clone:
+For a fresh clone, replace `YOUR-USER/YOUR-REPOSITORY` with the repository or fork you intend to use. If you already have an installation, **skip the environment-file copy** to preserve your existing credentials.
 
 ```sh
 git clone https://github.com/YOUR-USER/YOUR-REPOSITORY.git holdings
@@ -51,7 +123,12 @@ chmod 600 .env.local
 
 If you do not use nvm, install Node 24 and npm 11 separately. In PowerShell, use `Copy-Item .env.example .env.local` instead of `cp`, and restrict access with your Windows file permissions rather than `chmod`. **Do not overwrite an existing `.env.local`.**
 
-Open `.env.local` in your editor and enter your own Personal credentials. Never paste them in chat, issues, screenshots or a browser form. Then:
+Choose one mode in your local editor:
+
+- **Explore the demo:** set `HOLDINGS_DEMO_MODE=true`. Leave the SnapTrade credentials empty; no financial account is needed.
+- **Use your own accounts:** leave demo mode off and enter your own `SNAPTRADE_CLIENT_ID` and `SNAPTRADE_CONSUMER_KEY`. See [SnapTrade setup](#snaptrade-personal-setup).
+
+Never paste credentials into chat, issues, screenshots or a browser form. Validate the local configuration and start the app:
 
 ```sh
 npm run check:config
@@ -72,7 +149,13 @@ Production still reads your local runtime environment; it is not a static site.
 
 ## Try fictional data first
 
-In `.env.local`, set `HOLDINGS_DEMO_MODE=true`, then restart the server. Credentials are unnecessary in this mode. All eight pages use existing synthetic view models, including holdings, cash, options, transactions and performance. Demo mode skips SnapTrade, local CSV reads, external logo URLs and Bank of Canada requests. CSV uploads are disabled so real exports cannot be mixed into demo data.
+In `.env.local`, set:
+
+```dotenv
+HOLDINGS_DEMO_MODE=true
+```
+
+Then run `npm run check:config` and `npm run dev`, or restart an already running server. Credentials are unnecessary in this mode. All eight pages use existing synthetic view models, including holdings, cash, options, transactions and performance. Demo mode skips SnapTrade, local CSV reads, external logo URLs and Bank of Canada requests. CSV uploads are disabled so real exports cannot be mixed into demo data.
 
 The fictional options fixture explicitly exercises the optional USD policy; live installations default to reported currencies. Set the flag back to `false` and restart to use your accounts. Live request failures never fall back to invented data. Development-only `?preview=sample` and other documented preview states remain available; production ignores those query parameters unless explicit demo mode is enabled.
 
@@ -167,7 +250,27 @@ npx playwright install chromium
 npm run test:browser -- --project=desktop
 ```
 
-For synthetic screenshot tooling, see [screenshots-tool/README.md](screenshots-tool/README.md). For code navigation, see [the project guide](docs/project-guide.md). Please read [CONTRIBUTING.md](CONTRIBUTING.md) before proposing changes.
+Useful commands:
+
+| Command                                     | Purpose                                                                                      |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `npm run dev`                               | Start the local development server.                                                          |
+| `npm run check:config`                      | Validate local settings without printing keys or contacting SnapTrade.                       |
+| `npm test`                                  | Run synthetic unit/regression tests.                                                         |
+| `npm run test:browser -- --project=desktop` | Run desktop Playwright checks; install Chromium first.                                       |
+| `npm run screenshots`                       | Capture a quick UI review, at most ten images per run, in the ignored `screenshots/` folder. |
+| `npm run build` / `npm start`               | Build and serve the local production app.                                                    |
+| `npm run check:distribution`                | Scan source, reachable history, bundles and deployment traces with redacted output.          |
+| `npm run release:export -- --review`        | Export a clean committed source snapshot for private review without its Git history.         |
+
+The committed documentation gallery is separate from the ignored screenshot-tool output. Only independently fictional captures may be copied into `docs/images/`. See [capture tooling](screenshots-tool/README.md) for its privacy controls and synthetic-only capture mode.
+
+For code navigation, start with [the project guide](docs/project-guide.md). Other references:
+
+- [Contribution guide](CONTRIBUTING.md) and [security reporting](SECURITY.md).
+- [Options methodology](docs/options-analytics.md) and [CSV source policy](docs/csv-reconciliation.md).
+- [Private import instructions](docs/private-imports.md) and [security/data boundaries](docs/security-and-data.md).
+- [Release checklist](docs/release-checklist.md) and [third-party notices](docs/third-party-notices.md).
 
 ## Prepare a source-only snapshot
 
